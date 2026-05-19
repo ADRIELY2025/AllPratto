@@ -29,7 +29,7 @@ Desenvolver uma solução web acessível para otimizar o processo de pedidos em 
 - PostgreSQL
 - JavaScript
 - HTML5
-- CSS3
+- CSS
 - Node.js
 
 ---
