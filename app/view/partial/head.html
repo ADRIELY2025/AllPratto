@@ -1,0 +1,67 @@
+<nav class="navbar bg-primary navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/home">Senac</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="/home">
+                        <i class="fa-solid fa-house"></i>
+                        Home
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fa-solid fa-plus"></i>
+                        Cadastro
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="/cliente/lista">
+                                <i class="fa-solid fa-user-plus"></i>
+                                Cliente
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/product/lista">
+                                <i class="fa-solid fa-box-open"></i>
+                                Produto
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/supplier/lista">
+                                <i class="fa-solid fa-truck"></i>
+                                Fornecedor
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/company/lista">
+                                <i class="fa-solid fa-building"></i>
+                                Empresa
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/users/lista">
+                                <i class="fa-solid fa-users"></i>
+                                Usuários
+                            </a>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                  <a href="/logout" class="nav-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+    Sair
+</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

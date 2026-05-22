@@ -1,0 +1,11 @@
+parameters:
+    level: 5
+    paths:
+        - App
+    phpVersion: 80500
+    tmpDir: storage/phpstan
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    excludePaths:
+        - vendor
+        - App/routes (?)

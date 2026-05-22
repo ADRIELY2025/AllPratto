@@ -1,0 +1,47 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Lista de clientes</li>
+</ol>
+{% endblock %}
+
+{% block main %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <a href="/cliente/detalhes" class="btn btn-outline-success">
+                    <i class="fa-solid fa-plus"></i>
+                    Cadastro
+                </a>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-striped table-hover" id="table-customer">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nome</th>
+                            <th>CPF | CNPJ</th>
+                            <th>Nascimento | Fundação</th>
+                            <th>Ativo?</th>
+                            <th>Criado em</th>
+                            <th>Atualizado em</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<form id="form">
+    <input type="hidden" name="id" id="id">
+</form>
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/list-customer.js') }}
+{% endblock %}

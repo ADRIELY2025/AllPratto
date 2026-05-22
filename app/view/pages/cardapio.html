@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AllPratto — Cardápio Online</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ════════════════════════════════════
+   VARIÁVEIS & RESET
+════════════════════════════════════ */
+:root {
+  --navy:       #1a2744;
+  --navy-light: #243460;
+  --gold:       #c9a84c;
+  --gold-light: #e8c97a;
+  --cream:      #f7f3ec;
+  --cream-dark: #ede5d5;
+  --white:      #ffffff;
+  --gray:       #6b7280;
+  --border:     #e5e7eb;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--cream);
+  color: #1f2937;
+  min-height: 100vh;
+}
+
+/* ════════════════════════════════════
+   NAVBAR
+════════════════════════════════════ */
+.navbar {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--navy);
+  display: flex; align-items: stretch;
+  box-shadow: 0 2px 16px rgba(26,39,68,.3);
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 28px;
+  border-right: 1px solid rgba(255,255,255,.08);
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; font-weight: 700; color: var(--gold);
+  line-height: 1;
+}
+.nav-sub {
+  font-size: 8px; letter-spacing: 3.5px; text-transform: uppercase;
+  color: rgba(201,168,76,.55); margin-top: 2px;
+}
+.nav-title {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; letter-spacing: 4px;
+  text-transform: uppercase; color: rgba(255,255,255,.5);
+}
+.nav-title span { color: rgba(201,168,76,.7); margin: 0 10px; }
+.nav-right {
+  padding: 0 20px; display: flex; align-items: center;
+  border-left: 1px solid rgba(255,255,255,.08);
+}
+.mesa-tag {
+  background: rgba(201,168,76,.12);
+  border: 1px solid rgba(201,168,76,.25);
+  color: var(--gold); padding: 7px 18px;
+  font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  border-radius: 2px;
+}
+
+/* ════════════════════════════════════
+   TELA DE QR CODE (sem parâmetro ?mesa)
+════════════════════════════════════ */
+.qr-screen {
+  min-height: calc(100vh - 62px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--navy); padding: 40px 20px; text-align: center;
+}
+.qr-box {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(201,168,76,.2);
+  border-radius: 8px; padding: 52px 48px; max-width: 420px; width: 100%;
+}
+.qr-icon { font-size: 72px; margin-bottom: 24px; filter: drop-shadow(0 4px 16px rgba(0,0,0,.4)); }
+.qr-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 700; color: var(--white);
+  margin-bottom: 10px; line-height: 1.2;
+}
+.qr-title em { color: var(--gold); font-style: italic; }
+.qr-sub {
+  font-size: 13px; color: rgba(255,255,255,.4);
+  line-height: 1.7; margin-bottom: 36px;
+}
+.qr-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 28px;
+}
+.qr-divider span { flex: 1; height: 1px; background: rgba(201,168,76,.2); }
+.qr-divider i { color: var(--gold); opacity: .5; }
+.qr-steps { text-align: left; margin-bottom: 32px; }
+.qr-step {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: 13px; color: rgba(255,255,255,.55);
+}
+.qr-step:last-child { border: none; }
+.qr-step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.3);
+  color: var(--gold); font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.btn-maps {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; background: transparent;
+  border: 1px solid rgba(201,168,76,.3); color: rgba(201,168,76,.7);
+  padding: 12px; border-radius: 4px; font-size: 11px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  text-decoration: none; transition: all .2s;
+}
+.btn-maps:hover { background: rgba(201,168,76,.08); color: var(--gold); border-color: var(--gold); }
+
+/* ════════════════════════════════════
+   HERO
+════════════════════════════════════ */
+.hero {
+  background: var(--navy);
+  padding: 60px 40px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(201,168,76,.1) 0%, transparent 60%),
+              repeating-linear-gradient(45deg,transparent,transparent 50px,rgba(255,255,255,.012) 50px,rgba(255,255,255,.012) 51px);
+}
+.hero-eyebrow {
+  font-size: 9px; letter-spacing: 6px; text-transform: uppercase;
+  color: var(--gold); opacity: .75; margin-bottom: 18px; position: relative;
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(38px, 6vw, 70px); font-weight: 700; line-height: 1.1;
+  color: var(--white); margin-bottom: 10px; position: relative;
+}
+.hero-title em { color: var(--gold); font-style: italic; }
+.hero-sub {
+  font-size: 12px; color: rgba(255,255,255,.35);
+  letter-spacing: 1.5px; margin-bottom: 30px; position: relative;
+}
+.hero-divider {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 28px; position: relative;
+}
+.hero-divider span { width: 56px; height: 1px; background: rgba(201,168,76,.3); }
+.hero-divider i { color: var(--gold); opacity: .6; font-size: 11px; }
+.hero-emojis {
+  display: flex; justify-content: center; gap: 20px;
+  font-size: 46px; position: relative;
+  filter: drop-shadow(0 6px 20px rgba(0,0,0,.35));
+}
+
+/* ════════════════════════════════════
+   CATS STICKY
+════════════════════════════════════ */
+.cats-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 62px; z-index: 100;
+  box-shadow: 0 2px 10px rgba(26,39,68,.06);
+}
+.cats-inner {
+  display: flex; overflow-x: auto; max-width: 1100px; margin: 0 auto;
+  scrollbar-width: none; padding: 0 16px;
+}
+.cats-inner::-webkit-scrollbar { display: none; }
+.cat-btn {
+  flex-shrink: 0; background: none; border: none;
+  border-bottom: 2px solid transparent;
+  padding: 16px 22px; font-family: 'Inter', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 2.5px;
+  text-transform: uppercase; color: #9ca3af; cursor: pointer;
+  transition: all .22s; white-space: nowrap;
+}
+.cat-btn:hover { color: var(--navy); }
+.cat-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ════════════════════════════════════
+   CONTEÚDO PRINCIPAL
+════════════════════════════════════ */
+.main { max-width: 1100px; margin: 0 auto; padding: 44px 24px 120px; }
+
+.section-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 28px;
+}
+.section-header h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 700; color: var(--navy); white-space: nowrap;
+}
+.section-header .line {
+  flex: 1; height: 1px;
+  background: linear-gradient(to right, var(--cream-dark), transparent);
+}
+
+/* BEST SELLERS — grid de destaque */
+.best-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 18px; margin-bottom: 56px;
+}
+.best-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden; cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column;
+}
+.best-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(26,39,68,.1); }
+.best-card-img {
+  height: 140px; background: var(--cream);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 58px; position: relative;
+  transition: transform .3s;
+}
+.best-card:hover .best-card-img { transform: scale(1.03); }
+.best-card-tag {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--navy); color: var(--gold);
+  font-size: 8px; letter-spacing: 2px; text-align: center;
+  padding: 4px; text-transform: uppercase; font-weight: 700;
+}
+.best-card-body { padding: 16px 16px 18px; flex: 1; display: flex; flex-direction: column; }
+.best-card-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 600; color: var(--navy);
+  margin-bottom: 5px; line-height: 1.2;
+}
+.best-card-desc { font-size: 11px; color: var(--gray); line-height: 1.6; flex: 1; margin-bottom: 14px; }
+.best-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--cream-dark); padding-top: 12px;
+}
+.best-card-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 700; color: var(--navy);
+}
+.best-card-price small { font-size: 11px; font-family: 'Inter', sans-serif; color: var(--gray); }
+.btn-add-best {
+  background: var(--navy); color: var(--gold);
+  border: none; padding: 8px 14px; border-radius: 2px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; cursor: pointer; transition: background .2s;
+}
+.btn-add-best:hover { background: var(--navy-light); }
+
+/* MAGIC BANNER */
+.magic-banner {
+  background: var(--navy); margin: 0 -24px;
+  padding: 44px 32px; text-align: center;
+  margin-bottom: 52px;
+}
+.magic-banner h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(22px, 4vw, 40px); color: var(--white);
+  font-weight: 400; letter-spacing: 1px;
+}
+.magic-banner h3 em { color: var(--gold); font-style: italic; }
+.magic-emojis {
+  margin-top: 18px; font-size: 36px;
+  display: flex; justify-content: center; gap: 18px;
+}
+
+/* CARDÁPIO COMPLETO */
+.menu-section { margin-bottom: 44px; }
+.menu-cat-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px; font-weight: 700; color: var(--navy);
+  margin-bottom: 18px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--cream-dark);
+  display: flex; align-items: center; gap: 10px;
+}
+.full-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+}
+/* mesmo estilo best-card já cobre */
+
+/* ════════════════════════════════════
+   CART BAR FLUTUANTE
+════════════════════════════════════ */
+.cart-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+  background: var(--navy);
+  padding: 14px 28px;
+  display: flex; align-items: center; gap: 16px;
+  transform: translateY(100%);
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 -4px 24px rgba(26,39,68,.3);
+}
+.cart-bar.visible { transform: translateY(0); }
+.cart-bar-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+.cart-qty {
+  background: var(--gold); color: var(--navy);
+  font-weight: 800; font-size: 13px;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.cart-bar-label { color: rgba(255,255,255,.6); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
+.cart-bar-total {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px; font-weight: 700; color: var(--gold);
+}
+.btn-ver-pedido {
+  background: var(--gold); color: var(--navy);
+  border: none; padding: 12px 24px;
+  font-size: 11px; font-weight: 800; letter-spacing: 2px;
+  text-transform: uppercase; cursor: pointer; border-radius: 2px;
+  transition: background .2s; white-space: nowrap;
+}
+.btn-ver-pedido:hover { background: var(--gold-light); }
+
+/* ════════════════════════════════════
+   DRAWER / MODAL DO PEDIDO
+════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(26,39,68,.6); backdrop-filter: blur(5px);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.overlay.open { display: flex; }
+.drawer {
+  background: var(--white); width: 100%; max-width: 480px;
+  border-radius: 16px 16px 0 0; max-height: 88vh; overflow-y: auto;
+  animation: slideUp .3s ease;
+}
+@keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:none;opacity:1} }
+
+.drawer-header {
+  background: var(--navy); padding: 22px 26px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 1;
+}
+.drawer-header h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; color: var(--white);
+}
+.drawer-mesa { font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-top: 2px; }
+.drawer-close {
+  background: none; border: none; color: var(--gold);
+  font-size: 22px; cursor: pointer; line-height: 1;
+}
+.drawer-body { padding: 22px 26px; }
+
+/* itens do carrinho */
+.ci {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.ci-emoji { font-size: 28px; }
+.ci-info { flex: 1; }
+.ci-nome { font-weight: 600; font-size: 14px; color: var(--navy); }
+.ci-preco { font-size: 12px; font-weight: 700; color: var(--gold); margin-top: 2px; }
+.ci-qty-ctrl { display: flex; align-items: center; gap: 8px; }
+.qbtn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--cream);
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s; color: var(--navy);
+}
+.qbtn:hover { background: var(--cream-dark); }
+.qval { font-weight: 800; min-width: 20px; text-align: center; color: var(--navy); }
+
+/* totais */
+.totais { padding: 16px 0 4px; }
+.tot-row {
+  display: flex; justify-content: space-between;
+  padding: 5px 0; font-size: 13px; color: var(--gray);
+}
+.tot-row.total {
+  border-top: 2px solid var(--navy); margin-top: 8px; padding-top: 12px;
+  font-size: 18px; font-weight: 700; color: var(--navy);
+}
+.tot-row.total span:last-child {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+}
+
+/* pagamento */
+.pay-label {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gray); margin: 20px 0 10px;
+}
+.pay-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+.popt {
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 6px; text-align: center; cursor: pointer;
+  font-size: 11px; font-weight: 600; color: var(--gray);
+  transition: all .18s;
+}
+.popt .pi { font-size: 22px; display: block; margin-bottom: 4px; }
+.popt:hover, .popt.ativo { border-color: var(--navy); color: var(--navy); background: rgba(26,39,68,.04); }
+
+.btn-confirmar {
+  width: 100%; background: var(--navy); color: var(--gold);
+  border: none; padding: 16px;
+  font-size: 11px; font-weight: 800; letter-spacing: 3px;
+  text-transform: uppercase; cursor: pointer; border-radius: 4px;
+  transition: background .2s;
+}
+.btn-confirmar:hover { background: var(--navy-light); }
+
+/* sucesso */
+.sucesso { text-align: center; padding: 16px 0 24px; }
+.sucesso .si { font-size: 54px; margin-bottom: 14px; }
+.sucesso h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px; color: var(--navy); margin-bottom: 10px;
+}
+.sucesso p { font-size: 12px; color: var(--gray); line-height: 1.9; }
+
+/* vazio */
+.vazio { text-align: center; padding: 44px 20px; color: var(--gray); }
+.vazio .vi { font-size: 44px; margin-bottom: 12px; }
+.vazio p { font-size: 13px; }
+
+/* notificação */
+.notif {
+  position: fixed; top: 80px; left: 50%;
+  transform: translateX(-50%) translateY(-70px);
+  background: var(--navy); color: var(--gold);
+  border: 1px solid rgba(201,168,76,.3);
+  padding: 10px 26px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; letter-spacing: 1px;
+  z-index: 600; transition: transform .3s; white-space: nowrap;
+}
+.notif.show { transform: translateX(-50%) translateY(0); }
+
+/* responsivo */
+@media(max-width:600px){
+  .hero { padding: 40px 20px; }
+  .hero-emojis { font-size: 36px; gap: 14px; }
+  .best-grid, .full-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .nav-title { display: none; }
+  .main { padding: 32px 16px 110px; }
+  .magic-banner { margin: 0 -16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NOTIFICAÇÃO -->
+<div class="notif" id="notif"></div>
+
+<!-- ══════════════════════════════════
+     NAVBAR
+══════════════════════════════════ -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <div>
+      <div class="nav-logo">AP</div>
+      <div class="nav-sub">AllPratto</div>
+    </div>
+  </div>
+
+  <div class="nav-title">
+    ✦ <span>Cardápio Online</span> ✦
+  </div>
+
+  <div class="nav-right">
+    <?php if ($mesaValida): ?>
+      <div class="mesa-tag">🍽 MESA <?= $mesa ?></div>
+    <?php endif; ?>
+  </div>
+</nav>
+
+<?php if (!$mesaValida): ?>
+<!-- ══════════════════════════════════
+     TELA SEM MESA — ESCANEAR QR
+══════════════════════════════════ -->
+<div class="qr-screen">
+  <div class="qr-box">
+    <div class="qr-icon">📱</div>
+    <div class="qr-title">Escaneie o <em>QR Code</em><br>da sua mesa</div>
+    <div class="qr-sub">
+      Para acessar o cardápio digital e fazer seu pedido,<br>
+      utilize o QR Code disponível na sua mesa.
+    </div>
+    <div class="qr-divider"><span></span><i>✦</i><span></span></div>
+    <div class="qr-steps">
+      <div class="qr-step"><div class="qr-step-num">1</div> Abra a câmera do seu celular</div>
+      <div class="qr-step"><div class="qr-step-num">2</div> Aponte para o QR Code na mesa</div>
+      <div class="qr-step"><div class="qr-step-num">3</div> Toque no link que aparecer</div>
+    </div>
+    <a class="btn-maps"
+       href="https://www.google.com/maps/search/AllPratto"
+       target="_blank">
+      📍 &nbsp; Ver no Google Maps
+    </a>
+  </div>
+</div>
+
+<?php else: ?>
+<!-- ══════════════════════════════════
+     CARDÁPIO COMPLETO
+══════════════════════════════════ -->
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">✦ Mesa <?= $mesa ?> — Bem-vindo</div>
+  <div class="hero-title">The <em>proof</em><br>is in the <em>pratto</em></div>
+  <div class="hero-sub">Manteiga, farinha e um toque de elegância em cada prato</div>
+  <div class="hero-divider"><span></span><i>✦</i><span></span></div>
+  <div class="hero-emojis">🥐 🍝 🍷 🍮</div>
+</section>
+
+<!-- CATEGORIAS STICKY -->
+<div class="cats-bar">
+  <div class="cats-inner" id="catsInner">
+    <button class="cat-btn active" data-cat="todos" onclick="filtrarCat('todos',this)">Todos</button>
+  </div>
+</div>
+
+<!-- CONTEÚDO -->
+<main class="main" id="mainContent">
+  <!-- preenchido pelo JS -->
+  <div style="text-align:center;padding:60px;color:#9ca3af">Carregando cardápio...</div>
+</main>
+
+<!-- CART BAR -->
+<div class="cart-bar" id="cartBar">
+  <div class="cart-bar-left">
+    <div class="cart-qty" id="cartQty">0</div>
+    <div class="cart-bar-label">itens selecionados</div>
+  </div>
+  <div class="cart-bar-total" id="cartTotal">R$ 0,00</div>
+  <button class="btn-ver-pedido" onclick="abrirCarrinho()">Ver Pedido ›</button>
+</div>
+
+<!-- DRAWER PEDIDO -->
+<div class="overlay" id="overlay" onclick="handleOverlay(event)">
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div>
+        <h3>Seu Pedido</h3>
+        <div class="drawer-mesa">MESA <?= $mesa ?></div>
+      </div>
+      <button class="drawer-close" onclick="fecharCarrinho()">✕</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </div>
+</div>
+
+<?php endif; ?>
+
+<!-- ════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════ -->
+<?php if ($mesaValida): ?>
+<script>
+// ── CONFIG ────────────────────────────
+const MESA = <?= $mesa ?>;
+
+// ── STATE ─────────────────────────────
+let cardapio  = {};        // { categoria: [itens] }
+let carrinho  = {};        // { id: quantidade }
+let catAtiva  = 'todos';
+let pagamento = null;
+
+// ── INIT ──────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await carregarCardapio();
+});
+
+async function carregarCardapio() {
+  try {
+    const res  = await fetch('/cardapio/itens');
+    const json = await res.json();
+
+    if (!json.sucesso) throw new Error();
+
+    cardapio = json.dados;
+    montarCategorias();
+    renderizarCardapio();
+
+  } catch {
+    document.getElementById('mainContent').innerHTML =
+      '<div style="text-align:center;padding:60px;color:#9ca3af">Erro ao carregar o cardápio.</div>';
+  }
+}
+
+// ── CATEGORIAS ────────────────────────
+function montarCategorias() {
+  const bar = document.getElementById('catsInner');
+  bar.innerHTML = '<button class="cat-btn active" data-cat="todos" onclick="filtrarCat(\'todos\',this)">Todos</button>';
+
+  Object.keys(cardapio).forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className    = 'cat-btn';
+    btn.dataset.cat  = cat;
+    btn.textContent  = cat;
+    btn.onclick      = () => filtrarCat(cat, btn);
+    bar.appendChild(btn);
+  });
+}
+
+function filtrarCat(cat, btn) {
+  catAtiva = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderizarCardapio();
+}
+
+// ── RENDER CARDÁPIO ───────────────────
+function renderizarCardapio() {
+  const main = document.getElementById('mainContent');
+
+  // Destaques (best sellers)
+  const todos  = Object.values(cardapio).flat();
+  const bests  = todos.filter(i => i.destaque).slice(0, 4);
+  const filtro = catAtiva === 'todos' ? null : catAtiva;
+
+  let html = '';
+
+  // Best Sellers (só quando em "Todos")
+  if (!filtro && bests.length) {
+    html += `
+      <div>
+        <div class="section-header">
+          <h2>Best Sellers</h2><div class="line"></div>
+        </div>
+        <div class="best-grid">
+          ${bests.map(card).join('')}
+        </div>
+      </div>
+
+      <div class="magic-banner">
+        <h3>The <em>magic</em> behind the pratto</h3>
+        <div class="magic-emojis">👨‍🍳 🔥 🌿 ⭐</div>
+      </div>`;
+  }
+
+  // Cardápio por categoria
+  const cats = filtro ? { [filtro]: cardapio[filtro] } : cardapio;
+
+  Object.entries(cats).forEach(([cat, itens]) => {
+    html += `
+      <div class="menu-section">
+        <div class="menu-cat-title">${cat}</div>
+        <div class="full-grid">
+          ${itens.map(card).join('')}
+        </div>
+      </div>`;
+  });
+
+  main.innerHTML = html;
+}
+
+function card(item) {
+  return `
+    <div class="best-card" onclick="adicionarItem(${item.id})">
+      <div class="best-card-img">
+        ${item.emoji}
+        <div class="best-card-tag">${item.nome.toUpperCase()}</div>
+      </div>
+      <div class="best-card-body">
+        <div class="best-card-name">${item.nome}</div>
+        <div class="best-card-desc">${item.descricao}</div>
+        <div class="best-card-footer">
+          <div class="best-card-price">
+            <small>R$</small> ${item.preco.toFixed(2).replace('.', ',')}
+          </div>
+          <button class="btn-add-best">+ Add</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── CARRINHO ──────────────────────────
+function adicionarItem(id) {
+  carrinho[id] = (carrinho[id] || 0) + 1;
+  const item = encontrarItem(id);
+  mostrarNotif(`✦ ${item.emoji} ${item.nome} adicionado`);
+  atualizarCartBar();
+}
+
+function mudarQtd(id, delta) {
+  carrinho[id] = (carrinho[id] || 0) + delta;
+  if (carrinho[id] <= 0) delete carrinho[id];
+  atualizarCartBar();
+  renderizarDrawer();
+}
+
+function encontrarItem(id) {
+  return Object.values(cardapio).flat().find(i => i.id === +id);
+}
+
+function totalCarrinho() {
+  return Object.entries(carrinho)
+    .reduce((s, [id, q]) => s + encontrarItem(+id).preco * q, 0);
+}
+
+function qtdTotal() {
+  return Object.values(carrinho).reduce((s, q) => s + q, 0);
+}
+
+function atualizarCartBar() {
+  const q = qtdTotal();
+  const t = totalCarrinho();
+  document.getElementById('cartQty').textContent   = q;
+  document.getElementById('cartTotal').textContent = fmt(t);
+  document.getElementById('cartBar').classList.toggle('visible', q > 0);
+}
+
+function fmt(v) {
+  return 'R$ ' + v.toFixed(2).replace('.', ',');
+}
+
+// ── DRAWER ────────────────────────────
+function abrirCarrinho() {
+  pagamento = null;
+  document.getElementById('overlay').classList.add('open');
+  renderizarDrawer();
+}
+
+function fecharCarrinho() {
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function handleOverlay(e) {
+  if (e.target === document.getElementById('overlay')) fecharCarrinho();
+}
+
+function renderizarDrawer() {
+  const body    = document.getElementById('drawerBody');
+  const entries = Object.entries(carrinho);
+
+  if (!entries.length) {
+    body.innerHTML = `
+      <div class="vazio">
+        <div class="vi">🛒</div>
+        <p>Nenhum item adicionado ainda.</p>
+      </div>`;
+    return;
+  }
+
+  const subtotal = totalCarrinho();
+  const taxa     = subtotal * 0.10;
+  const total    = subtotal + taxa;
+
+  const pagOpts = [
+    { k: 'pix',      i: '◆',  l: 'Pix'      },
+    { k: 'credito',  i: '💳', l: 'Crédito'  },
+    { k: 'dinheiro', i: '💵', l: 'Dinheiro' },
+  ];
+
+  body.innerHTML = `
+    ${entries.map(([id, q]) => {
+      const it = encontrarItem(+id);
+      return `
+        <div class="ci">
+          <div class="ci-emoji">${it.emoji}</div>
+          <div class="ci-info">
+            <div class="ci-nome">${it.nome}</div>
+            <div class="ci-preco">${fmt(it.preco * q)}</div>
+          </div>
+          <div class="ci-qty-ctrl">
+            <button class="qbtn" onclick="mudarQtd(${id},-1)">−</button>
+            <div class="qval">${q}</div>
+            <button class="qbtn" onclick="mudarQtd(${id},+1)">+</button>
+          </div>
+        </div>`;
+    }).join('')}
+
+    <div class="totais">
+      <div class="tot-row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+      <div class="tot-row"><span>Taxa de serviço (10%)</span><span>${fmt(taxa)}</span></div>
+      <div class="tot-row total"><span>Total</span><span>${fmt(total)}</span></div>
+    </div>
+
+    <div class="pay-label">Forma de Pagamento</div>
+    <div class="pay-grid">
+      ${pagOpts.map(p => `
+        <div class="popt ${pagamento === p.k ? 'ativo' : ''}" onclick="selecionarPag('${p.k}')">
+          <span class="pi">${p.i}</span>${p.l}
+        </div>`).join('')}
+    </div>
+
+    <button class="btn-confirmar" onclick="confirmarPedido()">
+      ✦ &nbsp; Confirmar Pedido
+    </button>`;
+}
+
+function selecionarPag(k) {
+  pagamento = k;
+  renderizarDrawer();
+}
+
+// ── CONFIRMAR PEDIDO (POST → PHP) ─────
+async function confirmarPedido() {
+  if (!pagamento) {
+    mostrarNotif('⚠ Selecione a forma de pagamento');
+    return;
+  }
+
+  const itensPedido = Object.entries(carrinho).map(([id, q]) => ({
+    id: +id, quantidade: q,
+  }));
+
+  try {
+    const res = await fetch('/cardapio/pedido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mesa:      MESA,
+        itens:     itensPedido,
+        pagamento: pagamento,
+      }),
+    });
+
+    const json = await res.json();
+
+    if (!json.sucesso) throw new Error(json.erro || 'Erro');
+
+    // Limpa o carrinho
+    carrinho  = {};
+    pagamento = null;
+    atualizarCartBar();
+
+    // Tela de sucesso
+    document.getElementById('drawerBody').innerHTML = `
+      <div class="sucesso">
+        <div class="si">✦</div>
+        <h3>Pedido Confirmado!</h3>
+        <p>
+          Pedido <strong>#${json.pedido_id}</strong> enviado à cozinha.<br>
+          Em breve um garçom irá até a <strong>Mesa ${MESA}</strong>.
+        </p>
+      </div>`;
+
+    setTimeout(fecharCarrinho, 3500);
+
+  } catch (err) {
+    mostrarNotif('Erro ao enviar pedido. Tente novamente.');
+  }
+}
+
+// ── NOTIFICAÇÃO ───────────────────────
+function mostrarNotif(msg) {
+  const n = document.getElementById('notif');
+  n.textContent = msg;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 2200);
+}
+</script>
+<?php endif; ?>
+
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ vite('resources/css/app.css') }}
+    {{ vite('resources/css/login.css') }}
+    <title>Autenticação do Sistema</title>
+</head>
+
+<body>
+    <div class="login-card">
+        <div class="login-image-side">
+            
+        </div>
+
+        <div class="login-form-side">
+            <h1 class="login-title">Login</h1>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login">CPF, Telefone ou E-mail</label>
+                    <input
+                        type="text"
+                        id="login"
+                        name="login"
+                        placeholder="CPF, Telefone ou E-mail"
+                        autofocus
+                        autocomplete="username"
+                        onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('senha').focus(); }"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <a href="#" class="forgot-link">Esqueceu a senha?</a>
+                    <input
+                        type="password"
+                        id="senha"
+                        name="senha"
+                        placeholder="Informe sua senha"
+                        autocomplete="current-password"
+                        onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('btnLogin').click(); }"
+                    >
+                </div>
+
+                <button id="btnLogin" type="button" class="btn-login">Login</button>
+
+                <button id="loginGoogle" type="button" class="btn-google" data-client-id="{{ google_client_id }}">
+                    <svg width="16" height="16" viewBox="0 0 48 48">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    </svg>
+                    Login com Google
+                </button>
+            </form>
+
+                    <!-- ===== MODAL CADASTRO ===== -->
+    <div class="overlay" id="overlay-cadastro">
+        <div class="modal-cadastro" id="modal-cadastro" name="modal-cadastro">
+            <form id="register-form">
+                <div class="modal-header">
+                    <div>
+                        <h2>Criar Conta</h2>
+                        <p>Preencha os dados para se cadastrar</p>
+                    </div>
+                    <button class="close-btn" onclick="closeModal()">✕</button>
+                </div>
+
+            <div class="modal-body">
+
+                <!-- Dados Pessoais -->
+                <div class="section-title">Dados Pessoais</div>
+
+                <div class="row cols-2">
+                    <div class="field">
+                        <label>Nome <span class="req">*</span></label>
+                        <input
+                            type="text"
+                            id="cad-nome"
+                            name="cad-nome"
+                            placeholder="Ex: João"
+                            required
+                            autocomplete="given-name"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('cad-sobrenome').focus(); }"
+                        />
+                        <span class="err-msg" id="err-nome"></span>
+                    </div>
+                    <div class="field">
+                        <label>Sobrenome <span class="req">*</span></label>
+                        <input
+                            type="text"
+                            id="cad-sobrenome"
+                            name="cad-sobrenome"    
+                            placeholder="Ex: Silva"
+                            required
+                            autocomplete="family-name"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('cad-cpf').focus(); }"
+                        />
+                        <span class="err-msg" id="err-sobrenome"></span>
+                    </div>
+                </div>
+
+                <div class="row cols-2">
+                    <div class="field">
+                        <label>CPF <span class="req">*</span></label>
+                        <input
+                            type="text"
+                            id="cad-cpf"
+                            name="cad-cpf"
+                            placeholder="000.000.000-00"
+                            required
+                            maxlength="14"
+                            autocomplete="off"
+                            inputmode="numeric"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('cad-rg').focus(); }"
+                        />
+                        <span class="err-msg" id="err-cpf"></span>
+                    </div>
+                    <div class="field">
+                        <label>RG</label>
+                        <input
+                            type="text"
+                            id="cad-rg"
+                            name="cad-rg"
+                            placeholder="00.000.000-0"
+                            required
+                            maxlength="12"
+                            autocomplete="off"
+                            inputmode="numeric"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('cad-senha').focus(); }"
+                        />
+                    </div>
+                </div>
+
+                <!-- Segurança -->
+                <div class="section-title">Segurança</div>
+
+                <div class="row cols-2">
+                    <div class="field">
+                        <label>Senha <span class="req">*</span></label>
+                        <div class="pw-wrap">
+                            <input
+                                type="password"
+                                id="cad-senha"
+                                name="cad-senha"
+                                placeholder="Mínimo 8 caracteres"
+                                required
+                                autocomplete="new-password"
+                                onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('cad-confirmar-senha').focus(); }"
+                            />
+                            <button class="pw-toggle" type="button" onclick="togglePw('cad-senha', this)">👁</button>
+                        </div>
+                        <div class="strength-bar">
+                            <div class="strength-seg" id="s1"></div>
+                            <div class="strength-seg" id="s2"></div>
+                            <div class="strength-seg" id="s3"></div>
+                            <div class="strength-seg" id="s4"></div>
+                        </div>
+                        <div class="strength-label" id="strength-label"></div>
+                        <span class="err-msg" id="err-senha"></span>
+                    </div>
+                    <div class="field">
+                        <label>Confirmar Senha <span class="req">*</span></label>
+                        <div class="pw-wrap">
+                            <input
+                                type="password"
+                                id="cad-confirmar-senha"
+                                name="cad-confirmar-senha"
+                                placeholder="Repita a senha"
+                                required
+                                autocomplete="new-password"
+                                onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('cad-email').focus(); }"
+                            />
+                            <button class="pw-toggle" type="button" onclick="togglePw('cad-confirmar-senha', this)">👁</button>
+                        </div>
+                        <span class="err-msg" id="err-confirmar-senha"></span>
+                    </div>
+                </div>
+
+                <!-- Contatos -->
+                <div class="section-title">Contatos</div>
+
+                <div class="chips-row">
+                    <button class="chip active" type="button" onclick="toggleChip(this, 'email')">✉ E-mail</button>
+                    <button class="chip" type="button" onclick="toggleChip(this, 'celular')">📱 Celular</button>
+                    <button class="chip" type="button" onclick="toggleChip(this, 'telefone')">📞 Telefone</button>
+                    <button class="chip" type="button" onclick="toggleChip(this, 'whatsapp')">💬 WhatsApp</button>
+                </div>
+
+                <div id="contact-email" class="contact-field visible">
+                    <div class="field">
+                        <label>E-mail <span class="req">*</span></label>
+                        <input
+                            type="email"
+                            id="cad-email"
+                            name="cad-email"
+                            placeholder="seu@email.com"
+                            required
+                            autocomplete="email"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('btnCadastrar').click(); }"
+                        />
+                        <span class="err-msg" id="err-email"></span>
+                    </div>
+                </div>
+
+                <div id="contact-celular" class="contact-field">
+                    <div class="field">
+                        <label>Celular</label>
+                        <input
+                            type="text"
+                            id="cad-celular"
+                            name="cad-celular"
+                            placeholder="(11) 9 0000-0000"
+                            required
+                            maxlength="16"
+                            inputmode="numeric"
+                            autocomplete="tel"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('btnCadastrar').click(); }"
+                        />
+                    </div>
+                </div>
+
+                <div id="contact-telefone" class="contact-field">
+                    <div class="field">
+                        <label>Telefone</label>
+                        <input
+                            type="text"
+                            id="cad-telefone"
+                            name="cad-telefone"
+                            placeholder="(11) 0000-0000"
+                            required
+                            maxlength="14"
+                            inputmode="numeric"
+                            autocomplete="tel"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('btnCadastrar').click(); }"
+                        />
+                    </div>
+                </div>
+
+                <div id="contact-whatsapp" class="contact-field">
+                    <div class="field">
+                        <label>WhatsApp</label>
+                        <input
+                            type="text"
+                            id="cad-whatsapp"
+                            name="cad-whatsapp"
+                            placeholder="(11) 9 0000-0000"
+                            required
+                            maxlength="16"
+                            inputmode="numeric"
+                            autocomplete="tel"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('btnCadastrar').click(); }"
+                        />
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <p class="terms">
+                        Ao se cadastrar você concorda com os
+                        <a href="#">Termos de Uso</a> e a <a href="#">Política de Privacidade</a>.
+                    </p>
+                    <button class="btn-submit" type="button" id="btnCadastrar" name="btnCadastrar">Criar Conta →</button>
+                </div>
+
+            </div>
+            </form>
+        </div>
+    </div>
+    <!-- ===== /MODAL CADASTRO ===== -->
+
+            <p class="signup-link">
+                Não tem uma conta? <a href="#" onclick="openModal(); return false;">Cadastre-se</a>
+            </p>
+        </div>
+    </div>
+
+
+    {{ vite('resources/js/app.js') }}
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    {{ vite('resources/js/pages/login.js') }}
+</body>
+</html>

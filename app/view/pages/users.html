@@ -1,0 +1,64 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item"><a href="/users/lista">Lista de usuários</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Detalhes do usuário</li>
+</ol>
+{% endblock %}
+
+{% block main %}
+<form id="form">
+    <input type="hidden" id="action" name="action" value="{{ action }}">
+    <input type="hidden" id="id" name="id" value="{{ id }}">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <a href="/users/lista" class="btn btn-warning">
+                        <i class="fa-solid fa-chevron-left"></i>
+                        Voltar
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6 col-md-6">
+                            <div class="form-floating mb-3">
+                                <input autofocus type="text" class="form-control" id="nome" name="nome"
+                                    placeholder="Digite o nome do usuário" value="{{ user.nome }}" required>
+                                <label for="nome">Nome</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="password" class="form-control" id="senha" name="senha"
+                                    placeholder="Digite a senha" autocomplete="new-password">
+                                <label for="senha">Senha</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="icheck-primary d-inline">
+                                    <input class="form-check-label" type="checkbox" id="ativo" name="ativo" value="true" {% if user.ativo==1 %} checked {% endif %}>
+                                    <label for="ativo">Ativo?</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button id="insert" type="button" class="btn btn-success">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/users.js') }}
+{% endblock %}
