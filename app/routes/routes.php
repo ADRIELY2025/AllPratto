@@ -18,7 +18,7 @@ $app->group('/authentication', function (\Slim\Routing\RouteCollectorProxy $grou
 
 $app->get('/',     app\controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home', app\controller\Home::class . ':home')->add(Middleware::web());
-$app->get('/cardapio', app\controller\Cardapio::class . ':home');
+$app->get('/cardapio', app\controller\Cardapio::class . ':list');
 
 $app->group('/cliente', function (\Slim\Routing\RouteCollectorProxy $group) {
     # Páginas HTML protegidas

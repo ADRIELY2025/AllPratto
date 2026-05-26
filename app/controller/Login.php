@@ -430,6 +430,8 @@ final class Login extends Base
             error_log('[preRegister][GERAL] ' . $e->getMessage());
             return $this->json($response, ['status' => false, 'msg' => 'Erro inesperado. Tente novamente.'], 500);
         }
+        
+        
     }
 
     // -------------------------------------------------------------------------

@@ -341,7 +341,6 @@ function validarCadastro() {
 }
 
 document.getElementById('btnCadastrar').addEventListener('click', async () => {
-    console.log('oi')
     const isValid = Validate.SetForm('register-form').Validate();
     if (!isValid) {
         Swal.fire({
@@ -352,12 +351,46 @@ document.getElementById('btnCadastrar').addEventListener('click', async () => {
         });
         return;
     }
+
+    const btn = document.getElementById('btnCadastrar');
+    btn.disabled = true;
+    btn.textContent = 'Cadastrando…';
+
     const requests = new Requests();
     try {
         const response = await requests.setForm('register-form').post('/authentication/preregister');
-        console.log(response);
+
+        if (!response?.status) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro no cadastro',
+                text: response?.msg || 'Não foi possível realizar o cadastro.',
+                confirmButtonColor: '#198754',
+            });
+            return;
+        }
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Cadastro realizado!',
+            text: response.msg || 'Usuário cadastrado com sucesso!',
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+        });
+
+        window.closeModal();
+        document.getElementById('register-form').reset();
 
     } catch (error) {
-
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro inesperado',
+            text: error.message || 'Não foi possível conectar ao servidor.',
+            confirmButtonColor: '#198754',
+        });
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Cadastrar';
     }
 });

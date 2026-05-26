@@ -7,27 +7,37 @@ namespace app\controller;
 final class Cardapio extends Base
 {
 
+    public function list($request, $response)
+    {
+        return $this->getTwig()
+            ->render($response, $this->setView('cardapio'), [
+                'titulo' => 'Cardápio',
+            ])
+            ->withHeader('Content-Type', 'text/html')
+            ->withStatus(200);
+    }
+
     private array $itens = [
         // ── Entradas ──
-        ['id'=>1,'nome'=>'Carpaccio de Filé',   'preco'=>42.00,'categoria'=>'Entradas',  'emoji'=>'🥩','descricao'=>'Filé fatiado, alcaparras, parmesão e azeite trufado','tempo'=>'15 min','destaque'=>true],
-        ['id'=>2,'nome'=>'Bruschetta Clássica', 'preco'=>28.00,'categoria'=>'Entradas',  'emoji'=>'🍞','descricao'=>'Pão rústico, tomate concassé e manjericão fresco',   'tempo'=>'8 min', 'destaque'=>false],
-        ['id'=>3,'nome'=>'Creme de Cogumelos',  'preco'=>34.00,'categoria'=>'Entradas',  'emoji'=>'🍄','descricao'=>'Cogumelos selvagens com creme e croutons dourados',  'tempo'=>'12 min','destaque'=>true],
+        ['id' => 1, 'nome' => 'Carpaccio de Filé',   'preco' => 42.00, 'categoria' => 'Entradas',  'emoji' => '🥩', 'descricao' => 'Filé fatiado, alcaparras, parmesão e azeite trufado', 'tempo' => '15 min', 'destaque' => true],
+        ['id' => 2, 'nome' => 'Bruschetta Clássica', 'preco' => 28.00, 'categoria' => 'Entradas',  'emoji' => '🍞', 'descricao' => 'Pão rústico, tomate concassé e manjericão fresco',   'tempo' => '8 min', 'destaque' => false],
+        ['id' => 3, 'nome' => 'Creme de Cogumelos',  'preco' => 34.00, 'categoria' => 'Entradas',  'emoji' => '🍄', 'descricao' => 'Cogumelos selvagens com creme e croutons dourados',  'tempo' => '12 min', 'destaque' => true],
 
         // ── Pratos Principais ──
-        ['id'=>4,'nome'=>'Medalhão ao Madeira', 'preco'=>89.00,'categoria'=>'Principais','emoji'=>'🥩','descricao'=>'Filé grelhado, molho madeira e purê de batata trufado','tempo'=>'30 min','destaque'=>true],
-        ['id'=>5,'nome'=>'Salmão Grelhado',     'preco'=>79.00,'categoria'=>'Principais','emoji'=>'🐟','descricao'=>'Crosta de ervas finas e risoto de limão siciliano',    'tempo'=>'25 min','destaque'=>false],
-        ['id'=>6,'nome'=>'Risoto de Camarão',   'preco'=>82.00,'categoria'=>'Principais','emoji'=>'🍤','descricao'=>'Camarões salteados, risoto cremoso com açafrão',       'tempo'=>'28 min','destaque'=>true],
-        ['id'=>7,'nome'=>'Nhoque ao Gorgonzola','preco'=>58.00,'categoria'=>'Principais','emoji'=>'🍝','descricao'=>'Nhoque artesanal, molho gorgonzola e nozes tostadas',  'tempo'=>'20 min','destaque'=>false],
+        ['id' => 4, 'nome' => 'Medalhão ao Madeira', 'preco' => 89.00, 'categoria' => 'Principais', 'emoji' => '🥩', 'descricao' => 'Filé grelhado, molho madeira e purê de batata trufado', 'tempo' => '30 min', 'destaque' => true],
+        ['id' => 5, 'nome' => 'Salmão Grelhado',     'preco' => 79.00, 'categoria' => 'Principais', 'emoji' => '🐟', 'descricao' => 'Crosta de ervas finas e risoto de limão siciliano',    'tempo' => '25 min', 'destaque' => false],
+        ['id' => 6, 'nome' => 'Risoto de Camarão',   'preco' => 82.00, 'categoria' => 'Principais', 'emoji' => '🍤', 'descricao' => 'Camarões salteados, risoto cremoso com açafrão',       'tempo' => '28 min', 'destaque' => true],
+        ['id' => 7, 'nome' => 'Nhoque ao Gorgonzola', 'preco' => 58.00, 'categoria' => 'Principais', 'emoji' => '🍝', 'descricao' => 'Nhoque artesanal, molho gorgonzola e nozes tostadas',  'tempo' => '20 min', 'destaque' => false],
 
         // ── Sobremesas ──
-        ['id'=>8, 'nome'=>'Crème Brûlée',          'preco'=>32.00,'categoria'=>'Sobremesas','emoji'=>'🍮','descricao'=>'Clássico francês com baunilha e caramelo crocante',    'tempo'=>'10 min','destaque'=>true],
-        ['id'=>9, 'nome'=>'Fondant de Chocolate',   'preco'=>36.00,'categoria'=>'Sobremesas','emoji'=>'🍫','descricao'=>'Centro derretido com sorvete de baunilha artesanal',  'tempo'=>'15 min','destaque'=>false],
-        ['id'=>10,'nome'=>'Panna Cotta',             'preco'=>28.00,'categoria'=>'Sobremesas','emoji'=>'🍨','descricao'=>'Coulis de frutas vermelhas e fio de mel',              'tempo'=>'8 min', 'destaque'=>false],
+        ['id' => 8, 'nome' => 'Crème Brûlée',          'preco' => 32.00, 'categoria' => 'Sobremesas', 'emoji' => '🍮', 'descricao' => 'Clássico francês com baunilha e caramelo crocante',    'tempo' => '10 min', 'destaque' => true],
+        ['id' => 9, 'nome' => 'Fondant de Chocolate',   'preco' => 36.00, 'categoria' => 'Sobremesas', 'emoji' => '🍫', 'descricao' => 'Centro derretido com sorvete de baunilha artesanal',  'tempo' => '15 min', 'destaque' => false],
+        ['id' => 10, 'nome' => 'Panna Cotta',             'preco' => 28.00, 'categoria' => 'Sobremesas', 'emoji' => '🍨', 'descricao' => 'Coulis de frutas vermelhas e fio de mel',              'tempo' => '8 min', 'destaque' => false],
 
         // ── Bebidas ──
-        ['id'=>11,'nome'=>'Água Mineral',   'preco'=>9.00, 'categoria'=>'Bebidas','emoji'=>'💧','descricao'=>'Sem gás ou com gás, 500ml',              'tempo'=>'2 min','destaque'=>false],
-        ['id'=>12,'nome'=>'Suco Natural',   'preco'=>16.00,'categoria'=>'Bebidas','emoji'=>'🍊','descricao'=>'Fruta do dia espremida na hora, 400ml', 'tempo'=>'5 min','destaque'=>false],
-        ['id'=>13,'nome'=>'Espumante Casa', 'preco'=>52.00,'categoria'=>'Bebidas','emoji'=>'🥂','descricao'=>'Espumante brut da casa, servido em taça','tempo'=>'3 min','destaque'=>true],
+        ['id' => 11, 'nome' => 'Água Mineral',   'preco' => 9.00, 'categoria' => 'Bebidas', 'emoji' => '💧', 'descricao' => 'Sem gás ou com gás, 500ml',              'tempo' => '2 min', 'destaque' => false],
+        ['id' => 12, 'nome' => 'Suco Natural',   'preco' => 16.00, 'categoria' => 'Bebidas', 'emoji' => '🍊', 'descricao' => 'Fruta do dia espremida na hora, 400ml', 'tempo' => '5 min', 'destaque' => false],
+        ['id' => 13, 'nome' => 'Espumante Casa', 'preco' => 52.00, 'categoria' => 'Bebidas', 'emoji' => '🥂', 'descricao' => 'Espumante brut da casa, servido em taça', 'tempo' => '3 min', 'destaque' => true],
     ];
 
     // ─────────────────────────────────────────
@@ -111,7 +121,7 @@ final class Cardapio extends Base
                 'id'        => $encontrado['id'],
                 'nome'      => $encontrado['nome'],
                 'preco'     => $encontrado['preco'],
-                'quantidade'=> $qty,
+                'quantidade' => $qty,
                 'subtotal'  => $subtot,
             ];
         }
