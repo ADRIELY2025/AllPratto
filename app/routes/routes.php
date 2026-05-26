@@ -79,3 +79,27 @@ $app->group('/product', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/delete',      app\controller\Product::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata', app\controller\Product::class . ':listingdata')->add(Middleware::api());
 });
+
+$app->group('/paymentterms', function (\Slim\Routing\RouteCollectorProxy $group) {
+    $group->get('',                    app\controller\PaymentTerms::class . ':form')->add(Middleware::web());
+    $group->get('/{id}',               app\controller\PaymentTerms::class . ':form')->add(Middleware::web());
+    $group->post('/insert',            app\controller\PaymentTerms::class . ':insert')->add(Middleware::api());
+    $group->post('/update',            app\controller\PaymentTerms::class . ':update')->add(Middleware::api());
+    $group->post('/delete',            app\controller\PaymentTerms::class . ':delete')->add(Middleware::api());
+    $group->post('/listingdata',       app\controller\PaymentTerms::class . ':find')->add(Middleware::api());
+    $group->get('/find/{id}',          app\controller\PaymentTerms::class . ':findById')->add(Middleware::api());
+    $group->get('/all',                app\controller\PaymentTerms::class . ':findAll')->add(Middleware::api());
+    $group->get('/installments/{id_pagamento}', app\controller\PaymentTerms::class . ':findInstallments')->add(Middleware::api());
+});
+
+$app->group('/sale', function (\Slim\Routing\RouteCollectorProxy $group) {
+    $group->get('/lista',             app\controller\Sale::class . ':list')->add(Middleware::web());
+    $group->get('/detalhes/{id}',     app\controller\Sale::class . ':details')->add(Middleware::web());
+    $group->get('/detalhes',          app\controller\Sale::class . ':details')->add(Middleware::web());
+    $group->post('/insert',           app\controller\Sale::class . ':insert')->add(Middleware::api());
+    $group->post('/update',           app\controller\Sale::class . ':update')->add(Middleware::api());
+    $group->post('/delete',           app\controller\Sale::class . ':delete')->add(Middleware::api());
+    $group->post('/listingdata',      app\controller\Sale::class . ':find')->add(Middleware::api());
+    $group->post('/insert-item',      app\controller\Sale::class . ':insertItem')->add(Middleware::api());
+    $group->post('/installment-sale', app\controller\Sale::class . ':insertInstallmentSale')->add(Middleware::api());
+});

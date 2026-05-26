@@ -7,8 +7,38 @@
 {% endblock %}
 
 {% block main %}
-
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-md-6">
+            <a href="/sale/lista" class="card h-100 text-decoration-none text-dark shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">Vendas</h5>
+                            <p class="card-text text-muted mb-0">Acesse a lista de vendas e cadastre novas saídas.</p>
+                        </div>
+                        <i class="fa-solid fa-receipt fa-2x text-success"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="/paymentterms" class="card h-100 text-decoration-none text-dark shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">Condições de Pagamento</h5>
+                            <p class="card-text text-muted mb-0">Gerencie condições e parcelas de pagamento.</p>
+                        </div>
+                        <i class="fa-solid fa-credit-card fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}
+
 {% block script %}
 <script></script>
 {% endblock %}

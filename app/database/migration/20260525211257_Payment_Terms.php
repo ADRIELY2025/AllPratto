@@ -9,18 +9,29 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20260525211257 extends AbstractMigration
 {
-    public function getDescription(): string
+ public function getDescription(): string
     {
         return 'Payment_Terms';
     }
 
     public function up(Schema $schema): void
     {
-        // escreva aqui as alterações
+        $table = $schema->createTable('payment_terms');
+
+        $table->addColumn('id',               'bigint',   ['autoincrement' => true]);
+        $table->addColumn('codigo',           'string',   ['length' => 50,  'notnull' => false]);
+        $table->addColumn('titulo',           'string',   ['length' => 255, 'notnull' => false]);
+        $table->addColumn('atalho',           'string',   ['length' => 50,  'notnull' => false]);
+        $table->addColumn('criado_em',        'datetime', ['default' => 'CURRENT_TIMESTAMP']);
+        $table->addColumn('atualizado_em',    'datetime', ['default' => 'CURRENT_TIMESTAMP']);
+
+        $table->setPrimaryKey(['id']);
+        $table->addIndex(['titulo']);
+        $table->addIndex(['codigo']);
     }
 
     public function down(Schema $schema): void
     {
-        // escreva aqui o rollback do up()
+        $schema->dropTable('payment_terms');
     }
 }

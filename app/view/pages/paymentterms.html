@@ -1,0 +1,125 @@
+{% extends "layouts/main.html" %}
+{% block title %}Novo Produto
+{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<div class="container py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col-sm-6">
+            <h3 class="fw-bold mb-0">
+                <i class="bi bi-credit-card-2-back me-2 text-primary"></i>{{titulo}}
+            </h3>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-xl-11 mx-auto">
+            <form id="form">
+                <input type="hidden" name="acao" id="acao" value="c">
+                <input type="hidden" name="id" id="id" value="{{id}}">
+                <input type="hidden" name="id_parcelamento" id="id_parcelamento">
+
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row g-3 mb-4">
+                            <div class="col-lg-6 col-md-12">
+                                <div class="form-floating">
+                                    <select class="form-select border-secondary-subtle shadow-none" id="codigo"
+                                        name="codigo">
+                                        <option value="" disabled selected>Selecione...</option>
+                                        <option {% if paymentTerms.codigo=='01' %} selected {% endif %} value="01">
+                                            Dinheiro</option>
+                                        <option {% if paymentTerms.codigo=='02' %} selected {% endif %} value="02">
+                                            Cheque</option>
+                                        <option {% if paymentTerms.codigo=='03' %} selected {% endif %} value="03">
+                                            Cartão de Crédito</option>
+                                        <option {% if paymentTerms.codigo=='04' %} selected {% endif %} value="04">
+                                            Cartão de Débito</option>
+                                        <option {% if paymentTerms.codigo=='15' %} selected {% endif %} value="15">
+                                            Boleto Bancário</option>
+                                        <option {% if paymentTerms.codigo=='17' %} selected {% endif %} value="17">PIX
+                                        </option>
+                                        <option {% if paymentTerms.codigo=='99' %} selected {% endif %} value="99">
+                                            Outros</option>
+                                    </select>
+                                    <label for="codigo" class="text-muted">Tipo de Pagamento</label>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control border-secondary-subtle shadow-none"
+                                        id="titulo_campo" name="titulo" placeholder="Ex: Dinheiro"
+                                        value="{{paymentTerms.titulo}}">
+                                    <label for="titulo_campo" class="text-muted">Título da Condição (Ex: A
+                                        Vista)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="text-muted my-4">
+
+                        <div class="row mb-3 align-items-end">
+                            <div class="col-12">
+                                <h5 class="fw-bold mb-3">
+                                    <i class="bi bi-calendar-range me-2 text-primary"></i>Configurar Parcelas
+                                </h5>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control border-secondary-subtle shadow-none"
+                                        id="parcela" name="parcela" placeholder="1">
+                                    <label for="parcela" class="text-muted">Qtd. Parcelas</label>
+                                </div>
+                            </div>
+                            <div class="col-lg-5 col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control border-secondary-subtle shadow-none"
+                                        id="intervalo" name="intervalo" placeholder="30">
+                                    <label for="intervalo" class="text-muted">Intervalo (Dias)</label>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-12 d-grid">
+                                <button id="insertInstallmentButton" type="button"
+                                    class="btn btn-outline-primary fw-bold shadow-sm py-2">
+                                    <i class="bi bi-plus-lg me-1"></i> Adicionar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive border rounded bg-dark mt-4">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark small">
+                                    <tr>
+                                        <th class="ps-3 py-3">Parcelas</th>
+                                        <th>Qtd.</th>
+                                        <th>Intervalo (Dias)</th>
+                                        <th class="text-center">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbInstallments" class="small">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">Nenhuma parcela adicionada.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-dark p-4 d-flex justify-content-end">
+                        <button id="insertPaymentoTermsButton" type="button"
+                            class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-check-circle me-2"></i> Salvar Condição
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="file:///{{ assets }}/js/paymentterms.js"></script>
+{% endblock %}
