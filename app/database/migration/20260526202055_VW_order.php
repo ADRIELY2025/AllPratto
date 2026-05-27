@@ -16,19 +16,19 @@ final class Version20260526202055 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-         // ── 4. View vw_pedido ─────────────────────────────────────────────────
         $this->addSql(<<<'SQL'
             CREATE OR REPLACE VIEW public.vw_pedido AS
             SELECT
                 o.id,
                 o.mesa,
                 o.pagamento,
-                pt.descricao  AS condicao_pagamento,
+                pt.titulo       AS condicao_pagamento,
+                pt.descricao,
                 pt.parcelas,
                 o.total,
                 o.status,
                 o.observacao,
-                COUNT(oi.id)  AS total_itens,
+                COUNT(oi.id)    AS total_itens,
                 o.criado_em,
                 o.atualizado_em
             FROM public.order o
@@ -40,6 +40,7 @@ final class Version20260526202055 extends AbstractMigration
                 o.id,
                 o.mesa,
                 o.pagamento,
+                pt.titulo,
                 pt.descricao,
                 pt.parcelas,
                 o.total,
@@ -52,6 +53,6 @@ final class Version20260526202055 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        // escreva aqui o rollback do up()
+        $this->addSql('DROP VIEW IF EXISTS public.vw_pedido');
     }
 }

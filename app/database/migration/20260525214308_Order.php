@@ -9,16 +9,16 @@ use Doctrine\Migrations\AbstractMigration;
 
 final class Version20260525214308 extends AbstractMigration
 {
-     public function getDescription(): string
+    public function getDescription(): string
     {
-        return 'Order - payment_terms, tabela base order_item e view vw_pedido';
+        return 'Order - cabeçalho do pedido com FK para payment_terms';
     }
- 
+
     public function up(Schema $schema): void
     {
-        // ── 2. Cabeçalho do pedido ────────────────────────────────────────────
+        // ── Cabeçalho do pedido ───────────────────────────────────────────────
         $order = $schema->createTable('order');
- 
+
         $order->addColumn('id',               'bigint',   ['autoincrement' => true]);
         $order->addColumn('mesa',             'integer',  ['notnull' => true]);
         $order->addColumn('payment_terms_id', 'bigint',   ['notnull' => false]);
@@ -28,7 +28,7 @@ final class Version20260525214308 extends AbstractMigration
         $order->addColumn('observacao',       'text',     ['notnull' => false]);
         $order->addColumn('criado_em',        'datetime', ['default' => 'CURRENT_TIMESTAMP']);
         $order->addColumn('atualizado_em',    'datetime', ['default' => 'CURRENT_TIMESTAMP']);
- 
+
         $order->setPrimaryKey(['id']);
         $order->addIndex(['mesa']);
         $order->addIndex(['status']);
@@ -39,39 +39,10 @@ final class Version20260525214308 extends AbstractMigration
             ['onDelete' => 'SET NULL'],
             'fk_order_payment_terms'
         );
- 
-        // ── 3. Itens do pedido ────────────────────────────────────────────────
-        $item = $schema->createTable('order_item');
- 
-        $item->addColumn('id',         'bigint',  ['autoincrement' => true]);
-        $item->addColumn('order_id',   'bigint',  ['notnull' => true]);
-        $item->addColumn('product_id', 'bigint',  ['notnull' => false]);
-        $item->addColumn('nome',       'string',  ['length' => 255]);
-        $item->addColumn('preco',      'decimal', ['precision' => 15, 'scale' => 2]);
-        $item->addColumn('quantidade', 'integer', ['default' => 1]);
-        $item->addColumn('subtotal',   'decimal', ['precision' => 15, 'scale' => 2]);
- 
-        $item->setPrimaryKey(['id']);
-        $item->addIndex(['order_id']);
-        $item->addForeignKeyConstraint(
-            'order',
-            ['order_id'],
-            ['id'],
-            ['onDelete' => 'CASCADE'],
-            'fk_order_item_order'
-        );
-        $item->addForeignKeyConstraint(
-            'product',
-            ['product_id'],
-            ['id'],
-            ['onDelete' => 'SET NULL'],
-            'fk_order_item_product'
-        );
     }
- 
+
     public function down(Schema $schema): void
     {
-    
+        $schema->dropTable('order');
     }
 }
- 

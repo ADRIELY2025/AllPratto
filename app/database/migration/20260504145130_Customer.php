@@ -20,6 +20,7 @@ final class Version20260504145130 extends AbstractMigration
 
         $table->addColumn('id',            'bigint', ['autoincrement' => true]);
         $table->addColumn('nome_fantasia', 'string',  ['length' => 255]);
+        $table->addColumn('nome_mesa', 'string',  ['length' => 255]);
         $table->addColumn('sobrenome_razao', 'string', ['length' => 255, 'notnull' => false]);
         $table->addColumn('cpf_cnpj',      'string',  ['length' => 18]);
         $table->addColumn('inscricao_estadual', 'string', ['length' => 30, 'notnull' => false]);
