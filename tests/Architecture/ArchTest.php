@@ -13,7 +13,7 @@ arch('Sem debug no código de produção')
     ->not->toUse(['var_dump', 'dd', 'dump', 'die']);
 
 // Controller não deve falar com banco diretamente
-arch('Controllers não acessam banco direto')
+arch('Controller não acessam banco direto')
     ->expect('App\Controller')
     ->not->toUse('PDO');
 
@@ -29,8 +29,8 @@ arch('Sem funções perigosas no código')
         'proc_open',
     ]);
 
-// Controllers finais evitam herança acidental
-arch('Controllers devem ser classes finais')
+// Controller devem ser classes finais
+arch('Controller devem ser classes finais')
     ->expect('App\Controller')
     ->toBeFinal()
     ->ignoring('App\Controller\Base');

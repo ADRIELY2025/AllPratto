@@ -53,6 +53,7 @@ final class Cardapio extends Base
         $this->renderView('cardapio/index', $dados);
     }
 
+
     // ─────────────────────────────────────────
     //  getItens()
     //  GET /cardapio/itens  → JSON
