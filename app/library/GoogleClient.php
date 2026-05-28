@@ -1,5 +1,5 @@
 <?php
 
-namespace app\library;
+namespace App\Library;
 
 class GoogleClient {}

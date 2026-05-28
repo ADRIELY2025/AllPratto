@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace app\middleware;
+namespace App\Middleware;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;

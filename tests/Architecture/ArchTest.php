@@ -2,19 +2,22 @@
 
 declare(strict_types=1);
 
+// Verifica se todos os arquivos do projeto usam strict_types=1
 arch('Todos os arquivos usam strict types')
     ->expect('App')
     ->toUseStrictTypes();
 
+// Impede que debug acidental vá para produção
 arch('Sem debug no código de produção')
-    ->expect('app\controller')
+    ->expect('App\Controller')
     ->not->toUse(['var_dump', 'dd', 'dump', 'die']);
 
+// Controller não deve falar com banco diretamente
 arch('Controllers não acessam banco direto')
-    ->expect('app\controller')
+    ->expect('App\Controller')
     ->not->toUse('PDO');
 
-#Nenhuma classe deve usar funções perigosas
+// Bloqueia funções que executam código do sistema operacional
 arch('Sem funções perigosas no código')
     ->expect('App')
     ->not->toUse([
@@ -26,8 +29,8 @@ arch('Sem funções perigosas no código')
         'proc_open',
     ]);
 
-#Garantir que classes são finais ou abstratas
+// Controllers finais evitam herança acidental
 arch('Controllers devem ser classes finais')
-    ->expect('app\controller')
+    ->expect('App\Controller')
     ->toBeFinal()
-    ->ignoring('app\controller\Base');
+    ->ignoring('App\Controller\Base');
