@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace app\controller;
+namespace App\Controller;
 
 use app\trait\DatabaseValueNormalizer;
 use app\trait\Response;

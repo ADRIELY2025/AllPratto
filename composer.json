@@ -2,12 +2,12 @@
     "name": "root/nginx",
     "autoload": {
         "psr-4": {
-            "app\\": "app/"
+            "App\\": "App/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "tests\\": "tests/"
+            "Tests\\": "Tests/"
         }
     },
     "require": {
