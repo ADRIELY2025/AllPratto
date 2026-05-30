@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use app\trait\DatabaseValueNormalizer;
-use app\trait\Response;
-use app\trait\Template;
+use App\Trait\DatabaseValueNormalizer;
+use App\Trait\Response;
+use App\Trait\Template;
 
 abstract class Base
 {

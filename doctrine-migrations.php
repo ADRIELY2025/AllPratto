@@ -10,7 +10,7 @@ return [
 
     'migrations_paths' => [
         # namespace => caminho no disco
-        'app\database\migration' => __DIR__ . '/app/database/migration',
+        'App\Database\Migration' => __DIR__ . '/App/Database/Migration',
     ],
 
     # Executa todas as migrations numa única transação — se uma falhar, reverte tudo

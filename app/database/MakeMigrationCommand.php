@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace app\database;
+namespace App\Database;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -60,7 +60,7 @@ final class MakeMigrationCommand extends Command
 
             declare(strict_types=1);
 
-            namespace app\database\migration;
+            namespace App\Database\Migration;
 
             use Doctrine\DBAL\Schema\Schema;
             use Doctrine\Migrations\AbstractMigration;

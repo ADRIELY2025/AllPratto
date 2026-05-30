@@ -6,7 +6,7 @@ namespace App\Trait;
 
 use Slim\Views\Twig;
 use Twig\TwigFunction;
-use app\helpers\Vite;
+use App\Helpers\Vite;
 
 trait Template
 {
