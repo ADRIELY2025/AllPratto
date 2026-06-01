@@ -3567,7 +3567,7 @@
             "type": "project",
             "autoload": {
                 "psr-4": {
-                    "App\\": "app/",
+                    "App\\": "App/",
                     "Database\\Seeders\\": "database/seeders/",
                     "Database\\Factories\\": "database/factories/"
                 }

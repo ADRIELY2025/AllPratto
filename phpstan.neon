@@ -8,4 +8,4 @@ parameters:
         - phpstan-bootstrap.php
     excludePaths:
         - vendor
-        - App/routes (?)
+        - App/Routes (?)

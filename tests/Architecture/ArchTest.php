@@ -15,18 +15,18 @@ arch('Controller não acessam banco direto')
     ->not->toUse(\PDO::class);
 
 # Nenhuma classe deve usar funções perigosas
-test('Sem funções perigosas no código', function () {
+arch('Sem funções perigosas no código')
+    ->expect('App')
+    ->not->toUse([
+        'eval',
+        'exec',
+        'shell_exec',
+        'system',
+        'passthru',
+        'proc_open',
+    ]);
 
-    $content = file_get_contents(__DIR__ . '/../App/Controller/CustomerController.php');
 
-    expect($content)
-        ->not->toContain('eval(')
-        ->not->toContain('exec(')
-        ->not->toContain('shell_exec(')
-        ->not->toContain('system(')
-        ->not->toContain('passthru(')
-        ->not->toContain('proc_open(');
-});
 
 # Garantir que classes são finais ou abstratas
 arch('Controller devem ser classes finais')
