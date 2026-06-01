@@ -1,0 +1,19 @@
+/* Bootstrap 5 — base do design system */
+@import "bootstrap/dist/css/bootstrap.css";
+
+/* FontAwesome (CSS + fontes — Vite copia as fontes automaticamente para public/assets/fonts/) */
+@import "@fortawesome/fontawesome-free/css/all.css";
+
+/* SweetAlert2 */
+@import "sweetalert2/dist/sweetalert2.css";
+
+/* DataTables com tema Bootstrap 5 + responsive */
+@import "datatables.net-bs5/css/dataTables.bootstrap5.css";
+@import "datatables.net-responsive-bs5/css/responsive.bootstrap5.css";
+
+/* Flatpickr (datepicker) */
+@import "flatpickr/dist/flatpickr.css";
+
+/* Select2 + tema Bootstrap 5 */
+@import "select2/dist/css/select2.css";
+@import "select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.css";

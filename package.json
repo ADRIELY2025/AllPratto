@@ -1,0 +1,34 @@
+{
+  "name": "doctrinephp",
+  "version": "1.0.0",
+  "description": "Repositório de apoio à aula Técnicas de Teste de Software, preparado para apresentação aos alunos do Senac.",
+  "license": "MIT",
+  "author": "Leniza Oliveira Mendes",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "7.2.0",
+    "bootstrap": "^5.3.8",
+    "datatables.net-bs5": "^2.3.8",
+    "datatables.net-responsive-bs5": "^3.0.8",
+    "datatables.net-staterestore-bs5": "^1.4.3",
+    "flatpickr": "4.6.13",
+    "inputmask": "5.0.9",
+    "jquery": "^3.7.1",
+    "jquery-validation": "1.21.0",
+    "qrcode": "^1.5.4",
+    "select2": "^4.1.0-rc.0",
+    "select2-bootstrap-5-theme": "^1.3.0",
+    "sweetalert2": "11.26.24"
+  },
+  "devDependencies": {
+    "vite": "8.0.10"
+  }
+}
