@@ -126,6 +126,9 @@ window.addEventListener('load', () => {
 
     if (window.Inputmask) {
         Inputmask({ mask: '999.999.999-99' }).mask('#cad-cpf');
+        Inputmask({ mask: '(99) 99999-9999' }).mask('#cad-celular');
+        Inputmask({ mask: '(99) 9999-9999' }).mask('#cad-telefone');
+        Inputmask({ mask: '(99) 99999-9999' }).mask('#cad-whatsapp');
     }
 });
 
@@ -160,36 +163,6 @@ window.togglePw = (id, btn) => {
     input.type = input.type === 'password' ? 'text' : 'password';
     btn.textContent = input.type === 'password' ? '👁' : '🙈';
 };
-
-// Validação de CPF (módulo 11)
-function validateCPF(cpf) {
-    cpf = cpf.replace(/\D/g, '');
-    
-    if (cpf.length !== 11) return false;
-    if (/^(\d)\1{10}$/.test(cpf)) return false; // Todos os dígitos iguais
-    
-    let sum = 0;
-    let remainder;
-    
-    // Primeiro dígito verificador
-    for (let i = 1; i <= 9; i++) {
-        sum += parseInt(cpf.substring(i - 1, i)) * (11 - i);
-    }
-    remainder = (sum * 10) % 11;
-    if (remainder === 10 || remainder === 11) remainder = 0;
-    if (remainder !== parseInt(cpf.substring(9, 10))) return false;
-    
-    sum = 0;
-    // Segundo dígito verificador
-    for (let i = 1; i <= 10; i++) {
-        sum += parseInt(cpf.substring(i - 1, i)) * (12 - i);
-    }
-    remainder = (sum * 10) % 11;
-    if (remainder === 10 || remainder === 11) remainder = 0;
-    if (remainder !== parseInt(cpf.substring(10, 11))) return false;
-    
-    return true;
-}
 
 // Indicador de força da senha
 document.getElementById('cad-senha').addEventListener('input', function () {
@@ -241,12 +214,6 @@ BtnCadastrar.addEventListener('click', async () => {
     }
 
     if (cpf.length !== 11) {
-        document.getElementById('err-cpf').textContent = 'CPF inválido';
-        document.getElementById('cad-cpf').classList.add('error');
-        valid = false;
-    }
-
-    if (!validateCPF(cpf)) {
         document.getElementById('err-cpf').textContent = 'CPF inválido';
         document.getElementById('cad-cpf').classList.add('error');
         valid = false;
