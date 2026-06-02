@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Database\DB;
+
 final class Login extends Base
 {
     // -------------------------------------------------------------------------
@@ -53,7 +55,7 @@ final class Login extends Base
 
         try {
             # Monta a query parametrizada (proteção contra SQL injection via Doctrine)
-            $query = \app\database\DB::select()->from('vw_user');
+            $query = DB::select()->from('vw_user');
 
             $query->where('cpf = :login')
                 ->orWhere('email = :login')
@@ -98,7 +100,7 @@ final class Login extends Base
 
             # Renova o hash se o algoritmo/custo padrão tiver mudado
             if (password_needs_rehash($user['senha'], PASSWORD_DEFAULT)) {
-                \app\database\DB::connection()->update(
+                DB::connection()->update(
                     'users',
                     [
                         'senha'         => password_hash($senha, PASSWORD_DEFAULT),
@@ -234,7 +236,7 @@ final class Login extends Base
             }
 
             # Busca o usuário pelo e-mail na view vw_user
-            $qb = \app\database\DB::select('*')->from('vw_user');
+            $qb = DB::select('*')->from('vw_user');
             $qb->where('email = ' . $qb->createNamedParameter($email));
             $user = $qb->fetchAssociative();
 
@@ -248,7 +250,7 @@ final class Login extends Base
                 $cpf        = $googleSub ? 'google:' . $googleSub : 'google:' . md5($email);
                 $senhaHash  = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
 
-                $connection = \app\database\DB::connection();
+                $connection = DB::connection();
                 $insertData = [
                     'nome'           => $nome,
                     'sobrenome'      => $sobrenome,
@@ -334,68 +336,78 @@ final class Login extends Base
     // -------------------------------------------------------------------------
     public function preRegister($request, $response)
     {
-        $form      = $request->getParsedBody();
-        $nome      = $form['cad-nome'] ?? null;
-        $sobrenome = $form['cad-sobrenome'] ?? null;
-        $cpf       = $form['cad-cpf']       ?? null;
-        $rg        = $form['cad-rg']        ?? null;
-        $senha     = $form['cad-senha']          ?? '';
-        $confirmar_senha = $form['cad-confirmar-senha'] ?? '';
-        $contacts  = $form['contacts']       ?? [];
-        $email     = $form['cad-email']     ?? null;
-        $telefone  = $form['cad-telefone']  ?? null;
-        $celular   = $form['cad-celular']   ?? null;
-        $whatsapp  = $form['cad-whatsapp']  ?? null;
-
-        # Adiciona e-mail e telefone ao array de contatos, se informados
-        if ($email) {
-            $contacts[] = ['tipo' => 'EMAIL',    'contato' => $email];
-        }
-        if ($telefone) {
-            $contacts[] = ['tipo' => 'TELEFONE', 'contato' => $telefone];
-        }
-        if ($celular) {
-            $contacts[] = ['tipo' => 'CELULAR',  'contato' => $celular];
-        }
-        if ($whatsapp) {
-            $contacts[] = ['tipo' => 'WHATSAPP', 'contato' => $whatsapp];
-        }
-
-        # Campos obrigatórios
-        if (!$nome || !$sobrenome || !$cpf || !$senha) {
-            return $this->json($response, [
-                'status' => false,
-                'msg'    => 'Nome, sobrenome, CPF e senha são obrigatórios.',
-            ], 400);
-        }
-
         try {
-            $qb = \app\database\DB::select('id')->from('users');
+            $form      = $request->getParsedBody();
+            $nome      = $form['cad-nome'] ?? null;
+            $sobrenome = $form['cad-sobrenome'] ?? null;
+            $cpf       = $form['cad-cpf']       ?? null;
+            $rg        = $form['cad-rg']        ?? null;
+            $senha     = $form['cad-senha']          ?? '';
+            $confirmar_senha = $form['cad-confirmar-senha'] ?? '';
+            
+            error_log('[preRegister] Dados recebidos: ' . json_encode([
+                'nome' => $nome,
+                'sobrenome' => $sobrenome,
+                'cpf' => $cpf,
+                'rg' => $rg,
+                'senha_len' => strlen($senha),
+                'confirmar_senha_len' => strlen($confirmar_senha),
+            ]));
+            
+            # Parseia contatos (pode vir como JSON string do JavaScript)
+            $contacts = [];
+            $contactsRaw = $form['contacts'] ?? null;
+            
+            if ($contactsRaw) {
+                error_log('[preRegister] Contatos raw: ' . $contactsRaw);
+                if (is_string($contactsRaw)) {
+                    try {
+                        $contacts = json_decode($contactsRaw, true, 512, JSON_THROW_ON_ERROR) ?? [];
+                    } catch (\JsonException $e) {
+                        error_log('[preRegister] Erro ao parsear JSON: ' . $e->getMessage());
+                        $contacts = [];
+                    }
+                } elseif (is_array($contactsRaw)) {
+                    $contacts = $contactsRaw;
+                }
+            }
+            
+            error_log('[preRegister] Contatos parseados: ' . json_encode($contacts));
+            
+            # Campos obrigatórios
+            if (!$nome || !$sobrenome || !$cpf || !$senha) {
+                return $this->json($response, [
+                    'status' => false,
+                    'msg'    => 'Nome, sobrenome, CPF e senha são obrigatórios.',
+                ], 400);
+            }
 
+            $qb = DB::select('id')->from('users');
             $qb->where('cpf = ' . $qb->createNamedParameter($cpf));
-
             $exists = $qb->fetchAssociative();
 
             if ($exists) {
-
                 return $this->json($response, [
                     'status' => false,
                     'msg'    => 'CPF já cadastrado.',
                 ], 409);
             }
 
-            $connection = \app\database\DB::connection();
+            $connection = DB::connection();
+            
+            error_log('[preRegister] Preparando insert em users');
 
             $connection->insert('users', [
                 'nome'      => $nome,
                 'sobrenome' => $sobrenome,
                 'cpf'       => $cpf,
                 'rg'        => $rg,
-                'senha'     => password_hash($confirmar_senha, PASSWORD_DEFAULT),
+                'senha'     => password_hash($senha, PASSWORD_DEFAULT),
                 'ativo'     => 0,
             ]);
 
             $id_usuario = (int) $connection->lastInsertId();
+            error_log('[preRegister] Usuário inserido com ID: ' . $id_usuario);
 
             if (!$id_usuario) {
                 throw new \RuntimeException("Não foi possível obter ID do usuário");
@@ -414,23 +426,33 @@ final class Login extends Base
                     continue;
                 }
 
-                \app\database\DB::connection()->insert('contact', [
-                    'id_usuario' => $id_usuario,
-                    'tipo'       => $tipo,
-                    'contato'    => $contato,
-                ]);
+                try {
+                    error_log('[preRegister] Inserindo contato: ' . $tipo . ' -> ' . $contato);
+                    $connection->insert('contact', [
+                        'id_usuario' => $id_usuario,
+                        'tipo'       => $tipo,
+                        'contato'    => $contato,
+                    ]);
+                } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                    error_log('[preRegister] Contato duplicado: ' . $contato);
+                    continue;
+                } catch (\Throwable $e) {
+                    error_log('[preRegister] Erro ao inserir contato: ' . $e->getMessage());
+                    continue;
+                }
             }
 
             return $this->json($response, [
                 'status' => true,
                 'msg'    => 'Usuário cadastrado com sucesso!',
             ], 200);
+            
         } catch (\PDOException $e) {
-            error_log('[preRegister][DB] ' . $e->getMessage());
+            error_log('[preRegister][DB] ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
             return $this->json($response, ['status' => false, 'msg' => 'Não foi possível realizar o cadastro. Tente novamente.'], 500);
         } catch (\Throwable $e) {
-            error_log('[preRegister][GERAL] ' . $e->getMessage());
-            return $this->json($response, ['status' => false, 'msg' => 'Erro inesperado. Tente novamente.'], 500);
+            error_log('[preRegister][GERAL] ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
+            return $this->json($response, ['status' => false, 'msg' => 'Erro inesperado: ' . $e->getMessage()], 500);
         }
     }
 
@@ -446,7 +468,7 @@ final class Login extends Base
 
             try {
 
-                \app\database\DB::connection()->update(
+                DB::connection()->update(
                     'users',
                     [
                         'ativo'         => 0,
