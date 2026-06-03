@@ -1,5 +1,9 @@
 {% extends 'layouts/main.html' %}
 
+{% block css %}
+{{ vite('resources/css/home.css') }}
+{% endblock %}
+
 {% block breadcrumbs %}
 <ol class="breadcrumb float-sm-end">
     <li class="breadcrumb-item active" aria-current="page">Início</li>
@@ -7,8 +11,144 @@
 {% endblock %}
 
 {% block main %}
+<div class="home-page-wrapper">
 
+  <section class="hero-section">
+    <div class="hero-bg-placeholder"></div>
+
+    <div class="hero-upload-zone" id="heroUploadZone" title="Clique para adicionar uma imagem de fundo">
+      <img id="hero-preview" src="" alt="Imagem de fundo">
+      <div class="hero-upload-hint" id="heroHint">
+        <i class="fa-solid fa-image"></i>
+        <strong>Adicionar imagem de fundo</strong>
+        <small>Clique para selecionar</small>
+      </div>
+      <input type="file" accept="image/*" id="heroFileInput">
+    </div>
+
+    <div class="hero-content">
+      <p class="hero-eyebrow">Bem-vindo ao AllPratto</p>
+      <h1 class="hero-title">
+        Gestão <span>moderna</span><br> eficiente
+      </h1>
+      <p class="hero-desc">
+      </p>
+      <div class="hero-ctas">
+        <a href="/product/lista" class="btn-hero-primary">
+          <i class="fa-solid fa-box-open me-1"></i> Ver Produtos
+        </a>
+        <a href="/cardapio" class="btn-hero-outline" target="_blank">
+          <i class="fa-solid fa-utensils me-1"></i> Cardápio
+        </a>
+      </div>
+      <div class="hero-dots">
+        <div class="hero-dot active"></div>
+        <div class="hero-dot"></div>
+        <div class="hero-dot"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="concepts-section">
+    <h2 class="section-title">
+      Acesse rapidamente
+      <span>o que precisa</span>
+    </h2>
+
+    <div class="concept-cards-grid">
+      <a href="/product/lista" class="concept-card">
+        <div class="concept-card-placeholder card-product">
+          <i class="fa-solid fa-box-open"></i>
+          <span>Produtos</span>
+        </div>
+        <div class="concept-card-overlay">
+          <span class="concept-card-label">Lista de Produtos</span>
+        </div>
+      </a>
+
+      <a href="/payment/lista" class="concept-card">
+        <div class="concept-card-placeholder card-payment">
+          <i class="fa-solid fa-file-invoice-dollar"></i>
+          <span>Pagamento</span>
+        </div>
+        <div class="concept-card-overlay">
+          <span class="concept-card-label">Condições de Pagamento</span>
+        </div>
+      </a>
+
+      <a href="#" class="concept-card">
+        <div class="concept-card-placeholder card-reserved">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>Em breve</span>
+        </div>
+        <div class="concept-card-overlay">
+          <span class="concept-card-label">Novidades em breve</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="concepts-cta">
+      <a href="/product/detalhes" class="btn-amber">
+        <i class="fa-solid fa-plus me-1"></i> Novo Cadastro
+      </a>
+    </div>
+    <p class="concepts-desc">Gerencie produtos, clientes, fornecedores e muito mais</p>
+  </section>
+
+  <div class="features-bar">
+    <a href="/cardapio" class="feature-pill" target="_blank">
+      <i class="fa-solid fa-utensils"></i>
+      <span class="feature-pill-label">Cardápio Admin</span>
+    </a>
+
+    <a href="/supplier/lista" class="feature-pill">
+      <i class="fa-solid fa-truck"></i>
+      <span class="feature-pill-label">Fornecedores</span>
+    </a>
+
+    <a href="/cliente/lista" class="feature-pill">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span class="feature-pill-label">Clientes</span>
+    </a>
+  </div>
+
+  <section class="experience-section">
+    <h2 class="exp-heading">
+      Oferecemos a você<br>a melhor experiência
+    </h2>
+    <p class="exp-desc">
+      Uma plataforma completa de gestão pensada para negócios modernos. Organize, analise e cresça com controle total sobre sua operação.
+    </p>
+
+    <div class="exp-gallery">
+      <div class="exp-gallery-card">
+        <div class="exp-gallery-card-inner">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Relatórios</span>
+        </div>
+      </div>
+      <div class="exp-gallery-card">
+        <div class="exp-gallery-card-inner">
+          <i class="fa-solid fa-users"></i>
+          <span>Usuários</span>
+        </div>
+      </div>
+      <div class="exp-gallery-card">
+        <div class="exp-gallery-card-inner">
+          <i class="fa-solid fa-building"></i>
+          <span>Empresas</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="exp-more">
+      <i class="fa-solid fa-angles-right"></i>
+    </div>
+  </section>
+
+</div>
 {% endblock %}
+
 {% block script %}
-<script></script>
+{{ vite('resources/js/pages/home.js') }}
 {% endblock %}
