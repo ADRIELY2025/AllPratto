@@ -1,0 +1,27 @@
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/localhost+2.pem
+      keyFile: /etc/traefik/certs/localhost+2-key.pem
+      
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/localhost+2.pem
+        keyFile: /etc/traefik/certs/localhost+2-key.pem
+
+  options:
+    default:
+      minVersion: VersionTLS13
+http:
+  middlewares:
+    security-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        frameDeny: true
+        contentTypeNosniff: true
+        referrerPolicy: no-referrer
+        customResponseHeaders:
+          X-Powered-By: ""
+          Server: ""

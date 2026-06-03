@@ -12,3 +12,23 @@
 /public/hot
 # Build output do Vite — gerado pelo CI/CD a partir de resources/
 /public/assets
+docker/redis/dump.rdb
+
+# === Segredos de TLS — chave privada NUNCA pode ir para o Git ===
+docker/traefik/certs/      # certs mkcert de dev (contêm chave privada)
+docker/traefik/acme/       # acme.json de prod (contém as chaves emitidas)
+*.pem
+*.key
+*.crt
+
+# === Legado a remover, caso ainda exista no disco ===
+docker/certbot/
+
+# === Dados de runtime (já fora do versionamento por design) ===
+docker/postgres/storage/
+docker/redis/
+storage/
+
+# === Ambiente ===
+# versione apenas .env.example
+.env                       

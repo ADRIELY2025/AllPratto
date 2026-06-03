@@ -17,14 +17,15 @@ use App\Controller\Product;
 $app->get('/', function ($request, $response) {
     return $response->withHeader('Location', '/login')->withStatus(302);
 });
+$app->get('/home', app\controller\Home::class . ':home'); #->add(app\middleware\Middleware::web());
 
 // ══════════════════════════════════════════════
 //  Autenticação
 // ══════════════════════════════════════════════
-$app->get( '/login',    Login::class . ':login'        )->add(Middleware::web());
-$app->post('/login',    Login::class . ':authenticate' )->add(Middleware::web());
-$app->get( '/logout',   Login::class . ':logout'       )->add(Middleware::web());
-$app->post('/cadastro', Login::class . ':preRegister'  )->add(Middleware::web());
+$app->get( '/login',    Login::class . ':login'        );#->add(Middleware::web());
+$app->post('/login',    Login::class . ':authenticate' );#->add(Middleware::web());
+$app->get( '/logout',   Login::class . ':logout'       );#->add(Middleware::web());
+$app->post('/cadastro', Login::class . ':preRegister'  );#->add(Middleware::web());
 
 $app->group('/authentication', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/google',      Login::class . ':google');

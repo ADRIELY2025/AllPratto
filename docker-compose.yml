@@ -2,32 +2,35 @@ services:
   # Servidor web Nginx que recebe as requisições HTTP
   nginx:
     # Imagem oficial estável do Nginx sobre Alpine 3.23
-    image: nginx:1.30-alpine3.23
-
+    image: nginx:1.31.0-alpine3.23
     # Nome fixo do container facilita identificação e debug
     container_name: app_nginx
-
     # Sobe novamente caso o processo morra inesperadamente
     restart: unless-stopped
-
     # Expõe a porta 80 do host na 80 do container
     ports:
-      - "80:80"
-
+      - "80"
+    labels:
+      - "traefik.enable=true"
+      # ${APP_DOMAIN}=localhost em dev | seu domínio real em prod
+      - "traefik.http.routers.app.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+      # SOMENTE em produção (via override) adicione a linha abaixo:
+      # - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+      - "traefik.http.services.app.loadbalancer.server.port=80"
     # Arquivos montados do host dentro do container
     volumes:
       # Configuração do site em modo somente leitura
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       # Diretório público da aplicação em modo somente leitura
       - ./public:/var/www/public:ro
-
     # Diretórios em RAM para evitar I/O de disco
     tmpfs:
       # Pasta temporária geral em RAM
       - /tmp:size=512m,mode=1777
       # Diretório de cache do Nginx em RAM com uid do usuário nginx
       - /var/cache/nginx:size=1024m,uid=101,gid=101
-
     # Limites de uso de recursos do container
     deploy:
       resources:
@@ -39,7 +42,6 @@ services:
         reservations:
           # Memória mínima garantida pelo Docker
           memory: 256M
-
     # Limites de file descriptor do processo
     ulimits:
       nofile:
@@ -47,7 +49,6 @@ services:
         soft: 65536
         # Limite rígido máximo
         hard: 65536
-
     # Configuração de captura e rotação de logs
     logging:
       # Driver json-file padrão do Docker
@@ -57,7 +58,6 @@ services:
         max-size: "256m"
         # Quantidade máxima de arquivos de log rotacionados
         max-file: "3"
-
     # Verificação periódica de que o servidor responde
     healthcheck:
       # Faz HEAD na raiz e considera saudável se responder
@@ -70,49 +70,39 @@ services:
       retries: 3
       # Período de carência após iniciar o container
       start_period: 10s
-
     # Garante que o PHP suba antes do Nginx
     depends_on:
       - php
-
     # Liga o container à rede interna do projeto
     networks:
       - app_network
-
   # Container do PHP-FPM que executa a aplicação Slim
   php:
     # Diretório padrão de trabalho dentro do container
     working_dir: /var/www
-
     # Build a partir do Dockerfile do projeto
     build:
       # Contexto de build na raiz do projeto
       context: .
       # Caminho do Dockerfile
       dockerfile: docker/php/Dockerfile
-
     # Nome fixo do container
     container_name: app_php
-
     # Sobe novamente caso o processo morra
     restart: unless-stopped
-
     # Permite ao container conversar com o host para o Xdebug
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
     # Volumes montados no container
     volumes:
       # Código-fonte do projeto refletido em tempo real para desenvolvimento
       - ./:/var/www/
       # Cache persistente do Composer entre runs do container
       - composer_cache:/root/.composer/cache
-
     # Comando executado na subida do container
-    command: >+
+    command: >
       sh -c "composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader &&
              exec php-fpm"
-
     # Variáveis de ambiente disponíveis dentro do container
     environment:
       # Fuso horário do container
@@ -125,7 +115,6 @@ services:
       XDEBUG_MODE: ${XDEBUG_MODE:-off}
       # Controla a revalidação de timestamps do OPcache — 1 dev e 0 produção
       OPCACHE_VALIDATE_TIMESTAMPS: ${OPCACHE_VALIDATE_TIMESTAMPS:-1}
-
       # Tempo máximo de execução do Composer em segundos
       COMPOSER_PROCESS_TIMEOUT: 1800
       # Remove limite de memória do Composer
@@ -138,7 +127,6 @@ services:
       COMPOSER_CACHE_DIR: /root/.composer/cache
       # Desliga prompts interativos do Composer
       COMPOSER_NO_INTERACTION: 1
-
       # String de conexão usada pela aplicação
       DB_CONNECTION: ${DB_CONNECTION}
       # Host do banco de dados
@@ -151,7 +139,6 @@ services:
       DB_USER: ${DB_USER}
       # Senha do banco
       DB_PASSWORD: ${DB_PASSWORD}
-
       # Host do Redis
       REDIS_HOST: ${REDIS_HOST}
       # Porta do Redis com fallback 6379
@@ -168,7 +155,6 @@ services:
       REDIS_READ_TIMEOUT: ${REDIS_READ_TIMEOUT:-2.5}
       # Liga conexões persistentes do PHP com o Redis
       REDIS_PERSISTENT: ${REDIS_PERSISTENT:-1}
-
       # Modo dinâmico do gerenciador de processos do PHP-FPM
       PHP_FPM_PM: dynamic
       # Número máximo de workers PHP-FPM
@@ -181,12 +167,10 @@ services:
       PHP_FPM_PM_MAX_SPARE_SERVERS: 3
       # Requests por worker antes de reciclar
       PHP_FPM_PM_MAX_REQUESTS: 500
-
     # Diretórios em RAM para acelerar I/O
     tmpfs:
       # Pasta temporária com sessões e uploads em RAM
       - /tmp:size=1g,mode=1777
-
     # Limites de recursos do container
     deploy:
       resources:
@@ -198,7 +182,6 @@ services:
         reservations:
           # Memória mínima garantida pelo Docker
           memory: 512M
-
     # Limites de file descriptor por worker
     ulimits:
       nofile:
@@ -206,7 +189,6 @@ services:
         soft: 65536
         # Limite rígido máximo
         hard: 65536
-
     # Logs do container com rotação
     logging:
       # Driver padrão json-file
@@ -216,7 +198,6 @@ services:
         max-size: "10m"
         # Quantidade máxima de arquivos rotacionados
         max-file: "3"
-
     # Healthcheck na porta TCP do PHP-FPM
     healthcheck:
       # Testa se a porta 9000 aceita conexão
@@ -229,39 +210,31 @@ services:
       retries: 3
       # Período de carência estendido para o composer install inicial
       start_period: 90s
-
     # Garante que o PostgreSQL esteja saudável antes do PHP-FPM iniciar
     depends_on:
       postgres:
         # Aguarda o healthcheck do PostgreSQL passar
         condition: service_healthy
-
     # Liga o container à rede interna do projeto
     networks:
       - app_network
-
   # Container do Redis usado para sessões e cache
   redis:
     # Imagem oficial do Redis sobre Alpine
     image: redis:8.6-alpine3.23
-
     # Nome fixo do container
     container_name: app_redis
-
     # Sobe novamente caso o processo morra
     restart: unless-stopped
-
     # Expõe apenas localhost do host para o desenvolvedor
     ports:
       - "127.0.0.1:6379:6379"
-
     # Variáveis de ambiente do container
     environment:
       # Fuso horário do container
       TZ: ${TZ}
       # Senha aplicada na configuração do Redis
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-
     # Comando que sobe o Redis com senha
     command: >
       sh -c "exec redis-server --requirepass \"$${REDIS_PASSWORD}\""
@@ -286,18 +259,14 @@ services:
     # Liga o container à rede interna do projeto
     networks:
       - app_network
-
   # Container do PostgreSQL como banco de dados
   postgres:
     # Imagem oficial do PostgreSQL sobre Alpine
-    image: postgres:18.3-alpine3.23
-
+    image: postgres:18.4-alpine3.23
     # Nome fixo do container
     container_name: app_postgres
-
     # Sobe novamente caso o processo morra
     restart: unless-stopped
-
     # Parâmetros de tuning passados diretamente ao processo postgres
     command: >
       postgres
@@ -312,7 +281,6 @@ services:
         -c log_min_duration_statement=1000
         -c log_timezone=${TZ}
         -c temp_file_limit=256MB
-
     # Variáveis de ambiente do container
     environment:
       # Nome do banco criado na inicialização
@@ -325,19 +293,16 @@ services:
       TZ: ${TZ}
       # Diretório explícito de dados do PostgreSQL
       PGDATA: /var/lib/postgresql/data/pgdata
-
     # Volumes do container
     volumes:
       # Persiste dados do banco no host
       - ./docker/postgres/storage:/var/lib/postgresql/data/pgdata
       # Script SQL executado na primeira inicialização
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-
     # Diretório em RAM para operações temporárias
     tmpfs:
       # Pasta temporária do PostgreSQL em RAM
       - /tmp:size=64m,mode=1777
-
     # Limites de recursos do container
     deploy:
       resources:
@@ -349,7 +314,6 @@ services:
         reservations:
           # Memória mínima garantida pelo Docker
           memory: 256M
-
     # Limites de file descriptor do processo
     ulimits:
       nofile:
@@ -357,7 +321,6 @@ services:
         soft: 65536
         # Limite rígido máximo
         hard: 65536
-
     # Logs do container com rotação
     logging:
       # Driver padrão json-file
@@ -367,7 +330,6 @@ services:
         max-size: "10m"
         # Quantidade máxima de arquivos rotacionados
         max-file: "3"
-
     # Healthcheck usando o utilitário nativo do PostgreSQL
     healthcheck:
       # Confirma que o banco aceita conexões
@@ -380,22 +342,40 @@ services:
       retries: 3
       # Período de carência após subir
       start_period: 30s
-
     # Expõe a porta do banco para ferramentas cliente no host
     ports:
       - "${DB_PORT}:${DB_PORT}"
-
     # Liga o container à rede interna do projeto
     networks:
       - app_network
-
+  traefik:
+    image: traefik:v3.6.14
+    container_name: app_traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      TZ: ${TZ}
+      # Token usado só em produção para o desafio DNS-01 do Cloudflare
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN:-}
+    volumes:
+      # Docker socket read-only: Traefik descobre os containers por labels
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./docker/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./docker/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./docker/traefik/certs:/etc/traefik/certs:ro
+      - ./docker/traefik/acme:/etc/traefik/acme
+    depends_on:
+      - nginx
+    networks:
+      - app_network
 # Volumes nomeados do projeto
 volumes:
   # Cache do Composer persistente entre runs do container
   composer_cache:
     # Driver padrão de volume local
     driver: local
-
 # Redes do projeto
 networks:
   # Rede bridge interna que conecta todos os serviços

@@ -6,6 +6,22 @@ import fs from 'node:fs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const HOT_FILE = resolve(__dirname, 'public/hot');
 
+function buildPageEntries() {
+    const pagesDir = resolve(__dirname, 'resources/js/pages')
+
+    return Object.fromEntries(
+        fs.readdirSync(pagesDir, { recursive: true })
+            .filter(file => String(file).endsWith('.js'))
+            .map(file => {
+                const normalized = String(file).replace(/\\/g, '/') // Windows path fix
+                return [
+                    `pages/${normalized.replace(/\.js$/, '')}`,
+                    resolve(pagesDir, normalized)
+                ]
+            })
+    )
+}
+
 function writeHotFilePlugin() {
     return {
         name: 'jaiminho-write-hot-file',
@@ -48,18 +64,8 @@ export default defineConfig(({ command }) => ({
                 style: resolve(__dirname, 'resources/css/app.css'),
                 // JS principal — sem nenhum import de CSS dentro dele
                 app: resolve(__dirname, 'resources/js/app.js'),
-                // Entries por página
-                'pages/login': resolve(__dirname, 'resources/js/pages/login.js'),
-                'pages/customer': resolve(__dirname, 'resources/js/pages/customer.js'),
-                'pages/list-customer': resolve(__dirname, 'resources/js/pages/list-customer.js'),
-                'pages/users': resolve(__dirname, 'resources/js/pages/users.js'),
-                'pages/list-users': resolve(__dirname, 'resources/js/pages/list-users.js'),
-                'pages/product': resolve(__dirname, 'resources/js/pages/product.js'),
-                'pages/list-product': resolve(__dirname, 'resources/js/pages/list-product.js'),
-                'pages/company': resolve(__dirname, 'resources/js/pages/company.js'),
-                'pages/list-company': resolve(__dirname, 'resources/js/pages/list-company.js'),
-                'pages/supplier': resolve(__dirname, 'resources/js/pages/supplier.js'),
-                'pages/list-supplier': resolve(__dirname, 'resources/js/pages/list-supplier.js')
+                // Entries de página
+                ...buildPageEntries()  // Descobre e injeta todas as páginas automaticamente
             },
             output: {
                 entryFileNames: '[name]-[hash].js',
