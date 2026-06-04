@@ -1,6 +1,6 @@
 <?php
 
-echo 'oi';die;#declare(strict_types=1);
+declare(strict_types=1);
 
 $app = require __DIR__ . '/../app/bootstrap.php';
 
