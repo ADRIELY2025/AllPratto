@@ -12,3 +12,4 @@
 /public/hot
 # Build output do Vite — gerado pelo CI/CD a partir de resources/
 /public/assets
+docker/redis/dump.rdb
