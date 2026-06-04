@@ -21,7 +21,6 @@ final class Version20260528183350 extends AbstractMigration
                 id               BIGSERIAL      PRIMARY KEY,
                 mesa             INTEGER        NOT NULL,
                 payment_terms_id BIGINT         NULL REFERENCES payment_terms(id) ON DELETE SET NULL,
-                pagamento        VARCHAR(50)    NULL,
                 total            NUMERIC(15,2)  NOT NULL DEFAULT 0,
                 status           VARCHAR(50)    NOT NULL DEFAULT 'pendente',
                 observacao       TEXT           NULL,
