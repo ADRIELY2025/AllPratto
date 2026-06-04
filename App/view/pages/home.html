@@ -112,6 +112,59 @@
     </a>
   </div>
 
+  <!-- ══════════════════════════════════════════════════════════
+       Seção de Relatórios — Atividade
+       ══════════════════════════════════════════════════════════ -->
+  <section class="container my-5">
+    <h2 class="section-title mb-4">
+      <i class="fa-solid fa-chart-line me-2"></i>Relatórios de Vendas
+    </h2>
+
+    <div class="row g-4">
+
+      <!-- Relatório 1: Total de vendas por mês/ano (barras) -->
+      <div class="col-12">
+        <div class="card shadow-sm p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="mb-0">
+              <i class="fa-solid fa-calendar-days me-1 text-primary"></i>
+              Total de Vendas por Mês e Ano
+            </h6>
+            <span class="badge bg-primary">Gráfico de Barras</span>
+          </div>
+          <p class="text-muted small mb-2">
+            Comparativo mensal do faturamento total, organizado por ano. Clique nas legendas para filtrar.
+          </p>
+          <!-- ECharts renderiza aqui — altura responsiva via CSS -->
+          <div id="graficoVendasMes" style="width:100%; height:350px;"></div>
+        </div>
+      </div>
+
+      <!-- Relatório 2: Curva ABC dos produtos (pizza interativa) -->
+      <div class="col-12">
+        <div class="card shadow-sm p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="mb-0">
+              <i class="fa-solid fa-chart-pie me-1 text-warning"></i>
+              Curva ABC — Produtos Mais Vendidos
+            </h6>
+            <span class="badge bg-warning text-dark">Gráfico de Pizza</span>
+          </div>
+          <p class="text-muted small mb-2">
+            Classificação por relevância de receita:
+            <span class="badge bg-danger">A</span> top 70% &nbsp;
+            <span class="badge bg-warning text-dark">B</span> até 90% &nbsp;
+            <span class="badge bg-primary">C</span> demais.
+            Passe o mouse ou clique para detalhes.
+          </p>
+          <div id="graficoCurvaAbc" style="width:100%; height:380px;"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+  <!-- ═════════════════════════════════════════════════════════ -->
+
   <section class="experience-section">
     <h2 class="exp-heading">
       Oferecemos a você<br>a melhor experiência

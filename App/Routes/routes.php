@@ -13,16 +13,25 @@ use App\Controller\Company;
 use App\Controller\Product;
 
 $app->post('/',     App\controller\Home::class . ':home')->add(Middleware::web());
-$app->get('/home', App\controller\Home::class . ':home')->add(Middleware::web());
+$app->get('/home',  App\controller\Home::class . ':home')->add(Middleware::web());
+
+// ── Home — Relatórios (novos endpoints da atividade) ──────────
+$app->get('/home/vendas-por-mes', App\Controller\Home::class . ':vendasPorMes')->add(Middleware::api());
+$app->get('/home/curva-abc',      App\Controller\Home::class . ':curvaAbc')->add(Middleware::api());
+
+// ── Home — Endpoints anteriores (mantidos) ────────────────────
+$app->get('/home/mesa-mais-pedida',    App\Controller\Home::class . ':mesaMaisPedida')->add(Middleware::api());
+$app->get('/home/produto-mais-menos',  App\Controller\Home::class . ':produtoMaisMenos')->add(Middleware::api());
+$app->get('/home/cliente-mais-compra', App\Controller\Home::class . ':clienteMaisCompra')->add(Middleware::api());
 
 $app->get('/', function ($request, $response) {
     return $response->withHeader('Location', '/login')->withStatus(302);
 });
 
 
-$app->get('/login',    Login::class . ':login')->add(Middleware::web());
+$app->get('/login',     Login::class . ':login')->add(Middleware::web());
 $app->post('/login',    Login::class . ':authenticate')->add(Middleware::web());
-$app->get('/logout',   Login::class . ':logout')->add(Middleware::web());
+$app->get('/logout',    Login::class . ':logout')->add(Middleware::web());
 $app->post('/cadastro', Login::class . ':preRegister')->add(Middleware::web());
 
 $app->group('/authentication', function (\Slim\Routing\RouteCollectorProxy $group) {
@@ -36,7 +45,7 @@ $app->group('/authentication', function (\Slim\Routing\RouteCollectorProxy $grou
 // ══════════════════════════════════════════════
 $app->get('/cardapio',         Cardapio::class . ':index');
 $app->get('/cardapio/itens',   Cardapio::class . ':getItens');
-$app->post('/cardapio/pedido',  Cardapio::class . ':salvarPedido');
+$app->post('/cardapio/pedido', Cardapio::class . ':salvarPedido');
 
 // ══════════════════════════════════════════════
 //  Clientes
