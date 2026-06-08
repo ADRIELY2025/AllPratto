@@ -1,8 +1,12 @@
 tls:
+  # Lista de certificados que o Traefik lê para CASAR com o SNI da requisição.
+  # É AQUI que o cert precisa estar para o handshake de https://localhost funcionar.
+  # O Traefik abre o .pem, lê as SANs (localhost, 127.0.0.1, ::1) e as registra.
   certificates:
     - certFile: /etc/traefik/certs/localhost+2.pem
       keyFile: /etc/traefik/certs/localhost+2-key.pem
-      
+
+  # defaultCertificate continua como rede de segurança para SNI não reconhecido.
   stores:
     default:
       defaultCertificate:
@@ -12,6 +16,11 @@ tls:
   options:
     default:
       minVersion: VersionTLS13
+      # sniStrict DESLIGADO em dev. Com 'localhost' e cert mkcert, ligá-lo causa
+      # ERR_SSL_UNRECOGNIZED_NAME_ALERT. Reative SOMENTE em produção, onde os
+      # certificados vêm do ACME/Let's Encrypt com domínio real.
+      # sniStrict: true
+
 http:
   middlewares:
     security-headers:
