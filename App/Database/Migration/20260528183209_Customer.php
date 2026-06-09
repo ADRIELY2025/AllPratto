@@ -20,7 +20,7 @@ final class Version20260528183209 extends AbstractMigration
             CREATE TABLE customer (
                 id               BIGSERIAL       PRIMARY KEY,
                 nome_fantasia    VARCHAR(255)    NOT NULL,
-                nome_mesa        VARCHAR(255)    NOT NULL,
+                nome_mesa        VARCHAR(255)    NULL,
                 sobrenome_razao  VARCHAR(255)    NULL,
                 cpf_cnpj         VARCHAR(18)     NOT NULL,
                 inscricao_estadual VARCHAR(30)   NULL,

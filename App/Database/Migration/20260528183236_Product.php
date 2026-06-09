@@ -21,6 +21,7 @@ final class Version20260528183236 extends AbstractMigration
                 id            BIGSERIAL        PRIMARY KEY,
                 descricao     VARCHAR(255)     NOT NULL,
                 codigo_barras VARCHAR(50)      NULL,
+                sku           VARCHAR(100)     NULL,
                 valor_custo   NUMERIC(15,2)    NOT NULL DEFAULT 0,
                 valor_venda   NUMERIC(15,2)    NOT NULL DEFAULT 0,
                 estoque       INTEGER          NOT NULL DEFAULT 0,
