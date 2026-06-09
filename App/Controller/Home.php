@@ -25,7 +25,7 @@ final class Home extends Base
     // ─────────────────────────────────────────────────────────────
     public function vendasPorMes($request, $response)
     {
-        $rows = DB::getConnection()
+        $rows = DB::connection()
             ->executeQuery('SELECT ano, mes, label, total_vendas FROM vw_vendas_por_mes')
             ->fetchAllAssociative();
 
@@ -76,7 +76,7 @@ final class Home extends Base
     // ─────────────────────────────────────────────────────────────
     public function curvaAbc($request, $response)
     {
-        $rows = DB::getConnection()
+        $rows = DB::connection()
             ->executeQuery('SELECT produto, receita, pct, classe_abc FROM vw_curva_abc')
             ->fetchAllAssociative();
 

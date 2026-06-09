@@ -23,7 +23,7 @@ final class Company extends Base
         $company = [];
 
         if (!is_null($id)) {
-            $qb = \app\database\DB::select('*')->from('company');
+            $qb = \App\Database\DB::select('*')->from('company');
 
             $company = $qb
                 ->where('id = ' . $qb->createPositionalParameter($id, \Doctrine\DBAL\ParameterType::INTEGER))
@@ -62,7 +62,7 @@ final class Company extends Base
         ];
 
         try {
-            $IsInserted = \app\database\DB::connection()->insert('company', $FieldsAndValues);
+            $IsInserted = \App\Database\DB::connection()->insert('company', $FieldsAndValues);
 
             if (!$IsInserted) {
                 return $this->json($response, [
@@ -72,7 +72,7 @@ final class Company extends Base
                 ], 500);
             }
 
-            $id = \app\database\DB::select('id')
+            $id = \App\Database\DB::select('id')
                 ->from('company')
                 ->orderBy('id', 'DESC')
                 ->setMaxResults(1)
@@ -123,7 +123,7 @@ final class Company extends Base
         ];
 
         try {
-            $IsUpdated = \app\database\DB::connection()->update(
+            $IsUpdated = \App\Database\DB::connection()->update(
                 'company',
                 $FieldsAndValues,
                 ['id' => $id]
@@ -166,7 +166,7 @@ final class Company extends Base
         }
 
         try {
-            $IsDeleted = \app\database\DB::connection()->delete('company', ['id' => $id]);
+            $IsDeleted = \App\Database\DB::connection()->delete('company', ['id' => $id]);
 
             if (!$IsDeleted) {
                 return $this->json($response, [
@@ -226,11 +226,11 @@ final class Company extends Base
         $orderField = $columns[$posField];
 
         try {
-            $totalRecords = (int) \app\database\DB::select('COUNT(*)')
+            $totalRecords = (int) \App\Database\DB::select('COUNT(*)')
                 ->from('company')
                 ->fetchOne();
 
-            $query = \app\database\DB::select('*')->from('company');
+            $query = \App\Database\DB::select('*')->from('company');
 
             if (!is_null($term) && $term !== '') {
                 $query->setParameter('term', '%' . $term . '%');

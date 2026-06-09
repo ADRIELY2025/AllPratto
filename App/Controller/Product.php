@@ -23,7 +23,7 @@ final class Product extends Base
         $product = [];
 
         if (!is_null($id)) {
-            $qb = \app\database\DB::select('*')->from('product');
+            $qb = \App\Database\DB::select('*')->from('product');
 
             $product = $qb
                 ->where('id = ' . $qb->createPositionalParameter($id, \Doctrine\DBAL\ParameterType::INTEGER))
@@ -56,7 +56,7 @@ final class Product extends Base
         ];
 
         try {
-            $IsInserted = \app\database\DB::connection()->insert('product', $FieldsAndValues);
+            $IsInserted = \App\Database\DB::connection()->insert('product', $FieldsAndValues);
 
             if (!$IsInserted) {
                 return $this->json($response, [
@@ -66,7 +66,7 @@ final class Product extends Base
                 ], 500);
             }
 
-            $id = \app\database\DB::select('id')
+            $id = \App\Database\DB::select('id')
                 ->from('product')
                 ->orderBy('id', 'DESC')
                 ->setMaxResults(1)
@@ -111,7 +111,7 @@ final class Product extends Base
         ];
 
         try {
-            $IsUpdated = \app\database\DB::connection()->update(
+            $IsUpdated = \App\Database\DB::connection()->update(
                 'product',
                 $FieldsAndValues,
                 ['id' => $id]
@@ -154,7 +154,7 @@ final class Product extends Base
         }
 
         try {
-            $IsDeleted = \app\database\DB::connection()->delete('product', ['id' => $id]);
+            $IsDeleted = \App\Database\DB::connection()->delete('product', ['id' => $id]);
 
             if (!$IsDeleted) {
                 return $this->json($response, [
@@ -213,11 +213,11 @@ final class Product extends Base
         $orderField = $columns[$posField];
 
         try {
-            $totalRecords = (int) \app\database\DB::select('COUNT(*)')
+            $totalRecords = (int) \App\Database\DB::select('COUNT(*)')
                 ->from('product')
                 ->fetchOne();
 
-            $query = \app\database\DB::select('*')->from('product');
+            $query = \App\Database\DB::select('*')->from('product');
 
             if (!is_null($term) && $term !== '') {
                 $query->setParameter('term', '%' . $term . '%');
