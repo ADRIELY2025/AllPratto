@@ -516,3 +516,45 @@
   .ap-hero__brand, .ap-hero__sub, .ap-hero__btn { animation: none; }
   .ap-card { transition: none; }
 }
+
+
+/* ═══════════════════════════════════════════
+   Gráficos — painéis com troca de aba
+   Acrescentar no final de resources/css/home.css
+   ═══════════════════════════════════════════ */
+
+/* Oculta todos os painéis; só o .active aparece */
+.ap-chart-panel {
+  display: none;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.ap-chart-panel.active {
+  display: flex;
+}
+
+/* Cada card de gráfico */
+.ap-analytics__chart-card {
+  flex: 1 1 320px;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+.ap-analytics__chart-title {
+  font-weight: 600;
+  font-size: .875rem;
+  color: #334155;
+  margin-bottom: .75rem;
+}
+
+/* Botão de aba ativo */
+.ap-analytics__button.active {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  opacity: 1;
+  filter: brightness(1.15);
+}

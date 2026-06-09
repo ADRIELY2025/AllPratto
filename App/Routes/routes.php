@@ -19,7 +19,6 @@ $app->get('/', function ($request, $response) {
     return $response->withHeader('Location', '/login')->withStatus(302);
 });
 
-
 $app->get('/login',    Login::class . ':login')->add(Middleware::web());
 $app->post('/login',    Login::class . ':authenticate')->add(Middleware::web());
 $app->get('/logout',   Login::class . ':logout')->add(Middleware::web());
@@ -102,3 +101,18 @@ $app->group('/product', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/delete',        Product::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   Product::class . ':listingdata')->add(Middleware::api());
 });
+
+// ══════════════════════════════════════════════
+//  Gráficos da Home (API JSON)
+// ══════════════════════════════════════════════
+$app->group('/home/grafico', function (\Slim\Routing\RouteCollectorProxy $group) {
+    $group->get('/mesas/bar',    App\Controller\Home::class . ':graficaMesasBar')  ->add(Middleware::api());
+    $group->get('/mesas/pie',    App\Controller\Home::class . ':graficaMesasPie')  ->add(Middleware::api());
+    $group->get('/cliente/bar',  App\Controller\Home::class . ':graficaClienteBar')->add(Middleware::api());
+    $group->get('/cliente/pie',  App\Controller\Home::class . ':graficaClientePie')->add(Middleware::api());
+    $group->get('/produto/bar',  App\Controller\Home::class . ':graficaProdutoBar')->add(Middleware::api());
+    $group->get('/produto/pie',  App\Controller\Home::class . ':graficaProdutoPie')->add(Middleware::api());
+});
+
+$app->get('/home/resultado-vendas',    App\Controller\Home::class . ':resultadoVendas')  ->add(Middleware::api());
+$app->get('/home/resultado-marketing', App\Controller\Home::class . ':resultadoMarketing')->add(Middleware::api());

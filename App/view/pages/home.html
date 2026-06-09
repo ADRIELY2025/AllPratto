@@ -142,19 +142,51 @@
       <div class="ap-analytics__top">
         <h2 class="ap-section-title ap-section-title--center">GRAFICOS</h2>
         <div class="ap-analytics__nav">
-          <a href="/mesa/lista" class="ap-analytics__button ap-analytics__button--light">MESAS</a>
-          <a href="/cliente/lista" class="ap-analytics__button ap-analytics__button--alt">CLIENTE</a>
-          <a href="/product/lista" class="ap-analytics__button ap-analytics__button--dark">PRODUTO</a>
+          <button data-chart-tab="mesas"   class="ap-analytics__button ap-analytics__button--light">MESAS</button>
+          <button data-chart-tab="cliente" class="ap-analytics__button ap-analytics__button--alt">CLIENTE</button>
+          <button data-chart-tab="produto" class="ap-analytics__button ap-analytics__button--dark">PRODUTO</button>
         </div>
       </div>
-      <div class="ap-analytics__chart-panel">
+
+      <!-- PAINEL MESAS -->
+      <div class="ap-chart-panel" id="panel-mesas">
         <div class="ap-analytics__chart-card">
-          <div class="ap-analytics__chart-title">Visão geral</div>
-          <div class="ap-analytics__chart-placeholder">Gráficos e métricas em breve</div>
+          <div class="ap-analytics__chart-title">Pedidos por Mesa</div>
+          <div id="chartBarMesas" style="width:100%;height:320px;"></div>
+        </div>
+        <div class="ap-analytics__chart-card">
+          <div class="ap-analytics__chart-title">Distribuição por Mesa</div>
+          <div id="chartPieMesas" style="width:100%;height:320px;"></div>
         </div>
       </div>
+
+      <!-- PAINEL CLIENTE -->
+      <div class="ap-chart-panel" id="panel-cliente">
+        <div class="ap-analytics__chart-card">
+          <div class="ap-analytics__chart-title">Novos Clientes por Mês</div>
+          <div id="chartBarCliente" style="width:100%;height:320px;"></div>
+        </div>
+        <div class="ap-analytics__chart-card">
+          <div class="ap-analytics__chart-title">Clientes por Cidade</div>
+          <div id="chartPieCliente" style="width:100%;height:320px;"></div>
+        </div>
+      </div>
+
+      <!-- PAINEL PRODUTO -->
+      <div class="ap-chart-panel" id="panel-produto">
+        <div class="ap-analytics__chart-card">
+          <div class="ap-analytics__chart-title">Top 10 Produtos Mais Pedidos</div>
+          <div id="chartBarProduto" style="width:100%;height:320px;"></div>
+        </div>
+        <div class="ap-analytics__chart-card">
+          <div class="ap-analytics__chart-title">Participação por Produto</div>
+          <div id="chartPieProduto" style="width:100%;height:320px;"></div>
+        </div>
+      </div>
+
     </div>
   </section>
+
 
   <!-- ═══════════════ DESTAQUES DA SEMANA ═══════════════ -->
   <section class="ap-highlights">
@@ -168,19 +200,19 @@
       <div class="ap-highlights__cards">
         <div class="ap-highlights__item">
           <span class="ap-highlights__item-title">Entrega grátis</span>
-          <p>Sample small text. Lorem ipsum dolor sit amet.</p>
+          <p></p>
         </div>
         <div class="ap-highlights__item">
           <span class="ap-highlights__item-title">Satisfação garantida</span>
-          <p>Sample small text. Lorem ipsum dolor sit amet.</p>
+          <p></p>
         </div>
         <div class="ap-highlights__item">
           <span class="ap-highlights__item-title">Assistência 24 horas</span>
-          <p>Sample small text. Lorem ipsum dolor sit amet.</p>
+          <p></p>
         </div>
         <div class="ap-highlights__item">
           <span class="ap-highlights__item-title">Pagamento flexível</span>
-          <p>Sample small text. Lorem ipsum dolor sit amet.</p>
+          <p></p>
         </div>
       </div>
     </div>
