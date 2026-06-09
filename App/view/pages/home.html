@@ -11,138 +11,178 @@
 {% endblock %}
 
 {% block main %}
-<div class="home-page-wrapper">
+<div class="ap-home">
 
-  <section class="hero-section">
-    <div class="hero-bg-placeholder"></div>
-
-    <div class="hero-upload-zone" id="heroUploadZone" title="Clique para adicionar uma imagem de fundo">
-      <img id="hero-preview" src="" alt="Imagem de fundo">
-      <div class="hero-upload-hint" id="heroHint">
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section class="ap-hero">
+    <div class="ap-hero__img-wrap">
+      <img
+        src="/img/logo.jpeg"
+        alt="Cozinha AllPratto"
+        class="ap-hero__img"
+        id="heroImg"
+        onerror="this.style.display='none'; document.getElementById('heroPlaceholder').style.display='flex';"
+      >
+      <div class="ap-hero__img-placeholder" id="heroPlaceholder">
         <i class="fa-solid fa-image"></i>
-        <strong>Adicionar imagem de fundo</strong>
-        <small>Clique para selecionar</small>
+        <span></span>
       </div>
-      <input type="file" accept="image/*" id="heroFileInput">
     </div>
 
-    <div class="hero-content">
-      <p class="hero-eyebrow">Bem-vindo ao AllPratto</p>
-      <h1 class="hero-title">
-        Gestão <span>moderna</span><br> eficiente
-      </h1>
-      <p class="hero-desc">
-      </p>
-      <div class="hero-ctas">
-        <a href="/product/lista" class="btn-hero-primary">
-          <i class="fa-solid fa-box-open me-1"></i> Ver Produtos
+    <div class="ap-hero__content">
+      <h1 class="ap-hero__brand">AllPratto</h1>
+      <p class="ap-hero__sub">Gestão moderna<br>eficiente</p>
+      <a href="/cardapio" class="ap-hero__btn" target="_blank">CARDÁPIO</a>
+    </div>
+  </section>
+
+  <!-- ═══════════════ GERENCIAR CARDÁPIO ═══════════════ -->
+  <section class="ap-menu-section">
+    <h2 class="ap-section-title ap-section-title--script">Gerenciar cardápio</h2>
+    <div class="ap-menu-banner">
+      <img
+        src="/img/banner-cardapio.jpg"
+        alt="Cardápio"
+        class="ap-menu-banner__img"
+        onerror="this.style.display='none';"
+      >
+      <div class="ap-menu-banner__overlay">
+        <a href="/cardapio" class="ap-menu-banner__link" target="_blank">
+          <i class="fa-solid fa-arrow-right"></i>
+          Acessar cardápio
         </a>
-        <a href="/cardapio" class="btn-hero-outline" target="_blank">
-          <i class="fa-solid fa-utensils me-1"></i> Cardápio
-        </a>
-      </div>
-      <div class="hero-dots">
-        <div class="hero-dot active"></div>
-        <div class="hero-dot"></div>
-        <div class="hero-dot"></div>
       </div>
     </div>
   </section>
 
-  <section class="concepts-section">
-    <h2 class="section-title">
-      Acesse rapidamente
-      <span>o que precisa</span>
-    </h2>
+  <!-- ═══════════════ CENTRAL DE CADASTROS ═══════════════ -->
+  <section class="ap-central">
+    <h2 class="ap-section-title ap-section-title--script ap-section-title--center">Central de cadastros</h2>
 
-    <div class="concept-cards-grid">
-      <a href="/product/lista" class="concept-card">
-        <div class="concept-card-placeholder card-product">
-          <i class="fa-solid fa-box-open"></i>
-          <span>Produtos</span>
+    <div class="ap-central__grid">
+
+      <a href="/cliente/lista" class="ap-card ap-card--cliente">
+        <div class="ap-card__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.029 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+          </svg>
         </div>
-        <div class="concept-card-overlay">
-          <span class="concept-card-label">Lista de Produtos</span>
-        </div>
+        <div class="ap-card__label">CLIENTE</div>
       </a>
 
-      <a href="/payment/lista" class="concept-card">
-        <div class="concept-card-placeholder card-payment">
-          <i class="fa-solid fa-file-invoice-dollar"></i>
-          <span>Pagamento</span>
+      <a href="/product/lista" class="ap-card ap-card--produto">
+        <div class="ap-card__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5M3.14 5l1.25 5h8.22l1.25-5zM5 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0m9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0"/>
+          </svg>
         </div>
-        <div class="concept-card-overlay">
-          <span class="concept-card-label">Condições de Pagamento</span>
-        </div>
+        <div class="ap-card__label">PRODUTO</div>
       </a>
 
-      <a href="#" class="concept-card">
-        <div class="concept-card-placeholder card-reserved">
-          <i class="fa-solid fa-layer-group"></i>
-          <span>Em breve</span>
+      <a href="/supplier/lista" class="ap-card ap-card--fornecedor">
+        <div class="ap-card__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-3.998-.085A1.5 1.5 0 0 1 0 10.5zm1.294 7.456A2 2 0 0 1 4.732 11h5.536a2 2 0 0 1 .732-.732V3.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .294.456M12 10a2 2 0 0 1 1.732 1h.768a.5.5 0 0 0 .5-.5V8.35a.5.5 0 0 0-.11-.312l-1.48-1.85A.5.5 0 0 0 13.02 6H12zm-9 1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m9 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2"/>
+          </svg>
         </div>
-        <div class="concept-card-overlay">
-          <span class="concept-card-label">Novidades em breve</span>
-        </div>
+        <div class="ap-card__label">FORNECEDOR</div>
       </a>
+
+      <a href="/company/lista" class="ap-card ap-card--empresa">
+        <div class="ap-card__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M14.763.075A.5.5 0 0 1 15 .5v15a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5V14h-1v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V10a.5.5 0 0 1 .342-.474L6 8.64V5.5a.5.5 0 0 1 .276-.447l8-4a.5.5 0 0 1 .487.022M6 5.793 1 7.543V15h5zM7 9h2v1H7zm2-2H7v1h2zm2 2h-1v1h1zm-1-2h1v1h-1zm2 4h-1v1h1zm-1-2h1v1h-1zM8 5h1v1H8zm1-2H8v1h1zm2 2h-1v1h1zm-1-2h1v1h-1z"/>
+          </svg>
+        </div>
+        <div class="ap-card__label">EMPRESA</div>
+      </a>
+
+      <a href="/venda/lista" class="ap-card ap-card--venda">
+        <div class="ap-card__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1m3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/>
+          </svg>
+        </div>
+        <div class="ap-card__label">VENDA</div>
+      </a>
+
+      <a href="/compra/lista" class="ap-card ap-card--compra">
+        <div class="ap-card__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M5.071 1.243a.5.5 0 0 1 .858.514L3.383 6h9.234L10.07 1.757a.5.5 0 1 1 .858-.514L13.783 6H15.5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5H15v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9H.5a.5.5 0 0 1-.5-.5v-2A.5.5 0 0 1 .5 6h1.717zM3.5 10.5a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0m2.5 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0m2.5 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0m2.5 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0m2.5 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0"/>
+          </svg>
+        </div>
+        <div class="ap-card__label">COMPRA</div>
+      </a>
+
+      <a href="/payment/lista" class="ap-card ap-card--pagamento">
+        <div class="ap-card__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm0 3a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm3 0a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm3 0a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm3-5a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1z"/>
+          </svg>
+        </div>
+        <div class="ap-card__label">FORMA DE<br>PAGAMENTO</div>
+      </a>
+
+      <a href="/cozinha" class="ap-card ap-card--cozinha">
+        <div class="ap-card__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8.5 1a.5.5 0 0 0-1 0v.79C5.21 2.047 4 3.24 4 4.5V5H1.5a.5.5 0 0 0 0 1H4v1.5H1.5a.5.5 0 0 0 0 1H4V11H3a1 1 0 0 0-1 1v1H1.5a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1H14v-1a1 1 0 0 0-1-1h-1V8.5h2.5a.5.5 0 0 0 0-1H12V6h2.5a.5.5 0 0 0 0-1H12v-.5c0-1.26-1.21-2.453-3.5-2.71zM5 4.5C5 3.67 6.322 2.5 8 2.5s3 1.17 3 2V11H5z"/>
+          </svg>
+        </div>
+        <div class="ap-card__label">COZINHA</div>
+      </a>
+
     </div>
-
-    <div class="concepts-cta">
-      <a href="/product/detalhes" class="btn-amber">
-        <i class="fa-solid fa-plus me-1"></i> Novo Cadastro
-      </a>
-    </div>
-    <p class="concepts-desc">Gerencie produtos, clientes, fornecedores e muito mais</p>
   </section>
 
-  <div class="features-bar">
-    <a href="/cardapio" class="feature-pill" target="_blank">
-      <i class="fa-solid fa-utensils"></i>
-      <span class="feature-pill-label">Cardápio Admin</span>
-    </a>
-
-    <a href="/supplier/lista" class="feature-pill">
-      <i class="fa-solid fa-truck"></i>
-      <span class="feature-pill-label">Fornecedores</span>
-    </a>
-
-    <a href="/cliente/lista" class="feature-pill">
-      <i class="fa-solid fa-shield-halved"></i>
-      <span class="feature-pill-label">Clientes</span>
-    </a>
-  </div>
-
-  <section class="experience-section">
-    <h2 class="exp-heading">
-      Oferecemos a você<br>a melhor experiência
-    </h2>
-    <p class="exp-desc">
-      Uma plataforma completa de gestão pensada para negócios modernos. Organize, analise e cresça com controle total sobre sua operação.
-    </p>
-
-    <div class="exp-gallery">
-      <div class="exp-gallery-card">
-        <div class="exp-gallery-card-inner">
-          <i class="fa-solid fa-chart-line"></i>
-          <span>Relatórios</span>
+  <!-- ═══════════════ GRÁFICOS ═══════════════ -->
+  <section class="ap-analytics">
+    <div class="ap-analytics__inner">
+      <div class="ap-analytics__top">
+        <h2 class="ap-section-title ap-section-title--center">GRAFICOS</h2>
+        <div class="ap-analytics__nav">
+          <a href="/mesa/lista" class="ap-analytics__button ap-analytics__button--light">MESAS</a>
+          <a href="/cliente/lista" class="ap-analytics__button ap-analytics__button--alt">CLIENTE</a>
+          <a href="/product/lista" class="ap-analytics__button ap-analytics__button--dark">PRODUTO</a>
         </div>
       </div>
-      <div class="exp-gallery-card">
-        <div class="exp-gallery-card-inner">
-          <i class="fa-solid fa-users"></i>
-          <span>Usuários</span>
-        </div>
-      </div>
-      <div class="exp-gallery-card">
-        <div class="exp-gallery-card-inner">
-          <i class="fa-solid fa-building"></i>
-          <span>Empresas</span>
+      <div class="ap-analytics__chart-panel">
+        <div class="ap-analytics__chart-card">
+          <div class="ap-analytics__chart-title">Visão geral</div>
+          <div class="ap-analytics__chart-placeholder">Gráficos e métricas em breve</div>
         </div>
       </div>
     </div>
+  </section>
 
-    <div class="exp-more">
-      <i class="fa-solid fa-angles-right"></i>
+  <!-- ═══════════════ DESTAQUES DA SEMANA ═══════════════ -->
+  <section class="ap-highlights">
+    <div class="ap-highlights__wrap">
+      <div class="ap-highlights__hero">
+        <img src="/img/banner-cardapio.jpg" alt="Destaques da semana" class="ap-highlights__img" onerror="this.style.display='none';">
+        <div class="ap-highlights__hero-copy">
+          <span class="ap-highlights__headline">Destaques da<br>semana</span>
+        </div>
+      </div>
+      <div class="ap-highlights__cards">
+        <div class="ap-highlights__item">
+          <span class="ap-highlights__item-title">Entrega grátis</span>
+          <p>Sample small text. Lorem ipsum dolor sit amet.</p>
+        </div>
+        <div class="ap-highlights__item">
+          <span class="ap-highlights__item-title">Satisfação garantida</span>
+          <p>Sample small text. Lorem ipsum dolor sit amet.</p>
+        </div>
+        <div class="ap-highlights__item">
+          <span class="ap-highlights__item-title">Assistência 24 horas</span>
+          <p>Sample small text. Lorem ipsum dolor sit amet.</p>
+        </div>
+        <div class="ap-highlights__item">
+          <span class="ap-highlights__item-title">Pagamento flexível</span>
+          <p>Sample small text. Lorem ipsum dolor sit amet.</p>
+        </div>
+      </div>
     </div>
   </section>
 
