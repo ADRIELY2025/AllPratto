@@ -181,15 +181,13 @@ final class Home extends Base
         ]);
     }
     //  PRODUTOS — Curva ABC por valor vendido (rosca)
+    //  Fonte: vw_curva_abc_grupos
+    //  A = até 70% do faturamento | B = até 90% | C = restante
     public function graficaProdutoPie($request, $response)
     {
         $conn = DB::connection();
 
         $rows = $conn->fetchAllAssociative('
-            SELECT oi.nome             AS produto,
-                   SUM(oi.quantidade) AS total
-            FROM order_item oi
-            GROUP BY oi.nome
             SELECT grupo,
                    total_valor,
                    pct_total
