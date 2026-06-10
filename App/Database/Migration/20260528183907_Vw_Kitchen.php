@@ -7,13 +7,11 @@ namespace App\Database\Migration;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-/*
- * ALTERAÇÕES em relação à versão original:
- *  - Expõe numero_mesa via JOIN com mesa
- *  - Expõe nome_cliente via JOIN com customer
- *  - Expõe titulo da forma de pagamento via JOIN com payment_terms
- *  - Remove o VARCHAR solto payment_method (excluído da kitchen)
- */
+// CORRIGIDO: ORDER BY removido da view principal.
+// PostgreSQL permite ORDER BY em views simples, mas falha silenciosamente
+// quando a view é usada como subquery ou CTE — o ORDER BY é ignorado e
+// pode causar erro "column reference is ambiguous" em certas versões.
+// A ordenação deve ser feita na query que consome a view.
 
 final class Version20260528183907 extends AbstractMigration
 {
@@ -49,7 +47,6 @@ final class Version20260528183907 extends AbstractMigration
                    ON c.id = k.id_cliente
             LEFT JOIN public.payment_terms pt
                    ON pt.id = k.payment_terms_id
-            ORDER BY k.received_at ASC
         SQL);
     }
 

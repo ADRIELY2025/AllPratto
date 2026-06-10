@@ -17,11 +17,6 @@ final class Home extends Base
             ->withHeader('Content-Type', 'text/html')
             ->withStatus(200);
     }
-
-    // ══════════════════════════════════════════════════════════
-    //  Visão Geral — total de cadastros por tabela
-    // ══════════════════════════════════════════════════════════
-
     public function resultadoVendas($request, $response)
     {
         $conn = DB::connection();
@@ -36,7 +31,6 @@ final class Home extends Base
             ],
         ]);
     }
-
     public function resultadoMarketing($request, $response)
     {
         $conn = DB::connection();
@@ -50,22 +44,18 @@ final class Home extends Base
             ]
         ]);
     }
-
-    // ══════════════════════════════════════════════════════════
-    //  MESAS — pedidos por mesa
-    //  Fonte: tabela "order" (mesa, total)
-    // ══════════════════════════════════════════════════════════
-
+    //  MESAS — faturamento total por mesa (barras)
+    //  Fonte: vw_faturamento_mesa
+    //  Funciona com order.mesa INTEGER (estrutura atual do banco)
     public function graficaMesasBar($request, $response)
     {
         $conn = DB::connection();
 
         $rows = $conn->fetchAllAssociative('
-            SELECT mesa,
-                   COUNT(*) AS pedidos
-            FROM "order"
-            GROUP BY mesa
-            ORDER BY mesa ASC
+            SELECT numero_mesa,
+                   faturamento_total
+            FROM public.vw_faturamento_mesa
+            ORDER BY numero_mesa ASC
         ');
 
         if (empty($rows)) {
@@ -73,22 +63,35 @@ final class Home extends Base
         }
 
         return $this->json($response, [
-            'categories' => array_map(fn($r) => 'Mesa ' . $r['mesa'], $rows),
-            'values'     => array_map(fn($r) => (int) $r['pedidos'], $rows),
+            'categories' => array_map(fn($r) => 'Mesa ' . $r['numero_mesa'], $rows),
+            'values'     => array_map(fn($r) => (float) $r['faturamento_total'], $rows),
         ]);
     }
-
+    //  MESAS — status em tempo real (rosca)
+    //  Fonte: vw_status_mesa_contagem
+    //  Deriva status do último pedido de cada mesa (sem tabela mesa)
     public function graficaMesasPie($request, $response)
     {
         $conn = DB::connection();
 
         $rows = $conn->fetchAllAssociative('
-            SELECT mesa,
-                   SUM(total) AS faturamento
-            FROM "order"
-            GROUP BY mesa
-            ORDER BY mesa ASC
+            SELECT status,
+                   total
+            FROM public.vw_status_mesa_contagem
+            ORDER BY status ASC
         ');
+
+        $labels = [
+            'livre'      => 'Livres',
+            'ocupada'    => 'Ocupadas',
+            'aguardando' => 'Aguardando pagamento / limpeza',
+        ];
+
+        $colors = [
+            'livre'      => '#2E7D5E',
+            'ocupada'    => '#C0392B',
+            'aguardando' => '#E8A838',
+        ];
 
         if (empty($rows)) {
             return $this->json($response, ['series' => []]);
@@ -96,16 +99,13 @@ final class Home extends Base
 
         return $this->json($response, [
             'series' => array_map(fn($r) => [
-                'name'  => 'Mesa ' . $r['mesa'],
-                'value' => (float) $r['faturamento'],
+                'name'      => $labels[$r['status']] ?? ucfirst($r['status']),
+                'value'     => (int) $r['total'],
+                'itemStyle' => ['color' => $colors[$r['status']] ?? '#888'],
             ], $rows),
         ]);
     }
-
-    // ══════════════════════════════════════════════════════════
-    //  CLIENTES — cadastros por mês (últimos 6 meses)
-    // ══════════════════════════════════════════════════════════
-
+    //  CLIENTES — novos cadastros por mês (últimos 6 meses)
     public function graficaClienteBar($request, $response)
     {
         $conn = DB::connection();
@@ -164,36 +164,23 @@ final class Home extends Base
         $conn = DB::connection();
 
         $rows = $conn->fetchAllAssociative('
-            SELECT oi.nome             AS produto,
-                   SUM(oi.quantidade) AS total
-            FROM order_item oi
-            GROUP BY oi.nome
-            ORDER BY total DESC
-            LIMIT 10
+            SELECT label,
+                   mes_ordem,
+                   total_vendas
+            FROM public.vw_vendas_por_mes_total
+            ORDER BY mes_ordem ASC
         ');
-
-        if (empty($rows)) {
-            $rows = $conn->fetchAllAssociative("
-                SELECT COALESCE(p.descricao, s.nome, 'Produto') AS produto,
-                       SUM(s.quantidade)                        AS total
-                FROM item_sale s
-                LEFT JOIN product p ON p.id = s.id_produto
-                GROUP BY COALESCE(p.descricao, s.nome, 'Produto')
-                ORDER BY total DESC
-                LIMIT 10
-            ");
-        }
 
         if (empty($rows)) {
             return $this->json($response, ['categories' => [], 'values' => []]);
         }
 
         return $this->json($response, [
-            'categories' => array_column($rows, 'produto'),
-            'values'     => array_map(fn($r) => (int) $r['total'], $rows),
+            'categories' => array_column($rows, 'label'),
+            'values'     => array_map(fn($r) => (float) $r['total_vendas'], $rows),
         ]);
     }
-
+    //  PRODUTOS — Curva ABC por valor vendido (rosca)
     public function graficaProdutoPie($request, $response)
     {
         $conn = DB::connection();
@@ -203,21 +190,24 @@ final class Home extends Base
                    SUM(oi.quantidade) AS total
             FROM order_item oi
             GROUP BY oi.nome
-            ORDER BY total DESC
-            LIMIT 10
+            SELECT grupo,
+                   total_valor,
+                   pct_total
+            FROM public.vw_curva_abc_grupos
+            ORDER BY grupo ASC
         ');
 
-        if (empty($rows)) {
-            $rows = $conn->fetchAllAssociative("
-                SELECT COALESCE(p.descricao, s.nome, 'Produto') AS produto,
-                       SUM(s.quantidade)                        AS total
-                FROM item_sale s
-                LEFT JOIN product p ON p.id = s.id_produto
-                GROUP BY COALESCE(p.descricao, s.nome, 'Produto')
-                ORDER BY total DESC
-                LIMIT 10
-            ");
-        }
+        $labels = [
+            'A' => 'Grupo A — alto volume',
+            'B' => 'Grupo B — médio volume',
+            'C' => 'Grupo C — baixo volume',
+        ];
+
+        $colors = [
+            'A' => '#378ADD',
+            'B' => '#63B85C',
+            'C' => '#EF9F27',
+        ];
 
         if (empty($rows)) {
             return $this->json($response, ['series' => []]);
@@ -225,8 +215,9 @@ final class Home extends Base
 
         return $this->json($response, [
             'series' => array_map(fn($r) => [
-                'name'  => $r['produto'],
-                'value' => (int) $r['total'],
+                'name'      => $labels[$r['grupo']] ?? 'Grupo ' . $r['grupo'],
+                'value'     => (float) $r['total_valor'],
+                'itemStyle' => ['color' => $colors[$r['grupo']] ?? '#888'],
             ], $rows),
         ]);
     }
