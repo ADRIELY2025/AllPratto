@@ -116,11 +116,12 @@ final class Customer extends Base
         $columns = [
             0 => 'id',
             1 => 'nome_fantasia',
-            2 => 'cpf_cnpj',
-            3 => 'inscricao_estadual',
-            4 => 'nascimento_fundacao',
-            5 => 'criado_em',
-            6 => 'atualizado_em',
+            2 => 'sobrenome_razao',
+            3 => 'cpf_cnpj',
+            4 => 'inscricao_estadual',
+            5 => 'nascimento_fundacao',
+            6 => 'criado_em',
+            7 => 'atualizado_em',
         ];
 
         $posField = (isset($form['order'][0]['column']) && isset($columns[(int) $form['order'][0]['column']]))
