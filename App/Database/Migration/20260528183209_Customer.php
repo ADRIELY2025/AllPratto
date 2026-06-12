@@ -26,10 +26,10 @@ final class Version20260528183209 extends AbstractMigration
         $this->addSql(<<<'SQL'
             CREATE TABLE customer (
                 id              BIGSERIAL       PRIMARY KEY,
-                nome            VARCHAR(255)    NOT NULL,
-                sobrenome       VARCHAR(255)    NULL,
-                cpf             VARCHAR(18)     NOT NULL,
-                rg              VARCHAR(30)     NULL,
+                nome_fantasia            VARCHAR(255)    NOT NULL,
+                sobrenome_razao       VARCHAR(255)    NULL,
+                cpf_cnpj             VARCHAR(18)     NOT NULL,
+                rg_ie              VARCHAR(30)     NULL,
                 nascimento_fundacao DATE           NULL,
                 ativo              BOOLEAN         NOT NULL DEFAULT TRUE,
                 criado_em          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
