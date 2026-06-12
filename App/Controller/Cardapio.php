@@ -38,6 +38,7 @@ final class Cardapio extends Base
             ])
             ->withHeader('Content-Type', 'text/html')
             ->withStatus(200);
+            
     }
 
     // GET /cardapio/itens → JSON
@@ -47,7 +48,7 @@ final class Cardapio extends Base
         foreach ($this->itens as $item) {
             $agrupado[$item['categoria']][] = $item;
         }
-
+ 
         return $this->json($response, [
             'sucesso' => true,
             'dados'   => $agrupado,
@@ -105,5 +106,6 @@ final class Cardapio extends Base
             if ($item['id'] === $id) return $item;
         }
         return null;
+        
     }
 }

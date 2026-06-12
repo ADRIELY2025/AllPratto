@@ -21,7 +21,7 @@ test('users insert com dados válidos retorna 201 com status true', function () 
 
     $response = (new ResponseFactory())->createResponse();
 
-    $result = (new app\controller\Users())->insert($request, $response);
+    $result = (new App\Controller\Users())->insert($request, $response);
 
     $result->getBody()->rewind();
 
@@ -47,7 +47,7 @@ test('users update sem id retorna 403 com status false', function () {
 
     $response = (new ResponseFactory())->createResponse();
 
-    $result = (new app\controller\Users())->update($request, $response);
+    $result = (new App\Controller\Users())->update($request, $response);
 
     $result->getBody()->rewind();
 
@@ -70,7 +70,7 @@ test('users delete sem id retorna 403 com status false', function () {
 
     $response = (new ResponseFactory())->createResponse();
 
-    $result = (new app\controller\Users())->delete($request, $response);
+    $result = (new App\Controller\Users())->delete($request, $response);
 
     $result->getBody()->rewind();
 
@@ -100,7 +100,7 @@ test('users listingdata retorna 200 com estrutura DataTables', function () {
 
     $response = (new ResponseFactory())->createResponse();
 
-    $result = (new app\controller\Users())->listingdata($request, $response);
+    $result = (new App\Controller\Users())->listingdata($request, $response);
 
     $result->getBody()->rewind();
 
