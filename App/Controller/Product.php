@@ -57,7 +57,7 @@ final class Product extends Base
             'preco_venda'            => $this->toDecimal($form['precoVenda']           ?? 0),
             'tempo_preparo'          => $form['tempoPreparo']        ?? null,
             'descricao'              => $form['descricao']           ?? '',
-            'ativo'                  => (($form['ativo'] ?? 'false') === 'true') ? true : false,
+            'ativo'                  => in_array($form['ativo'] ?? '', ['true', 'on', '1', 1], true),
             'excluido'               => false,
         ];
 
@@ -98,7 +98,7 @@ final class Product extends Base
             'preco_venda'            => $this->toDecimal($form['precoVenda']           ?? 0),
             'tempo_preparo'          => $form['tempoPreparo']        ?? null,
             'descricao'              => $form['descricao']           ?? null,
-            'ativo'                  => (($form['ativo'] ?? 'false') === 'true') ? true : false,
+            'ativo'                  => in_array($form['ativo'] ?? '', ['true', 'on', '1', 1], true),
             'atualizado_em'          => date('Y-m-d H:i:s'),
         ];
 
