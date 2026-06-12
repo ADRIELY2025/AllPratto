@@ -494,7 +494,10 @@ final class Login extends Base
             (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || ($_SERVER['SERVER_PORT'] ?? null) == 443;
 
-        $cookieDomain = parse_url(HOST, PHP_URL_HOST) ?: '';
+        $hostNameForLogout = parse_url('http://' . HOST, PHP_URL_HOST);
+        $cookieDomain = ($hostNameForLogout && $hostNameForLogout !== 'localhost' && filter_var($hostNameForLogout, FILTER_VALIDATE_IP) === false)
+            ? $hostNameForLogout
+            : '';
 
         # Remove cookie da sessão PHP
         if (ini_get('session.use_cookies')) {
@@ -570,14 +573,23 @@ final class Login extends Base
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || ($_SERVER['SERVER_PORT'] ?? null) == 443;
 
-        setcookie('auth_token', $jwt, [
+        $cookieOptions = [
             'expires'  => time() + $lifetime,
             'path'     => '/',
-            'domain'   => parse_url(HOST, PHP_URL_HOST),
             'secure'   => $isSecure,
             'httponly' => true,
             'samesite' => 'Lax',
-        ]);
+        ];
+
+        // Em 'localhost' (ou IPs), não definir 'domain': o navegador rejeita
+        // cookies com domain inválido/nulo, o que impedia o auth_token de ser
+        // persistido (causando 401 "Sessão expirada" mesmo após login).
+        $hostName = parse_url('http://' . HOST, PHP_URL_HOST);
+        if ($hostName && $hostName !== 'localhost' && filter_var($hostName, FILTER_VALIDATE_IP) === false) {
+            $cookieOptions['domain'] = $hostName;
+        }
+
+        setcookie('auth_token', $jwt, $cookieOptions);
 
         $agora = (new \DateTimeImmutable())->setTimestamp($now);
         $_SESSION['user']['sessao_criada_em'] = $agora->format('Y-m-d H:i:s');
