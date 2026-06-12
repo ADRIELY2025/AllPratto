@@ -11,74 +11,158 @@
 {% block main %}
 <form id="form">
     <input type="hidden" id="action" name="action" value="{{ action }}">
-    <input type="hidden" id="id" name="id" value="{{ id }}">
+    <input type="hidden" id="id"     name="id"     value="{{ id }}">
+
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <a href="/product/lista" class="btn btn-warning">
-                        <i class="fa-solid fa-chevron-left"></i>
-                        Voltar
+                        <i class="fa-solid fa-chevron-left"></i> Voltar
                     </a>
                 </div>
+
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row g-3">
+
+                        {# Identificação #}
                         <div class="col-lg-6 col-md-6">
-                            <div class="form-floating mb-3">
-                                <input autofocus type="text" class="form-control" id="descricao" name="descricao"
-                                    placeholder="Descrição do produto" value="{{ product.descricao }}" required>
+                            <div class="form-floating">
+                                <input autofocus type="text" class="form-control"
+                                    id="nome" name="nome"
+                                    placeholder="Nome do produto"
+                                    value="{{ product.nome }}" required>
+                                <label for="nome">Nome do produto</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control"
+                                    id="codigoBarra" name="codigoBarra"
+                                    placeholder="Código de barras"
+                                    value="{{ product.codigo_barra }}">
+                                <label for="codigoBarra">Código de barras</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control"
+                                    id="grupo" name="grupo"
+                                    placeholder="Grupo / Categoria"
+                                    value="{{ product.grupo }}">
+                                <label for="grupo">Grupo / Categoria</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control"
+                                    id="unidade" name="unidade"
+                                    placeholder="Unidade (ex: UN, KG, L)"
+                                    value="{{ product.unidade }}" required>
+                                <label for="unidade">Unidade</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control"
+                                    id="tempoPreparo" name="tempoPreparo"
+                                    placeholder="Tempo de preparo (ex: 15min)"
+                                    value="{{ product.tempo_preparo }}">
+                                <label for="tempoPreparo">Tempo de preparo</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="descricao" name="descricao"
+                                    placeholder="Descrição" style="height:80px">{{ product.descricao }}</textarea>
                                 <label for="descricao">Descrição</label>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-md-6">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="codigoBarras" name="codigoBarras"
-                                    placeholder="Código de barras" value="{{ product.codigo_barras }}">
-                                <label for="codigoBarras">Código de barras</label>
+
+                        {# Preços #}
+                        <div class="col-12"><hr class="my-1"><h6 class="text-muted">Preços &amp; Custos</h6></div>
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control money"
+                                    id="precoCompra" name="precoCompra"
+                                    placeholder="Preço de compra"
+                                    value="{{ product.preco_compra ?? '0,00' }}">
+                                <label for="precoCompra">Preço de compra (R$)</label>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-md-6">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="sku" name="sku"
-                                    placeholder="SKU" value="{{ product.sku }}">
-                                <label for="sku">SKU</label>
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control money"
+                                    id="totalImposto" name="totalImposto"
+                                    placeholder="Total de impostos"
+                                    value="{{ product.total_imposto ?? '0,00' }}">
+                                <label for="totalImposto">Total de impostos (R$)</label>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="valorCusto" name="valorCusto"
-                                    placeholder="Valor de custo" value="{{ product.valor_custo }}">
-                                <label for="valorCusto">Valor de custo</label>
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control money"
+                                    id="custoOperacional" name="custoOperacional"
+                                    placeholder="Custo operacional"
+                                    value="{{ product.custo_operacional ?? '0,00' }}">
+                                <label for="custoOperacional">Custo operacional (R$)</label>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="valorVenda" name="valorVenda"
-                                    placeholder="Valor de venda" value="{{ product.valor_venda }}">
-                                <label for="valorVenda">Valor de venda</label>
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control"
+                                    id="margemLucro" name="margemLucro"
+                                    placeholder="Margem de lucro (%)"
+                                    value="{{ product.margem_lucro ?? '0,00' }}">
+                                <label for="margemLucro">Margem de lucro (%)</label>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="form-floating mb-3">
-                                <input type="number" class="form-control" id="estoque" name="estoque"
-                                    placeholder="Estoque" value="{{ product.estoque }}">
-                                <label for="estoque">Estoque</label>
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control money"
+                                    id="valorVendaSugerido" name="valorVendaSugerido"
+                                    placeholder="Valor sugerido"
+                                    value="{{ product.valor_venda_sugerido ?? '0,00' }}">
+                                <label for="valorVendaSugerido">Valor venda sugerido (R$)</label>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <div class="form-group">
-                                <div class="icheck-primary d-inline">
-                                    <input class="form-check-label" type="checkbox" id="ativo" name="ativo" value="true" {% if product.ativo==1 %} checked {% endif %}>
-                                    <label for="ativo">Ativo?</label>
-                                </div>
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control money"
+                                    id="precoVenda" name="precoVenda"
+                                    placeholder="Preço de venda"
+                                    value="{{ product.preco_venda ?? '0,00' }}" required>
+                                <label for="precoVenda">Preço de venda (R$)</label>
                             </div>
                         </div>
-                    </div>
-                </div>
+
+                        {# Status #}
+                        <div class="col-12 mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                    id="ativo" name="ativo" value="true"
+                                    {% if product.ativo %} checked {% endif %}>
+                                <label class="form-check-label" for="ativo">Ativo?</label>
+                            </div>
+                        </div>
+
+                    </div>{# /row #}
+                </div>{# /card-body #}
+
                 <div class="card-footer">
                     <button id="insert" type="button" class="btn btn-success">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        Salvar
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar
                     </button>
                 </div>
             </div>
