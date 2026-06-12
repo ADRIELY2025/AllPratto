@@ -20,7 +20,7 @@ final class Version20260528183907 extends AbstractMigration
         return 'Vw_Kitchen';
     }
 
-    public function up(Schema $schema): void
+   public function up(Schema $schema): void
     {
         $this->addSql(<<<'SQL'
             CREATE OR REPLACE VIEW public.vw_kitchen AS
@@ -30,7 +30,7 @@ final class Version20260528183907 extends AbstractMigration
                 k.id_mesa,
                 m.numero        AS numero_mesa,
                 k.id_cliente,
-                c.nome_fantasia AS nome_cliente,
+                TRIM(CONCAT(c.nome, ' ', c.sobrenome)) AS nome_cliente,
                 k.id_produto,
                 k.product_name,
                 k.quantidade,

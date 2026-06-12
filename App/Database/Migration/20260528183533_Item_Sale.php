@@ -19,6 +19,7 @@ final class Version20260528183533 extends AbstractMigration
         $this->addSql(<<<'SQL'
             CREATE TABLE item_sale (
                 id               BIGSERIAL      PRIMARY KEY,
+                nome             TEXT           NULL,
                 id_venda         BIGINT         NULL REFERENCES sale(id)    ON DELETE CASCADE,
                 id_produto       BIGINT         NULL REFERENCES product(id) ON DELETE CASCADE,
                 descricao        TEXT           NULL,
@@ -29,7 +30,6 @@ final class Version20260528183533 extends AbstractMigration
                 unitario_liquido NUMERIC(18,4)  NULL,
                 desconto         NUMERIC(18,4)  NULL,
                 acrescimo        NUMERIC(18,4)  NULL,
-                nome             TEXT           NULL,
                 criado_em        TIMESTAMP      NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em    TIMESTAMP      NULL DEFAULT CURRENT_TIMESTAMP
             )

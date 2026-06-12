@@ -19,6 +19,7 @@ final class Version20260608235445 extends AbstractMigration
         $this->addSql(<<<'SQL'
             CREATE TABLE item_purchase (
                 id               BIGSERIAL       PRIMARY KEY,
+                nome             TEXT            NULL,
                 id_compra        BIGINT          NULL,
                 id_produto       BIGINT          NULL,
                 quantidade       NUMERIC(18,4)   NULL,
@@ -27,7 +28,6 @@ final class Version20260608235445 extends AbstractMigration
                 preco_unitario   NUMERIC(18,4)   NULL,
                 desconto         NUMERIC(18,4)   NULL,
                 acrescimo        NUMERIC(18,4)   NULL,
-                nome             TEXT            NULL,
                 data_cadastro    TIMESTAMP       NULL DEFAULT CURRENT_TIMESTAMP,
                 data_atualizacao TIMESTAMP       NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT fk_item_purchase_purchase

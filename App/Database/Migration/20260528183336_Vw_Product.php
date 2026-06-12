@@ -26,14 +26,12 @@ final class Version20260528183336 extends AbstractMigration
             CREATE OR REPLACE VIEW view_product AS
             SELECT
                 p.id::TEXT,
-                p.descricao      AS nome,
-                p.codigo_barras,
-                p.valor_venda    AS valor,
-                p.categoria,
-                p.emoji,
+                p.nome,
+                p.codigo_barra,
+                p.grupo,
+                p.descricao,
+                p.preco_venda AS valor,
                 p.tempo_preparo,
-                p.destaque,
-                p.imagem_url,
                 p.ativo,
                 TRUE             AS produto
             FROM public.product p

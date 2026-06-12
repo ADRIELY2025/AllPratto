@@ -33,8 +33,11 @@ final class Version20260528183652 extends AbstractMigration
             )
         SQL);
 
-        // A FK de id_item_compra é adicionada após item_purchase ser criada
-        // (item_purchase vem depois no histórico de migrations)
+        // 2. Adiciona as colunas com os tipos ENUM personalizados do PostgreSQL
+        $this->addSql('ALTER TABLE stock_movement ADD COLUMN tipo stock_movement_direction');
+        $this->addSql('ALTER TABLE stock_movement ADD COLUMN origem_movimento stock_movement_origin');
+
+        // 3. Cria o índice
         $this->addSql('CREATE INDEX idx_stock_movement_produto ON stock_movement (id_produto)');
     }
 

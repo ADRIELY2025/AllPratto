@@ -21,10 +21,11 @@ final class Version20260528183243 extends AbstractMigration
                 id                 BIGSERIAL     PRIMARY KEY,
                 nome_fantasia      VARCHAR(255)  NOT NULL,
                 razao_social       VARCHAR(255)  NULL,
-                cnpj               VARCHAR(18)   NOT NULL,
                 inscricao_estadual VARCHAR(30)   NULL,
                 telefone           VARCHAR(20)   NULL,
                 email              VARCHAR(255)  NULL,
+                cnpj_cpf           VARCHAR(18)   NOT NULL,
+                ie_rg              VARCHAR(30)   NULL,
                 ativo              BOOLEAN       NOT NULL DEFAULT TRUE,
                 criado_em          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP

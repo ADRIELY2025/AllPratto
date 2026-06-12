@@ -27,8 +27,8 @@ final class Version20260528183340 extends AbstractMigration
                 total_liquido NUMERIC(18,4)          NULL,
                 desconto      NUMERIC(18,4)          NULL,
                 acrescimo     NUMERIC(18,4)          NULL,
-                estado_venda  stock_movement_venda   NULL,
                 observacao    TEXT                   NULL,
+                estado_venda  stock_movement_venda   NULL, -- Adicionado aqui
                 criado_em     TIMESTAMP              NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP              NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
@@ -36,6 +36,7 @@ final class Version20260528183340 extends AbstractMigration
 
         $this->addSql('CREATE INDEX idx_sale_id_cliente ON sale (id_cliente)');
     }
+
 
     public function down(Schema $schema): void
     {

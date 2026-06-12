@@ -23,26 +23,24 @@ final class Version20260528183236 extends AbstractMigration
         $this->addSql(<<<'SQL'
             CREATE TABLE product (
                 id            BIGSERIAL        PRIMARY KEY,
-                descricao     VARCHAR(255)     NOT NULL,
-                codigo_barras VARCHAR(50)      NULL,
-                valor_custo   NUMERIC(15,2)    NOT NULL DEFAULT 0,
-                valor_venda   NUMERIC(15,2)    NOT NULL DEFAULT 0,
-                estoque       INTEGER          NOT NULL DEFAULT 0,
-                categoria     VARCHAR(100)     NULL,
-                emoji         VARCHAR(10)      NULL,
+                nome            VARCHAR(255)    NOT NULL,
+                codigo_barra  VARCHAR(50)      NULL,
+                grupo         text      NULL,
+                unidade       text          NOT NULL DEFAULT 0,
+                preco_compra   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                total_imposto   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                margem_lucro   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                custo_operacional   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                valor_venda_sugerido   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                preco_venda   NUMERIC(18,4)    NOT NULL DEFAULT 0,
                 tempo_preparo VARCHAR(30)      NULL,
-                destaque      BOOLEAN          NOT NULL DEFAULT FALSE,
-                imagem_url    TEXT             NULL,
+                descricao     VARCHAR(255)     NOT NULL,
                 ativo         BOOLEAN          NOT NULL DEFAULT TRUE,
+                excluido         BOOLEAN          NOT NULL DEFAULT TRUE,
                 criado_em     TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                atualizado_em TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT uq_product_codigo_barras UNIQUE (codigo_barras)
+                atualizado_em TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         SQL);
-
-        $this->addSql('CREATE INDEX idx_product_descricao ON product (descricao)');
-        $this->addSql('CREATE INDEX idx_product_categoria ON product (categoria)');
-        $this->addSql('CREATE INDEX idx_product_destaque  ON product (destaque)');
     }
 
     public function down(Schema $schema): void

@@ -19,17 +19,20 @@ final class Version20260528183310 extends AbstractMigration
         $this->addSql(<<<'SQL'
             CREATE TABLE contact (
                 id            BIGSERIAL   PRIMARY KEY,
-                id_usuario    BIGINT      NULL REFERENCES users(id)    ON DELETE CASCADE,
+                id_fornecedor BIGINT      NULL REFERENCES supplier(id) ON DELETE CASCADE,
+                id_usuario    BIGINT      NULL REFERENCES users(id) ON DELETE CASCADE,
+                id_empresa    BIGINT      NULL REFERENCES company(id) ON DELETE CASCADE,
                 id_cliente    BIGINT      NULL REFERENCES customer(id) ON DELETE CASCADE,
-                tipo          VARCHAR(20) NULL,
+                tipo_contato          VARCHAR(20) NULL,
                 contato       TEXT        NULL,
+                email         TEXT        NULL,
                 criado_em     TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT uq_contact_contato UNIQUE (contato)
             )
         SQL);
 
-        $this->addSql('CREATE INDEX idx_contact_tipo ON contact (tipo)');
+        $this->addSql('CREATE INDEX idx_contact_tipo_contato ON contact (tipo_contato)');
     }
 
     public function down(Schema $schema): void

@@ -24,7 +24,6 @@ final class Version20260608235444 extends AbstractMigration
                 total_liquido    NUMERIC(18,4)   NULL,
                 desconto         NUMERIC(18,4)   NULL,
                 acrescimo        NUMERIC(18,4)   NULL,
-                estado_compra    stock_movement_compra NULL,
                 observacao       TEXT            NULL,
                 data_cadastro    TIMESTAMP       NULL DEFAULT CURRENT_TIMESTAMP,
                 data_atualizacao TIMESTAMP       NULL DEFAULT CURRENT_TIMESTAMP,

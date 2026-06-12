@@ -21,9 +21,7 @@ final class Version20260528183259 extends AbstractMigration
                 id            BIGSERIAL     PRIMARY KEY,
                 codigo        VARCHAR(50)   NULL,
                 titulo        VARCHAR(255)  NULL,
-                descricao     TEXT          NULL,
                 atalho        VARCHAR(50)   NULL,
-                parcelas      INTEGER       NULL DEFAULT 1,
                 criado_em     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
