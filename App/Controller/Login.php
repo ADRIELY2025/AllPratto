@@ -272,9 +272,10 @@ final class Login extends Base
 
                 if ($email) {
                     $connection->insert('contact', [
-                        'id_usuario' => $id_usuario,
-                        'tipo'       => 'EMAIL',
-                        'contato'    => $email,
+                        'id_usuario'  => $id_usuario,
+                        'tipo_contato' => 'EMAIL',
+                        'contato'     => $email,
+                        'email'       => $email,
                     ]);
                 }
 
@@ -428,11 +429,15 @@ final class Login extends Base
 
                 try {
                     error_log('[preRegister] Inserindo contato: ' . $tipo . ' -> ' . $contato);
-                    $connection->insert('contact', [
-                        'id_usuario' => $id_usuario,
-                        'tipo'       => $tipo,
-                        'contato'    => $contato,
-                    ]);
+                    $row = [
+                        'id_usuario'   => $id_usuario,
+                        'tipo_contato' => $tipo,
+                        'contato'      => $contato,
+                    ];
+                    if ($tipo === 'EMAIL') {
+                        $row['email'] = $contato;
+                    }
+                    $connection->insert('contact', $row);
                 } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
                     error_log('[preRegister] Contato duplicado: ' . $contato);
                     continue;
