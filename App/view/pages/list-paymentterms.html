@@ -3,7 +3,7 @@
 {% block breadcrumbs %}
 <ol class="breadcrumb float-sm-end">
     <li class="breadcrumb-item"><a href="/">Início</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Lista de empresas</li>
+    <li class="breadcrumb-item active" aria-current="page">Condições de pagamento</li>
 </ol>
 {% endblock %}
 
@@ -12,23 +12,19 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <a href="/company/detalhes" class="btn btn-outline-success">
+                <a href="/payment/detalhes" class="btn btn-outline-success">
                     <i class="fa-solid fa-plus"></i>
                     Cadastro
                 </a>
             </div>
             <div class="card-body">
-                <table class="table table-bordered table-striped table-hover" id="table-company">
+                <table class="table table-bordered table-striped table-hover" id="table-payment">
                     <thead>
                         <tr>
                             <th>Código</th>
-                            <th>Nome fantasia</th>
-                            <th>Razão social</th>
-                            <th>CNPJ</th>
-                            <th>Inscricao estadual</th>
-                            <th>Telefone</th>
-                            <th>E-mail</th>
-                            <th>Ativo?</th>
+                            <th>Forma de Pagamento</th>
+                            <th>Título</th>
+                            <th>Atalho</th>
                             <th>Criado em</th>
                             <th>Atualizado em</th>
                             <th>Ação</th>
@@ -46,5 +42,5 @@
 {% endblock %}
 
 {% block script %}
-{{ vite('resources/js/pages/list-company.js') }}
+{{ vite('resources/js/pages/list-paymentterms.js') }}
 {% endblock %}

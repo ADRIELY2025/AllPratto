@@ -23,7 +23,7 @@ final class Supplier extends Base
         $supplier = [];
 
         if (!is_null($id)) {
-            $qb = \app\database\DB::select('*')->from('supplier');
+            $qb = \App\Database\DB::select('*')->from('supplier');
 
             $supplier = $qb
                 ->where('id = ' . $qb->createPositionalParameter($id, \Doctrine\DBAL\ParameterType::INTEGER))
@@ -56,7 +56,7 @@ final class Supplier extends Base
         ];
 
         try {
-            $IsInserted = \app\database\DB::connection()->insert('supplier', $FieldsAndValues);
+            $IsInserted = \App\Database\DB::connection()->insert('supplier', $FieldsAndValues);
 
             if (!$IsInserted) {
                 return $this->json($response, [
@@ -66,7 +66,7 @@ final class Supplier extends Base
                 ], 500);
             }
 
-            $id = \app\database\DB::select('id')
+            $id = \App\Database\DB::select('id')
                 ->from('supplier')
                 ->orderBy('id', 'DESC')
                 ->setMaxResults(1)
@@ -111,7 +111,7 @@ final class Supplier extends Base
         ];
 
         try {
-            $IsUpdated = \app\database\DB::connection()->update(
+            $IsUpdated = \App\Database\DB::connection()->update(
                 'supplier',
                 $FieldsAndValues,
                 ['id' => $id]
@@ -154,7 +154,7 @@ final class Supplier extends Base
         }
 
         try {
-            $IsDeleted = \app\database\DB::connection()->delete('supplier', ['id' => $id]);
+            $IsDeleted = \App\Database\DB::connection()->delete('supplier', ['id' => $id]);
 
             if (!$IsDeleted) {
                 return $this->json($response, [
@@ -212,11 +212,11 @@ final class Supplier extends Base
         $orderField = $columns[$posField];
 
         try {
-            $totalRecords = (int) \app\database\DB::select('COUNT(*)')
+            $totalRecords = (int) \App\Database\DB::select('COUNT(*)')
                 ->from('supplier')
                 ->fetchOne();
 
-            $query = \app\database\DB::select('*')->from('supplier');
+            $query = \App\Database\DB::select('*')->from('supplier');
 
             if (!is_null($term) && $term !== '') {
                 $query->setParameter('term', '%' . $term . '%');
@@ -251,9 +251,9 @@ final class Supplier extends Base
                     $value['cnpj'],
                     $value['telefone'],
                     $value['email'],
-                    ($value['ativo'] === true) ? 'Ativo' : 'Inativo',
-                    (new \DateTime($value['criado_em']))->format('d/m/Y H:i:s'),
-                    (new \DateTime($value['atualizado_em']))->format('d/m/Y H:i:s'),
+                    (in_array($value['ativo'], [true, 't', '1', 1], true)) ? 'Ativo' : 'Inativo',
+                    $value['criado_em'] ? (new \DateTime($value['criado_em']))->format('d/m/Y H:i:s') : '-',
+                    $value['atualizado_em'] ? (new \DateTime($value['atualizado_em']))->format('d/m/Y H:i:s') : '-',
                     "<td>
                         <a class='btn btn-sm btn-warning' href='/supplier/detalhes/" . $value['id'] . "'>
                             <i class='fa-solid fa-pen-to-square'></i> Editar
