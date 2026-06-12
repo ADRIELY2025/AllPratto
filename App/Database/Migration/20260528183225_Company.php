@@ -25,12 +25,6 @@ final class Version20260528183225 extends AbstractMigration
                 inscricao_estadual VARCHAR(30)   NULL,
                 telefone           VARCHAR(20)   NULL,
                 email              VARCHAR(255)  NULL,
-                endereco           VARCHAR(255)  NULL,
-                numero             VARCHAR(20)   NULL,
-                bairro             VARCHAR(100)  NULL,
-                cidade             VARCHAR(100)  NULL,
-                estado             VARCHAR(2)    NULL,
-                cep                VARCHAR(10)   NULL,
                 ativo              BOOLEAN       NOT NULL DEFAULT TRUE,
                 criado_em          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP

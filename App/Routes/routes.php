@@ -11,6 +11,7 @@ use App\Controller\Users;
 use App\Controller\Supplier;
 use App\Controller\Company;
 use App\Controller\Product;
+use App\Controller\PaymentTerms;
 
 $app->post('/',     App\controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home', App\controller\Home::class . ':home')->add(Middleware::web());
@@ -116,3 +117,14 @@ $app->group('/home/grafico', function (\Slim\Routing\RouteCollectorProxy $group)
 
 $app->get('/home/resultado-vendas',    App\Controller\Home::class . ':resultadoVendas')  ->add(Middleware::api());
 $app->get('/home/resultado-marketing', App\Controller\Home::class . ':resultadoMarketing')->add(Middleware::api());
+
+
+$app->group('/payment', function (\Slim\Routing\RouteCollectorProxy $group) {
+    $group->get('/lista',          PaymentTerms::class . ':list')->add(Middleware::web());
+    $group->get('/detalhes/{id}',  PaymentTerms::class . ':details')->add(Middleware::web());
+    $group->get('/detalhes',       PaymentTerms::class . ':details')->add(Middleware::web());
+    $group->post('/insert',        PaymentTerms::class . ':insert')->add(Middleware::api());
+    $group->post('/update',        PaymentTerms::class . ':update')->add(Middleware::api());
+    $group->post('/delete',        PaymentTerms::class . ':delete')->add(Middleware::api());
+    $group->post('/listingdata',   PaymentTerms::class . ':listingdata')->add(Middleware::api());
+});

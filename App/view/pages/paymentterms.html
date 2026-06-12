@@ -1,0 +1,123 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item"><a href="/payment/lista">Condições de pagamento</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Detalhes</li>
+</ol>
+{% endblock %}
+
+{% block main %}
+<form id="form">
+    <input type="hidden" id="action" name="action" value="{{ action }}">
+    <input type="hidden" id="id" name="id" value="{{ id }}">
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <a href="/payment/lista" class="btn btn-warning">
+                        <i class="fa-solid fa-chevron-left"></i>
+                        Voltar
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+
+                        <div class="col-lg-6 col-md-12">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="codigo" name="codigo" required>
+                                    <option value="" disabled {% if not paymentTerm.codigo %}selected{% endif %}>Selecione...</option>
+                                    <option value="01" {% if paymentTerm.codigo == '01' %}selected{% endif %}>Dinheiro</option>
+                                    <option value="02" {% if paymentTerm.codigo == '02' %}selected{% endif %}>Cheque</option>
+                                    <option value="03" {% if paymentTerm.codigo == '03' %}selected{% endif %}>Cartão de Crédito</option>
+                                    <option value="04" {% if paymentTerm.codigo == '04' %}selected{% endif %}>Cartão de Débito</option>
+                                    <option value="15" {% if paymentTerm.codigo == '15' %}selected{% endif %}>Boleto Bancário</option>
+                                    <option value="17" {% if paymentTerm.codigo == '17' %}selected{% endif %}>PIX</option>
+                                    <option value="99" {% if paymentTerm.codigo == '99' %}selected{% endif %}>Outros</option>
+                                </select>
+                                <label for="codigo">Forma de Pagamento</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="titulo" name="titulo"
+                                    placeholder="Ex: À Vista" value="{{ paymentTerm.titulo }}" required>
+                                <label for="titulo">Título (Ex: À Vista)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="atalho" name="atalho"
+                                    placeholder="Atalho" value="{{ paymentTerm.atalho }}">
+                                <label for="atalho">Atalho</label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                    <h6 class="fw-bold mb-3">
+                        <i class="fa-solid fa-calendar-days me-1"></i> Parcelas
+                    </h6>
+
+                    <div class="row align-items-end mb-3">
+                        <div class="col-lg-4 col-md-5">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="parcela"
+                                    placeholder="1" min="1">
+                                <label for="parcela">Qtd. Parcelas</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-5">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="intervalo"
+                                    placeholder="30" min="0">
+                                <label for="intervalo">Intervalo (Dias)</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-2 d-grid mt-2 mt-md-0">
+                            <button id="btnAddParcela" type="button" class="btn btn-outline-primary" style="height:58px">
+                                <i class="fa-solid fa-plus"></i> Adicionar
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="table table-bordered table-sm table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Parcela</th>
+                                <th>Qtd.</th>
+                                <th>Intervalo (Dias)</th>
+                                <th class="text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbInstallments">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Nenhuma parcela adicionada.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <div class="card-footer">
+                    <button id="insert" type="button" class="btn btn-success">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/paymentterms.js') }}
+{% endblock %}
