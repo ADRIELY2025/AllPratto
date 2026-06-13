@@ -5,11 +5,11 @@ const Action = document.getElementById('action');
 const Id     = document.getElementById('id');
 const Insert = document.getElementById('insert');
 
-const inputPrecoCompra      = document.getElementById('precoCompra');
-const inputTotalImposto     = document.getElementById('totalImposto');
-const inputCustoOperacional = document.getElementById('custoOperacional');
-const inputMargemLucro      = document.getElementById('margemLucro');
-const inputPrecoVenda       = document.getElementById('precoVenda');
+const inputPrecoCompra      = document.getElementById('preco_compra');
+const inputTotalImposto     = document.getElementById('total_imposto');
+const inputCustoOperacional = document.getElementById('custo_operacional');
+const inputMargemLucro      = document.getElementById('margem_lucro');
+const inputPrecoVenda       = document.getElementById('preco_venda');
 
 // ─── Máscaras ────────────────────────────────────────────────────────────────
 if (window.Inputmask) {
@@ -20,7 +20,7 @@ if (window.Inputmask) {
         groupSeparator: '.',
         rightAlign: false,
         onBeforeMask: v => String(v).replace('.', ','),
-    }).mask('#precoCompra, #precoVenda');
+    }).mask('#preco_compra, #preco_venda');
 
     Inputmask('currency', {
         radixPoint: ',',
@@ -29,7 +29,7 @@ if (window.Inputmask) {
         groupSeparator: '.',
         rightAlign: false,
         onBeforeMask: v => String(v).replace('.', ','),
-    }).mask('#totalImposto, #margemLucro, #custoOperacional');
+    }).mask('#total_imposto, #margem_lucro, #custo_operacional');
 }
 
 // ─── Helper: limpa máscara e converte para float ─────────────────────────────
@@ -101,25 +101,25 @@ async function applyChanges() {
     formData.append('action',         Action.value);
     formData.append('id',             Id.value);
     formData.append('nome',           document.getElementById('nome').value);
-    formData.append('codigoBarra',    document.getElementById('codigoBarra').value);
+    formData.append('codigo_barra',    document.getElementById('codigo_barra').value);
     formData.append('grupo',          document.getElementById('grupo').value);
     formData.append('unidade',        document.getElementById('unidade').value);
-    formData.append('tempoPreparo',   document.getElementById('tempoPreparo').value);
+    formData.append('tempo_preparo',   document.getElementById('tempo_preparo').value);
     formData.append('descricao',      document.getElementById('descricao').value);
 
     // Checkbox: envia 'true' se marcado, 'false' se não (evita campo vazio)
     formData.append('ativo', document.getElementById('ativo').checked ? 'true' : 'false');
 
     // Valores numéricos — remove máscara antes de enviar
-    formData.append('precoCompra',        parseMoney(inputPrecoCompra.value));
-    formData.append('totalImposto',       parseMoney(inputTotalImposto.value));
-    formData.append('custoOperacional',   parseMoney(inputCustoOperacional.value));
-    formData.append('margemLucro',        parseMoney(inputMargemLucro.value));
-    formData.append('precoVenda',         parseMoney(inputPrecoVenda.value));
+    formData.append('preco_compra',        parseMoney(inputPrecoCompra.value));
+    formData.append('total_imposto',       parseMoney(inputTotalImposto.value));
+    formData.append('custo_operacional',   parseMoney(inputCustoOperacional.value));
+    formData.append('margem_lucro',        parseMoney(inputMargemLucro.value));
+    formData.append('preco_venda',         parseMoney(inputPrecoVenda.value));
 
     // Valor sugerido calculado
     const valVendaText = document.getElementById('val-venda')?.textContent ?? '0';
-    formData.append('valorVendaSugerido', parseMoney(valVendaText.replace('R$', '')));
+    formData.append('valor_venda_sugerido', parseMoney(valVendaText.replace('R$', '')));
 
     const requests = new Requests();
     try {
@@ -145,7 +145,55 @@ async function applyChanges() {
         Swal.fire({ icon: 'error', title: 'Erro', text: `Erro: ${error.message}`, timer: 3000, timerProgressBar: true });
     } finally {
         $('button, input').prop('disabled', false);
-    }
+    }   
 }
 
+// ─── Upload de imagem ─────────────────────────────────────────────
+const btnUpload    = document.getElementById('btn-upload-imagem');
+const inputImagem  = document.getElementById('inputImagem');
+const previewImg   = document.getElementById('preview-imagem');
+
+// Pré-visualização local antes de enviar
+if (inputImagem) {
+    inputImagem.addEventListener('change', () => {
+        const file = inputImagem.files[0];
+        if (!file) return;
+        previewImg.src = URL.createObjectURL(file);
+    });
+}
+
+// Envio da imagem separado do formulário principal
+if (btnUpload) {
+    btnUpload.addEventListener('click', async () => {
+        const file = inputImagem?.files[0];
+        if (!file) {
+            Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Selecione uma imagem antes de enviar.', timer: 2500, timerProgressBar: true });
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('id',     Id.value);
+        formData.append('imagem', file);
+
+        btnUpload.disabled = true;
+
+        try {
+            const requests = new Requests();
+            const response = await requests.setBody(formData).post('/product/upload-imagem');
+
+            if (!response?.status) {
+                Swal.fire({ icon: 'error', title: 'Erro', text: response?.msg || 'Erro ao enviar imagem.', timer: 3000, timerProgressBar: true });
+                return;
+            }
+
+            // Atualiza o preview com a imagem do servidor (evita cache)
+            previewImg.src = response.imagem_url + '?v=' + Date.now();
+            Swal.fire({ icon: 'success', title: 'Sucesso', text: 'Imagem enviada!', timer: 2000, timerProgressBar: true });
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Erro', text: error.message, timer: 3000, timerProgressBar: true });
+        } finally {
+            btnUpload.disabled = false;
+        }
+    });
+}
 Insert.addEventListener('click', applyChanges);

@@ -1,0 +1,106 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item"><a href="/pedido/lista">Lista de pedidos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Detalhes do pedido</li>
+</ol>
+{% endblock %}
+
+{% block main %}
+<form id="form">
+    <input type="hidden" id="id"     name="id"     value="{{ id }}">
+    <input type="hidden" id="action" name="action" value="{{ action }}">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <a href="/pedido/lista" class="btn btn-warning">
+                        <i class="fa-solid fa-chevron-left"></i>
+                        Voltar
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" disabled
+                                    value="Mesa {{ pedido.mesa_numero ?? '—' }}">
+                                <label>Mesa</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" disabled
+                                    value="R$ {{ pedido.total ? pedido.total | number_format(2, ',', '.') : '0,00' }}">
+                                <label>Total</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="status" name="status">
+                                    <option value="pendente"   {% if pedido.status == 'pendente'   %}selected{% endif %}>Pendente</option>
+                                    <option value="em_preparo" {% if pedido.status == 'em_preparo' %}selected{% endif %}>Em preparo</option>
+                                    <option value="pronto"     {% if pedido.status == 'pronto'     %}selected{% endif %}>Pronto</option>
+                                    <option value="entregue"   {% if pedido.status == 'entregue'   %}selected{% endif %}>Entregue</option>
+                                    <option value="pago"       {% if pedido.status == 'pago'       %}selected{% endif %}>Pago</option>
+                                    <option value="cancelado"  {% if pedido.status == 'cancelado'  %}selected{% endif %}>Cancelado</option>
+                                </select>
+                                <label for="status">Status</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                                <textarea class="form-control" id="observacao" name="observacao"
+                                    placeholder="Observação" style="height: 80px" disabled>{{ pedido.observacao }}</textarea>
+                                <label for="observacao">Observação</label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {# Itens do pedido — carregados via JS #}
+                    <div class="row mt-3" id="itens-container" style="display:none">
+                        <div class="col-12">
+                            <h6 class="fw-bold">Itens do pedido</h6>
+                            <table class="table table-sm table-bordered" id="table-itens">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th class="text-end">Qtd</th>
+                                        <th class="text-end">Preço</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-itens"></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3" class="text-end">Total</th>
+                                        <th class="text-end" id="total-itens"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="card-footer">
+                    <button id="btn-salvar" type="button" class="btn btn-success">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Salvar status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/pedido.js') }}
+{% endblock %}

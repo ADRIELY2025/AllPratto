@@ -251,4 +251,80 @@ final class Product extends Base
         }
         return (float) $str;
     }
+
+    
+public function uploadImagem($request, $response)
+{
+    $uploadedFiles = $request->getUploadedFiles();
+    $form          = $request->getParsedBody();
+    $id            = $form['id'] ?? null;
+ 
+    if (is_null($id) || $id === '') {
+        return $this->json($response, ['status' => false, 'msg' => 'Salve o produto antes de enviar a imagem.'], 400);
+    }
+ 
+    $arquivo = $uploadedFiles['imagem'] ?? null;
+ 
+    if (!$arquivo || $arquivo->getError() !== UPLOAD_ERR_OK) {
+        return $this->json($response, ['status' => false, 'msg' => 'Nenhum arquivo recebido ou erro no upload.'], 400);
+    }
+ 
+    // Valida tipo
+    $tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+    $tipo            = $arquivo->getClientMediaType();
+ 
+    if (!in_array($tipo, $tiposPermitidos, true)) {
+        return $this->json($response, ['status' => false, 'msg' => 'Apenas JPG, PNG e WEBP são permitidos.'], 422);
+    }
+ 
+    // Valida tamanho (máx 2 MB)
+    if ($arquivo->getSize() > 2 * 1024 * 1024) {
+        return $this->json($response, ['status' => false, 'msg' => 'Imagem muito grande. Máximo 2 MB.'], 422);
+    }
+ 
+    // Pasta de destino — fora do assets do Vite para não ser apagada no build
+    $pastaDestino = __DIR__ . '/../../public/uploads/produtos/';
+    if (!is_dir($pastaDestino)) {
+        mkdir($pastaDestino, 0775, true);
+    }
+ 
+    // Extensão segura baseada no tipo MIME
+    $extensao = match ($tipo) {
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+    };
+ 
+    $nomeArquivo = 'produto-' . $id . '.' . $extensao;
+    $caminhoFinal = $pastaDestino . $nomeArquivo;
+ 
+    // Remove imagem anterior se existir (troca de extensão)
+    foreach (['jpg', 'png', 'webp'] as $ext) {
+        $antigo = $pastaDestino . 'produto-' . $id . '.' . $ext;
+        if (file_exists($antigo)) {
+            unlink($antigo);
+        }
+    }
+ 
+    $arquivo->moveTo($caminhoFinal);
+ 
+    // Salva o caminho público no banco
+    $urlPublica = '/uploads/produtos/' . $nomeArquivo;
+ 
+    try {
+        \App\Database\DB::connection()->update('product', [
+            'imagem_url'    => $urlPublica,
+            'atualizado_em' => date('Y-m-d H:i:s'),
+        ], ['id' => (int) $id]);
+ 
+        return $this->json($response, [
+            'status'     => true,
+            'msg'        => 'Imagem salva com sucesso!',
+            'imagem_url' => $urlPublica,
+        ], 200);
+    } catch (\Exception $e) {
+        return $this->json($response, ['status' => false, 'msg' => 'Erro ao salvar no banco: ' . $e->getMessage()], 500);
+    }
+}
+
 }

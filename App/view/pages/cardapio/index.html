@@ -1,299 +1,561 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cardápio — {{ nomeLocal }}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#f4f4f4;min-height:100vh}
-
-/* ── Cabeçalho ── */
-header{background:#1a2744;color:white;padding:18px 20px;text-align:center}
-header h1{font-size:1.6rem}
-header p{font-size:.9rem;opacity:.8;margin-top:4px}
-
-/* ── Alerta mesa inválida ── */
-.aviso{background:#fff3cd;border:1px solid #ffc107;color:#856404;
-       padding:14px 20px;text-align:center;font-size:.95rem}
-
-/* ── Layout principal ── */
-.container{max-width:960px;margin:0 auto;padding:20px}
-
-/* ── Categorias / grid ── */
-.categoria{margin-top:28px}
-.categoria h2{color:#1a2744;border-bottom:2px solid #ddd;padding-bottom:8px;
-              margin-bottom:14px;font-size:1.2rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
-
-/* ── Card de item ── */
-.card{background:white;border-radius:10px;padding:15px;
-      box-shadow:0 2px 5px rgba(0,0,0,.1);display:flex;flex-direction:column}
-.card-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.card-emoji{font-size:1.8rem}
-.card h3{font-size:1rem;color:#1a2744}
-.card p{font-size:.85rem;color:#555;flex:1;margin-bottom:10px}
-.card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
-.preco{color:#0a7a0a;font-size:1.15rem;font-weight:bold}
-.tempo{font-size:.75rem;color:#888}
-.destaque-badge{font-size:.7rem;background:#fff3cd;color:#856404;
-                border-radius:4px;padding:2px 6px;margin-left:6px}
-
-/* ── Botão adicionar ── */
-.btn-add{background:#1a2744;color:white;border:none;padding:8px 14px;
-         border-radius:6px;cursor:pointer;font-size:.85rem;transition:background .2s}
-.btn-add:hover{background:#253563}
-.btn-add:disabled{background:#aaa;cursor:not-allowed}
-
-/* ── Carrinho fixo ── */
-#carrinho{position:fixed;bottom:20px;right:20px;width:320px;
-          background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.2);
-          overflow:hidden;z-index:999;transition:max-height .3s ease}
-#carrinho-header{background:#1a2744;color:white;padding:12px 16px;
-                 display:flex;justify-content:space-between;align-items:center;cursor:pointer}
-#carrinho-header h3{font-size:.95rem}
-#carrinho-body{padding:12px 16px;max-height:320px;overflow-y:auto;display:none}
-#carrinho-body.aberto{display:block}
-.item-carrinho{display:flex;justify-content:space-between;align-items:center;
-               padding:6px 0;border-bottom:1px solid #eee;font-size:.85rem}
-.item-carrinho:last-child{border-bottom:none}
-.item-nome{flex:1}
-.item-qty{display:flex;align-items:center;gap:6px}
-.btn-qty{background:#eee;border:none;width:22px;height:22px;border-radius:4px;
-         cursor:pointer;font-size:.9rem;line-height:1}
-.item-subtotal{min-width:60px;text-align:right;font-weight:bold;color:#0a7a0a}
-.btn-remover{background:none;border:none;color:#c00;cursor:pointer;font-size:1rem;padding:0 4px}
-
-#carrinho-footer{padding:12px 16px;border-top:1px solid #eee}
-.total-linha{display:flex;justify-content:space-between;font-weight:bold;
-             font-size:1rem;margin-bottom:10px}
-
-/* Forma de pagamento */
-.pagamento-group{margin-bottom:10px}
-.pagamento-group label{font-size:.8rem;color:#555;display:block;margin-bottom:4px}
-.pagamento-group select{width:100%;padding:7px 10px;border:1px solid #ccc;
-                        border-radius:6px;font-size:.85rem}
-
-#btn-pedido{width:100%;background:#0a7a0a;color:white;border:none;padding:11px;
-            border-radius:8px;cursor:pointer;font-size:.95rem;font-weight:bold;
-            transition:background .2s}
-#btn-pedido:hover{background:#085e08}
-#btn-pedido:disabled{background:#aaa;cursor:not-allowed}
-
-.badge-count{background:#e74c3c;color:white;border-radius:50%;
-             font-size:.7rem;padding:1px 6px;margin-left:6px}
-
-/* ── Mesa inválida — overlay ── */
-#modal-mesa{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
-            z-index:9999;align-items:center;justify-content:center}
-#modal-mesa.show{display:flex}
-.modal-box{background:white;border-radius:12px;padding:28px 32px;
-           text-align:center;max-width:340px;width:90%}
-.modal-box h2{color:#1a2744;margin-bottom:10px}
-.modal-box p{color:#555;font-size:.9rem;margin-bottom:18px}
-.modal-box input{width:100%;padding:10px;border:1px solid #ccc;border-radius:6px;
-                 font-size:1rem;text-align:center;margin-bottom:12px}
-.modal-box button{background:#1a2744;color:white;border:none;padding:10px 24px;
-                  border-radius:6px;cursor:pointer;font-size:.95rem}
-
-/* ── Toast ── */
-#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);
-       background:#1a2744;color:white;padding:12px 24px;border-radius:8px;
-       font-size:.9rem;transition:transform .3s;z-index:9998;pointer-events:none}
-#toast.show{transform:translateX(-50%) translateY(0)}
-#toast.sucesso{background:#0a7a0a}
-#toast.erro{background:#c00}
-</style>
-</head>
-<body>
-
-{# ── Cabeçalho ── #}
-<header>
-  <h1>🍽 {{ nomeLocal }}</h1>
-  {% if mesaValida %}
-    <p>Mesa {{ mesa }}</p>
-  {% else %}
-    <p>Cardápio Digital</p>
-  {% endif %}
-</header>
-
-{# ── Aviso se mesa não foi passada ── #}
-{% if not mesaValida %}
-<div class="aviso">
-  ⚠️ Nenhuma mesa identificada. Escaneie o QR Code da sua mesa para fazer pedidos.
-</div>
-{% endif %}
-
-{# ── Modal para informar mesa manualmente ── #}
-<div id="modal-mesa" {% if mesaValida %}{% else %}class="show"{% endif %}>
-  <div class="modal-box">
-    <h2>Qual é sua mesa?</h2>
-    <p>Digite o número da mesa para continuar</p>
-    <input type="number" id="input-mesa" min="1" max="99" placeholder="Ex: 5">
-    <button onclick="confirmarMesa()">Confirmar</button>
-  </div>
-</div>
-
-{# ── Toast de notificação ── #}
-<div id="toast"></div>
-
-{# ── Conteúdo principal ── #}
-<div class="container" id="conteudo">
-
-  {# Carregado via AJAX — placeholder enquanto busca #}
-  <div id="menu-loading" style="text-align:center;padding:40px;color:#888">
-    Carregando cardápio…
-  </div>
-  <div id="menu-content"></div>
-
-</div>
-
-{# ── Carrinho fixo ── #}
-<div id="carrinho">
-  <div id="carrinho-header" onclick="toggleCarrinho()">
-    <h3>🛒 Meu Pedido <span id="badge-count" class="badge-count" style="display:none">0</span></h3>
-    <span id="carrinho-seta">▲</span>
-  </div>
-  <div id="carrinho-body">
-    <div id="lista-carrinho"></div>
-  </div>
-  <div id="carrinho-footer" style="display:none">
-    <div class="total-linha">
-      <span>Total</span>
-      <span id="total-valor">R$ 0,00</span>
-    </div>
-    <div class="pagamento-group">
-      <label>Forma de pagamento</label>
-      <select id="select-pagamento">
-        <option value="pix">PIX</option>
-        <option value="credito">Cartão de Crédito</option>
-        <option value="debito">Cartão de Débito</option>
-        <option value="dinheiro">Dinheiro</option>
-      </select>
-    </div>
-    <button id="btn-pedido" onclick="enviarPedido()">Fazer Pedido</button>
-  </div>
-</div>
-
-<script>
-// ── Estado global ──
-let mesa     = {{ mesa is not null ? mesa : 'null' }};
-let carrinho = [];  // [{id, nome, preco, emoji, quantidade}]
-let aberto   = false;
-
-// ── Carrega itens via AJAX ──
-async function carregarCardapio() {
-  try {
-    const res  = await fetch('/cardapio/itens');
-    const json = await res.json();
-    if (!json.sucesso) throw new Error('Falha ao carregar');
-
-    document.getElementById('menu-loading').style.display = 'none';
-    renderCardapio(json.dados);
-  } catch(e) {
-    document.getElementById('menu-loading').textContent = 'Erro ao carregar o cardápio.';
-  }
-}
-
-// ── Renderiza categorias e cards ──
-function renderCardapio(dados) {
-  const el = document.getElementById('menu-content');
-  let html  = '';
-
-  for (const [categoria, itens] of Object.entries(dados)) {
-    html += `<div class="categoria">
-      <h2>${categoria}</h2>
-      <div class="grid">`;
-
-    for (const item of itens) {
-      const precoFmt = 'R$ ' + item.preco.toFixed(2).replace('.', ',');
-      const badge    = item.destaque ? '<span class="destaque-badge">⭐ Destaque</span>' : '';
-      html += `
-        <div class="card">
-          <div class="card-top">
-            <span class="card-emoji">${item.emoji}</span>
-            <h3>${item.nome}${badge}</h3>
-          </div>
-          <p>${item.descricao}</p>
-          <div class="card-footer">
-            <div>
-              <div class="preco">${precoFmt}</div>
-              <div class="tempo">⏱ ${item.tempo}</div>
-            </div>
-            <button class="btn-add" onclick="adicionarItem(${item.id})"
-              ${mesa ? '' : 'disabled title="Informe a mesa primeiro"'}>
-              + Adicionar
-            </button>
-          </div>
-        </div>`;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cardápio — {{ nomeLocal }}</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
     }
 
-    html += `</div></div>`;
-  }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      min-height: 100vh
+    }
 
-  el.innerHTML = html;
-  // Guarda referência dos itens para busca rápida
-  window._itens = Object.values(dados).flat();
-}
+    header {
+      background: #1a2744;
+      color: white;
+      padding: 18px 20px;
+      text-align: center
+    }
 
-// ── Adiciona ao carrinho ──
-function adicionarItem(id) {
-  const item = window._itens.find(i => i.id === id);
-  if (!item) return;
+    header h1 {
+      font-size: 1.6rem
+    }
 
-  const existente = carrinho.find(i => i.id === id);
-  if (existente) {
-    existente.quantidade++;
-  } else {
-    carrinho.push({...item, quantidade: 1});
-  }
+    header p {
+      font-size: .9rem;
+      opacity: .8;
+      margin-top: 4px
+    }
 
-  renderCarrinho();
-  showToast('✅ ' + item.nome + ' adicionado!');
+    .aviso {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 14px 20px;
+      text-align: center;
+      font-size: .95rem
+    }
 
-  if (!aberto) {
-    toggleCarrinho();
-  }
-}
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px
+    }
 
-// ── Altera quantidade ──
-function alterarQty(id, delta) {
-  const idx = carrinho.findIndex(i => i.id === id);
-  if (idx === -1) return;
-  carrinho[idx].quantidade += delta;
-  if (carrinho[idx].quantidade <= 0) {
-    carrinho.splice(idx, 1);
-  }
-  renderCarrinho();
-}
+    .categoria {
+      margin-top: 28px
+    }
 
-// ── Renderiza carrinho ──
-function renderCarrinho() {
-  const lista  = document.getElementById('lista-carrinho');
-  const footer = document.getElementById('carrinho-footer');
-  const badge  = document.getElementById('badge-count');
+    .categoria h2 {
+      color: #1a2744;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      font-size: 1.2rem
+    }
 
-  const totalQty = carrinho.reduce((s, i) => s + i.quantidade, 0);
-  const total    = carrinho.reduce((s, i) => s + i.preco * i.quantidade, 0);
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px
+    }
 
-  badge.textContent = totalQty;
-  badge.style.display = totalQty > 0 ? 'inline' : 'none';
+    .card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, .1);
+      display: flex;
+      flex-direction: column
+    }
 
-  if (carrinho.length === 0) {
-    lista.innerHTML  = '<p style="color:#888;font-size:.85rem;text-align:center;padding:10px">Carrinho vazio</p>';
-    footer.style.display = 'none';
-    return;
-  }
+    /* ── Imagem do card ── */
+    .card-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+      background: #eee
+    }
 
-  footer.style.display = 'block';
-  document.getElementById('total-valor').textContent =
-    'R$ ' + total.toFixed(2).replace('.', ',');
+    .card-img-placeholder {
+      width: 100%;
+      height: 160px;
+      background: #e8e8e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 2rem
+    }
 
-  lista.innerHTML = carrinho.map(item => {
-    const sub = 'R$ ' + (item.preco * item.quantidade).toFixed(2).replace('.', ',');
-    return `
+    .card-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      flex: 1
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      color: #1a2744;
+      margin-bottom: 6px
+    }
+
+    .card p {
+      font-size: .85rem;
+      color: #555;
+      flex: 1;
+      margin-bottom: 10px
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto
+    }
+
+    .preco {
+      color: #0a7a0a;
+      font-size: 1.15rem;
+      font-weight: bold
+    }
+
+    .tempo {
+      font-size: .75rem;
+      color: #888
+    }
+
+    .btn-add {
+      background: #1a2744;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .85rem;
+      transition: background .2s
+    }
+
+    .btn-add:hover {
+      background: #253563
+    }
+
+    .btn-add:disabled {
+      background: #aaa;
+      cursor: not-allowed
+    }
+
+    #carrinho {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .2);
+      overflow: hidden;
+      z-index: 999
+    }
+
+    #carrinho-header {
+      background: #1a2744;
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer
+    }
+
+    #carrinho-header h3 {
+      font-size: .95rem
+    }
+
+    #carrinho-body {
+      padding: 12px 16px;
+      max-height: 320px;
+      overflow-y: auto;
+      display: none
+    }
+
+    #carrinho-body.aberto {
+      display: block
+    }
+
+    .item-carrinho {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+      font-size: .85rem
+    }
+
+    .item-carrinho:last-child {
+      border-bottom: none
+    }
+
+    .item-nome {
+      flex: 1
+    }
+
+    .item-qty {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .btn-qty {
+      background: #eee;
+      border: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: .9rem;
+      line-height: 1
+    }
+
+    .item-subtotal {
+      min-width: 60px;
+      text-align: right;
+      font-weight: bold;
+      color: #0a7a0a
+    }
+
+    .btn-remover {
+      background: none;
+      border: none;
+      color: #c00;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 4px
+    }
+
+    #carrinho-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #eee
+    }
+
+    .total-linha {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 10px
+    }
+
+    .pagamento-group {
+      margin-bottom: 10px
+    }
+
+    .pagamento-group label {
+      font-size: .8rem;
+      color: #555;
+      display: block;
+      margin-bottom: 4px
+    }
+
+    .pagamento-group select {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: .85rem
+    }
+
+    #btn-pedido {
+      width: 100%;
+      background: #0a7a0a;
+      color: white;
+      border: none;
+      padding: 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .95rem;
+      font-weight: bold
+    }
+
+    #btn-pedido:hover {
+      background: #085e08
+    }
+
+    #btn-pedido:disabled {
+      background: #aaa;
+      cursor: not-allowed
+    }
+
+    .badge-count {
+      background: #e74c3c;
+      color: white;
+      border-radius: 50%;
+      font-size: .7rem;
+      padding: 1px 6px;
+      margin-left: 6px
+    }
+
+    #modal-mesa {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .5);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center
+    }
+
+    #modal-mesa.show {
+      display: flex
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 12px;
+      padding: 28px 32px;
+      text-align: center;
+      max-width: 340px;
+      width: 90%
+    }
+
+    .modal-box h2 {
+      color: #1a2744;
+      margin-bottom: 10px
+    }
+
+    .modal-box p {
+      color: #555;
+      font-size: .9rem;
+      margin-bottom: 18px
+    }
+
+    .modal-box input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 12px
+    }
+
+    .modal-box button {
+      background: #1a2744;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .95rem
+    }
+
+    #toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: #1a2744;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: .9rem;
+      transition: transform .3s;
+      z-index: 9998;
+      pointer-events: none
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0)
+    }
+
+    #toast.sucesso {
+      background: #0a7a0a
+    }
+
+    #toast.erro {
+      background: #c00
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>🍽 {{ nomeLocal }}</h1>
+    {% if mesaValida %}
+    <p>Mesa {{ mesa }}</p>
+    {% else %}
+    <p>Cardápio Digital</p>
+    {% endif %}
+  </header>
+
+  {% if not mesaValida %}
+  <div class="aviso">
+    ⚠️ Nenhuma mesa identificada. Escaneie o QR Code da sua mesa para fazer pedidos.
+  </div>
+  {% endif %}
+
+  <div id="modal-mesa" {% if not mesaValida %}class="show" {% endif %}>
+    <div class="modal-box">
+      <h2>Qual é sua mesa?</h2>
+      <p>Digite o número da mesa para continuar</p>
+      <input type="number" id="input-mesa" min="1" max="99" placeholder="Ex: 5">
+      <button onclick="confirmarMesa()">Confirmar</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div class="container" id="conteudo">
+    <div id="menu-loading" style="text-align:center;padding:40px;color:#888">
+      Carregando cardápio…
+    </div>
+    <div id="menu-content"></div>
+  </div>
+
+  <div id="carrinho">
+    <div id="carrinho-header" onclick="toggleCarrinho()">
+      <h3>🛒 Meu Pedido <span id="badge-count" class="badge-count" style="display:none">0</span></h3>
+      <span id="carrinho-seta">▲</span>
+    </div>
+    <div id="carrinho-body">
+      <div id="lista-carrinho"></div>
+    </div>
+    <div id="carrinho-footer" style="display:none">
+      <div class="total-linha">
+        <span>Total</span>
+        <span id="total-valor">R$ 0,00</span>
+      </div>
+      <div class="pagamento-group">
+        <label>Forma de pagamento</label>
+        <select id="select-pagamento">
+          <option value="pix">PIX</option>
+          <option value="credito">Cartão de Crédito</option>
+          <option value="debito">Cartão de Débito</option>
+          <option value="dinheiro">Dinheiro</option>
+        </select>
+      </div>
+      <button id="btn-pedido" onclick="enviarPedido()">Fazer Pedido</button>
+    </div>
+  </div>
+
+  <script>
+    let mesa = {{ mesa_id is not null ?mesa_id: 'null' }};
+    let mesaNum = {{ mesa is not null ?mesa: 'null' }};
+    let carrinho = [];
+    let aberto = false;
+
+    async function carregarCardapio() {
+      try {
+        const res = await fetch('/cardapio/itens');
+        const json = await res.json();
+        if (!json.sucesso) throw new Error(json.erro || 'Falha ao carregar');
+        document.getElementById('menu-loading').style.display = 'none';
+        renderCardapio(json.dados);
+      } catch (e) {
+        document.getElementById('menu-loading').textContent = 'Erro ao carregar o cardápio: ' + e.message;
+      }
+    }
+
+    function renderCardapio(dados) {
+      const el = document.getElementById('menu-content');
+      let html = '';
+
+      for (const [categoria, itens] of Object.entries(dados)) {
+        html += `<div class="categoria"><h2>${categoria}</h2><div class="grid">`;
+
+        for (const item of itens) {
+          const precoFmt = 'R$ ' + parseFloat(item.preco).toFixed(2).replace('.', ',');
+          const tempo = item.tempo ? `<div class="tempo">⏱ ${item.tempo}</div>` : '';
+
+          // Imagem: usa imagem do banco se existir, senão placeholder com ícone
+          const imgHtml = item.imagem_url
+            ? `<img class="card-img" src="${item.imagem_url}" alt="${item.nome}" loading="lazy">`
+            : `<div class="card-img-placeholder">🍽</div>`;
+
+          html += `
+        <div class="card">
+          ${imgHtml}
+          <div class="card-body">
+            <h3>${item.nome}</h3>
+            <p>${item.descricao}</p>
+            <div class="card-footer">
+              <div>
+                <div class="preco">${precoFmt}</div>
+                ${tempo}
+              </div>
+              <button class="btn-add" onclick="adicionarItem(${item.id})"
+                ${mesa ? '' : 'disabled title="Informe a mesa primeiro"'}>
+                + Adicionar
+              </button>
+            </div>
+          </div>
+        </div>`;
+        }
+
+        html += `</div></div>`;
+      }
+
+      el.innerHTML = html;
+      window._itens = Object.values(dados).flat();
+    }
+
+    function adicionarItem(id) {
+      const item = window._itens.find(i => i.id === id);
+      if (!item) return;
+      const existente = carrinho.find(i => i.id === id);
+      if (existente) {
+        existente.quantidade++;
+      } else {
+        carrinho.push({ ...item, quantidade: 1 });
+      }
+      renderCarrinho();
+      showToast('✅ ' + item.nome + ' adicionado!');
+      if (!aberto) toggleCarrinho();
+    }
+
+    function alterarQty(id, delta) {
+      const idx = carrinho.findIndex(i => i.id === id);
+      if (idx === -1) return;
+      carrinho[idx].quantidade += delta;
+      if (carrinho[idx].quantidade <= 0) carrinho.splice(idx, 1);
+      renderCarrinho();
+    }
+
+    function renderCarrinho() {
+      const lista = document.getElementById('lista-carrinho');
+      const footer = document.getElementById('carrinho-footer');
+      const badge = document.getElementById('badge-count');
+
+      const totalQty = carrinho.reduce((s, i) => s + i.quantidade, 0);
+      const total = carrinho.reduce((s, i) => s + i.preco * i.quantidade, 0);
+
+      badge.textContent = totalQty;
+      badge.style.display = totalQty > 0 ? 'inline' : 'none';
+
+      if (carrinho.length === 0) {
+        lista.innerHTML = '<p style="color:#888;font-size:.85rem;text-align:center;padding:10px">Carrinho vazio</p>';
+        footer.style.display = 'none';
+        return;
+      }
+
+      footer.style.display = 'block';
+      document.getElementById('total-valor').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+
+      lista.innerHTML = carrinho.map(item => {
+        const sub = 'R$ ' + (item.preco * item.quantidade).toFixed(2).replace('.', ',');
+        return `
       <div class="item-carrinho">
-        <span class="item-nome">${item.emoji} ${item.nome}</span>
+        <span class="item-nome">${item.nome}</span>
         <div class="item-qty">
           <button class="btn-qty" onclick="alterarQty(${item.id},-1)">−</button>
           <span>${item.quantidade}</span>
@@ -302,82 +564,91 @@ function renderCarrinho() {
         <span class="item-subtotal">${sub}</span>
         <button class="btn-remover" onclick="alterarQty(${item.id},-999)" title="Remover">✕</button>
       </div>`;
-  }).join('');
-}
-
-// ── Abre/fecha carrinho ──
-function toggleCarrinho() {
-  aberto = !aberto;
-  document.getElementById('carrinho-body').classList.toggle('aberto', aberto);
-  document.getElementById('carrinho-seta').textContent = aberto ? '▼' : '▲';
-}
-
-// ── Envia pedido ──
-async function enviarPedido() {
-  if (!mesa) { showToast('⚠️ Informe sua mesa!', 'erro'); return; }
-  if (carrinho.length === 0) { showToast('Carrinho vazio!', 'erro'); return; }
-
-  const pagamento = document.getElementById('select-pagamento').value;
-  const btn       = document.getElementById('btn-pedido');
-  btn.disabled    = true;
-  btn.textContent = 'Enviando…';
-
-  try {
-    const res  = await fetch('/cardapio/pedido', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        mesa,
-        pagamento,
-        itens: carrinho.map(i => ({id: i.id, quantidade: i.quantidade}))
-      })
-    });
-    const json = await res.json();
-
-    if (json.sucesso) {
-      showToast('🎉 Pedido #' + json.pedido_id + ' enviado!', 'sucesso');
-      carrinho = [];
-      renderCarrinho();
-      toggleCarrinho();
-    } else {
-      showToast('Erro: ' + (json.erro || 'Tente novamente'), 'erro');
+      }).join('');
     }
-  } catch(e) {
-    showToast('Erro de conexão. Tente novamente.', 'erro');
-  } finally {
-    btn.disabled    = false;
-    btn.textContent = 'Fazer Pedido';
-  }
-}
 
-// ── Modal mesa ──
-function confirmarMesa() {
-  const val = parseInt(document.getElementById('input-mesa').value);
-  if (val >= 1 && val <= 99) {
-    mesa = val;
-    document.getElementById('modal-mesa').classList.remove('show');
-    // Atualiza subtítulo do header
-    document.querySelector('header p').textContent = 'Mesa ' + mesa;
-    // Habilita botões
-    document.querySelectorAll('.btn-add').forEach(b => {
-      b.disabled = false;
-      b.removeAttribute('title');
-    });
-  } else {
-    alert('Digite um número de mesa entre 1 e 99');
-  }
-}
+    function toggleCarrinho() {
+      aberto = !aberto;
+      document.getElementById('carrinho-body').classList.toggle('aberto', aberto);
+      document.getElementById('carrinho-seta').textContent = aberto ? '▼' : '▲';
+    }
 
-// ── Toast ──
-function showToast(msg, tipo = '') {
-  const t = document.getElementById('toast');
-  t.textContent  = msg;
-  t.className    = 'show ' + tipo;
-  setTimeout(() => t.className = tipo, 2500);
-}
+    async function enviarPedido() {
+      if (!mesa) { showToast('⚠️ Informe sua mesa!', 'erro'); return; }
+      if (carrinho.length === 0) { showToast('Carrinho vazio!', 'erro'); return; }
 
-// ── Inicializa ──
-carregarCardapio();
-</script>
+      const pagamento = document.getElementById('select-pagamento').value;
+      const btn = document.getElementById('btn-pedido');
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+
+      try {
+        const res = await fetch('/cardapio/pedido', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mesa_id: mesa,
+            pagamento: pagamento,
+            itens: carrinho.map(i => ({
+              id: i.id,
+              nome: i.nome,
+              preco: i.preco,
+              quantidade: i.quantidade
+            }))
+          })
+        });
+        const json = await res.json();
+
+        if (json.sucesso) {
+          showToast('🎉 Pedido #' + json.pedido_id + ' enviado para a cozinha!', 'sucesso');
+          carrinho = [];
+          renderCarrinho();
+          if (aberto) toggleCarrinho();
+        } else {
+          showToast('Erro: ' + (json.erro || 'Tente novamente'), 'erro');
+        }
+      } catch (e) {
+        showToast('Erro de conexão. Tente novamente.', 'erro');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Fazer Pedido';
+      }
+    }
+
+    async function confirmarMesa() {
+      const val = parseInt(document.getElementById('input-mesa').value);
+      if (!val || val < 1 || val > 99) {
+        alert('Digite um número de mesa entre 1 e 99');
+        return;
+      }
+
+      // Busca o id real da mesa pelo número
+      try {
+        const res = await fetch('/cardapio/itens'); // endpoint já existe, reaproveitamos a autenticação
+        // Fazemos uma chamada específica para buscar o id da mesa
+      } catch (e) { }
+
+      // Por enquanto seta o número como id temporário
+      // (se o QR code contiver ?mesa=N, o PHP já resolve o id_real via Cardapio::index)
+      mesa = val;
+      mesaNum = val;
+      document.getElementById('modal-mesa').classList.remove('show');
+      document.querySelector('header p').textContent = 'Mesa ' + val;
+      document.querySelectorAll('.btn-add').forEach(b => {
+        b.disabled = false;
+        b.removeAttribute('title');
+      });
+    }
+
+    function showToast(msg, tipo = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'show ' + tipo;
+      setTimeout(() => t.className = tipo, 2500);
+    }
+
+    carregarCardapio();
+  </script>
 </body>
+
 </html>

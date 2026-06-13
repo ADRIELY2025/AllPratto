@@ -45,9 +45,9 @@
                     <div class="col-4">
                         <div class="form-floating">
                             <input type="text" class="form-control"
-                                id="codigoBarra" name="codigoBarra" placeholder="x"
+                                id="codigo_barra" name="codigo_barra" placeholder="x"
                                 value="{{ product.codigo_barra }}">
-                            <label for="codigoBarra">Código de barras</label>
+                            <label for="codigo_barra">Código de barras</label>
                         </div>
                     </div>
                     <div class="col-4">
@@ -69,11 +69,53 @@
                     <div class="col-4">
                         <div class="form-floating">
                             <input type="text" class="form-control"
-                                id="tempoPreparo" name="tempoPreparo" placeholder="x"
+                                id="tempo_preparo" name="tempo_preparo" placeholder="x"
                                 value="{{ product.tempo_preparo }}">
-                            <label for="tempoPreparo">Tempo de preparo</label>
+                            <label for="tempo_preparo">Tempo de preparo</label>
                         </div>
                     </div>
+
+                    {#
+  Bloco de imagem para adicionar no Product.html
+  Cole logo após o bloco de "Identificação" (após o campo tempo_preparo e o checkbox ativo),
+  antes do bloco de "Precificação".
+#}
+
+{# ── Imagem do produto ── #}
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <hr class="my-0">
+        <p class="text-muted small mb-2 mt-2 text-uppercase fw-semibold">
+            <i class="fa-solid fa-image me-1"></i>Imagem do produto
+        </p>
+    </div>
+
+    <div class="col-lg-4 col-md-6">
+
+        {# Preview — mostra imagem atual ou um placeholder #}
+        <div class="mb-2">
+            <img id="preview-imagem"
+                src="{{ product.imagem_url ? product.imagem_url ~ '?v=' ~ 'now'|date('U') : '/img/sem-imagem.png' }}"
+                alt="Imagem do produto"
+                class="img-thumbnail"
+                style="width: 180px; height: 180px; object-fit: cover;">
+        </div>
+
+        {# Input de arquivo — só aparece depois que o produto está salvo #}
+        {% if action == 'e' %}
+            <input type="file" class="form-control form-control-sm"
+                id="inputImagem" name="imagem"
+                accept="image/jpeg,image/png,image/webp">
+            <div class="form-text">JPG, PNG ou WEBP. Máx. 2 MB.</div>
+            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn-upload-imagem">
+                <i class="fa-solid fa-upload me-1"></i> Enviar imagem
+            </button>
+        {% else %}
+            <p class="text-muted small">Salve o produto primeiro para poder enviar uma imagem.</p>
+        {% endif %}
+
+    </div>
+</div>
                     <div class="col-12 d-flex align-items-center">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" role="switch"
@@ -90,41 +132,41 @@
                     <div class="col-3">
                         <div class="form-floating">
                             <input type="text" class="form-control"
-                                id="precoCompra" name="precoCompra" placeholder="x"
+                                id="preco_compra" name="preco_compra" placeholder="x"
                                 value="{{ product.preco_compra ?? '' }}">
-                            <label for="precoCompra">Preço de compra</label>
+                            <label for="preco_compra">Preço de compra</label>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="form-floating">
                             <input type="text" class="form-control"
-                                id="totalImposto" name="totalImposto" placeholder="x"
+                                id="total_imposto" name="total_imposto" placeholder="x"
                                 value="{{ product.total_imposto ?? '' }}">
-                            <label for="totalImposto">Total de imposto (%)</label>
+                            <label for="total_imposto">Total de imposto (%)</label>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="form-floating">
                             <input type="text" class="form-control"
-                                id="custoOperacional" name="custoOperacional" placeholder="x"
+                                id="custo_operacional" name="custo_operacional" placeholder="x"
                                 value="{{ product.custo_operacional ?? '' }}">
-                            <label for="custoOperacional">Custo operacional (%)</label>
+                            <label for="custo_operacional">Custo operacional (%)</label>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="form-floating">
                             <input type="text" class="form-control"
-                                id="margemLucro" name="margemLucro" placeholder="x"
+                                id="margem_lucro" name="margem_lucro" placeholder="x"
                                 value="{{ product.margem_lucro ?? '' }}">
-                            <label for="margemLucro">Margem de lucro (%)</label>
+                            <label for="margem_lucro">Margem de lucro (%)</label>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="form-floating">
                             <input type="text" class="form-control"
-                                id="precoVenda" name="precoVenda" placeholder="x"
+                                id="preco_venda" name="preco_venda" placeholder="x"
                                 value="{{ product.preco_venda ?? '' }}" required>
-                            <label for="precoVenda">Preço de venda</label>
+                            <label for="preco_venda">Preço de venda</label>
                         </div>
                     </div>
                 </div>
