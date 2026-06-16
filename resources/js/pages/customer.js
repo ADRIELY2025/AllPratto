@@ -1,12 +1,11 @@
-import FindCompany from "../components/find-company.js";
 import Requests from "../components/requests.js";
 import Validate from "../components/validate.js";
 
 const Action = document.getElementById('action');
 const Id = document.getElementById('id');
-const Cnpj = document.getElementById('numeroDocumento');
+const Cnpj = document.getElementById('cpfcnpj');
 const Insert = document.getElementById('insert');
-Inputmask({ mask: ['999.999.999-99', '99.999.999/9999-99'], keepStatic: true }).mask("#numeroDocumento");
+Inputmask({ mask: ['999.999.999-99', '99.999.999/9999-99'], keepStatic: true }).mask("#cpfcnpj");
 Inputmask({ mask: ['99/99/9999'] }).mask("#dataRegistro");
 $('#dataRegistro').flatpickr({
     enableTime: false,
@@ -84,7 +83,7 @@ Cnpj.addEventListener('blur', async () => {
     if (Cnpj.value.trim() === '' || Cnpj.value.replace(/\D/g, '').length < 14) {
         return;
     }
-    const findCompany = new FindCompany({ cnpjField: 'numeroDocumento', cnaeValue: 'cnae', cnaeSearch: 'codigoAtividadeEconomica' })
+    const findCompany = new FindCompany({ cnpjField: 'cpfcnpj', cnaeValue: 'cnae', cnaeSearch: 'codigoAtividadeEconomica' })
     await findCompany.FindCompanyData();
 });
 

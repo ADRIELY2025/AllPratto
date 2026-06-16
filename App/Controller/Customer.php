@@ -45,10 +45,10 @@ final class Customer extends Base
         $form = $request->getParsedBody();
 
         $data = [
-            'nome_fantasia'      => $form['nomeExibicao']      ?? '',
-            'sobrenome_razao'    => $form['nomeLegal']          ?? '',
-            'cpf_cnpj'           => preg_replace('/\D/', '', $form['numeroDocumento'] ?? ''),
-            'rg_ie'              => $form['registroSecundario'] ?? '',
+            'nome_fantasia'      => $form['nome']      ?? '',
+            'sobrenome_razao'    => $form['sobrenomeRazao']          ?? '',
+            'cpf_cnpj'           => preg_replace('/\D/', '', $form['cpfcnpj'] ?? ''),
+            'rg_ie'              => $form['rgie'] ?? '',
             'nascimento_fundacao'=> $this->convertBrDateToDatabaseFormat($form['dataRegistro'] ?? ''),
             'ativo'              => (($form['ativo'] ?? 'false') === 'true') ? true : false,
         ];
@@ -78,10 +78,10 @@ final class Customer extends Base
         }
 
         $data = [
-            'nome_fantasia'      => $form['nomeExibicao']      ?? null,
-            'sobrenome_razao'    => $form['nomeLegal']          ?? null,
-            'cpf_cnpj'           => preg_replace('/\D/', '', $form['numeroDocumento'] ?? ''),
-            'rg_ie'              => $form['registroSecundario'] ?? null,
+            'nome_fantasia'      => $form['nome']      ?? null,
+            'sobrenome_razao'    => $form['sobrenomeRazao']          ?? null,
+            'cpf_cnpj'           => preg_replace('/\D/', '', $form['cpfcnpj'] ?? ''),
+            'rg_ie'              => $form['rgie'] ?? null,
             'nascimento_fundacao'=> $this->convertBrDateToDatabaseFormat($form['dataRegistro'] ?? ''),
             'ativo'              => (($form['ativo'] ?? 'false') === 'true') ? true : false,
             'atualizado_em'      => date('Y-m-d H:i:s'),
