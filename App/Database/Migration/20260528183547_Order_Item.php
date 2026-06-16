@@ -20,7 +20,6 @@ final class Version20260528183547 extends AbstractMigration
             CREATE TABLE order_item (
                 id         BIGSERIAL      PRIMARY KEY,
                 order_id   BIGINT         NOT NULL REFERENCES "order"(id) ON DELETE CASCADE,
-                product_id BIGINT         NULL     REFERENCES product(id) ON DELETE SET NULL,
                 nome       VARCHAR(255)   NOT NULL,
                 preco      NUMERIC(15,2)  NOT NULL,
                 quantidade INTEGER        NOT NULL DEFAULT 1,

@@ -12,6 +12,8 @@ use App\Controller\Supplier;
 use App\Controller\Company;
 use App\Controller\Product;
 use App\Controller\PaymentTerms;
+use App\Controller\Sale;
+use App\Controller\ItemSale;
 
 $app->post('/',     App\controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home', App\controller\Home::class . ':home')->add(Middleware::web());
@@ -127,4 +129,26 @@ $app->group('/payment', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/update',        PaymentTerms::class . ':update')->add(Middleware::api());
     $group->post('/delete',        PaymentTerms::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   PaymentTerms::class . ':listingdata')->add(Middleware::api());
+});
+
+$app->group('/sale', function (\Slim\Routing\RouteCollectorProxy $group) {
+    // ── Páginas HTML ──────────────────────────
+    $group->get('/lista',          Sale::class . ':list')   ->add(Middleware::web());
+    $group->get('/detalhes/{id}',  Sale::class . ':details')->add(Middleware::web());
+    $group->get('/detalhes',       Sale::class . ':details')->add(Middleware::web());
+    // ── CRUD Venda ────────────────────────────
+    $group->post('/insert',        Sale::class . ':insert')     ->add(Middleware::api());
+    $group->post('/update',        Sale::class . ':update')     ->add(Middleware::api());
+    $group->post('/delete',        Sale::class . ':delete')     ->add(Middleware::api());
+    $group->post('/listingdata',   Sale::class . ':listingdata')->add(Middleware::api());
+    // ── Buscas auxiliares (ajax / Select2) ───
+    $group->post('/find-customer',      Sale::class . ':findCustomer')   ->add(Middleware::api());
+    $group->post('/find-product',       Sale::class . ':findProduct')    ->add(Middleware::api());
+    $group->get('/find-product/{id}',   Sale::class . ':findProductById')->add(Middleware::api());
+    $group->get('/payment-terms',       Sale::class . ':findPaymentTerms')->add(Middleware::api());
+    $group->get('/installments/{id}',   Sale::class . ':findInstallments')->add(Middleware::api());
+    // ── CRUD Item da Venda ────────────────────
+    $group->post('/item/insert',        ItemSale::class . ':insert')     ->add(Middleware::api());
+    $group->post('/item/delete',        ItemSale::class . ':delete')     ->add(Middleware::api());
+    $group->get('/{id}/itens',          ItemSale::class . ':findBySale') ->add(Middleware::api());
 });

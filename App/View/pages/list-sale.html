@@ -1,0 +1,48 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Lista de vendas</li>
+</ol>
+{% endblock %}
+
+{% block main %}
+<div class="col-12">
+    <div class="card">
+        <div class="card-header">
+            <a href="/sale/detalhes" class="btn btn-outline-success">
+                <i class="fa-solid fa-plus"></i>
+                Nova Venda
+            </a>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped table-hover" id="table-sale">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Cliente</th>
+                        <th>Total Bruto</th>
+                        <th>Total Líquido</th>
+                        <th>Desconto</th>
+                        <th>Acréscimo</th>
+                        <th>Observação</th>
+                        <th>Status</th>
+                        <th>Criado em</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<form id="form">
+    <input type="hidden" name="id" id="id">
+</form>
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/list-sale.js') }}
+{% endblock %}
