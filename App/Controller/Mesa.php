@@ -8,11 +8,9 @@ use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Label\Label;
-use Endroid\QrCode\Logo\Logo;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
-use Endroid\QrCode\Writer\ValidationException;
+
 
 final class Mesa extends Base
 {
@@ -90,7 +88,7 @@ final class Mesa extends Base
             }
 
             // URL que será aberta pelo QRCode
-            $qrUrl = HOST . '/cardapio/mesa/' . $id;
+            $qrUrl = PROTOCOL . '://' . HOST . '/cardapio/mesa/' . $id;
 
             $qrDir = ROOT . '/storage/qrcode/' . $id;
 
@@ -104,7 +102,7 @@ final class Mesa extends Base
 
             // Create QR code
             $qrCode = new QrCode(
-                data: 'Life is too short to be generating QR codes',
+                data: $qrUrl,
                 encoding: new Encoding('UTF-8'),
                 errorCorrectionLevel: ErrorCorrectionLevel::Low,
                 size: 300,
@@ -114,23 +112,10 @@ final class Mesa extends Base
                 backgroundColor: new Color(255, 255, 255)
             );
 
-            // Create generic logo
-            $logo = new Logo(
-                path: $fileName,
-                resizeToWidth: 50,
-                punchoutBackground: true
-            );
-
-            // Create generic label
-            $label = new Label(
-                text: 'Label',
-                textColor: new Color(255, 0, 0)
-            );
-
             $result = $writer->write($qrCode);
 
             // Validate the result
-            $writer->validateResult($result, 'Life is too short to be generating QR codes');
+            $writer->validateResult($result, $qrUrl);
 
             $result->saveToFile($qrDir . '/' . $fileName);
 

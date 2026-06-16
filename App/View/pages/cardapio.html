@@ -1,0 +1,81 @@
+{% block main %}
+<body data-mesa-id="{{ mesa_id }}">
+
+    {% if not mesaValida %}
+    <div class="alert alert-warning">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+        Nenhuma mesa identificada. Use o QR Code da sua mesa.
+    </div>
+    {% endif %}
+
+    <!-- HEADER DA MESA -->
+    <div class="top-bar">
+        <div class="nome-local">
+            <i class="fa-solid fa-utensils me-2"></i>{{ nomeLocal }}
+        </div>
+        {% if mesaValida %}
+            <div class="badge-mesa">
+                <i class="fa-solid fa-chair"></i> Mesa {{ mesa }}
+            </div>
+        {% else %}
+            <div class="badge-mesa" style="background:#dc3545;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Mesa inválida
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- CATEGORIAS (JS preenche) -->
+    <div class="categorias-bar" id="categorias-bar"></div>
+
+    <!-- PRODUTOS (JS preenche) -->
+    <div class="produtos-grid" id="lista-produtos"></div>
+
+    <!-- BOTÃO FLUTUANTE -->
+    <button id="btn-carrinho" class="oculto">
+        <i class="fa-solid fa-basket-shopping"></i>
+        Ver pedido
+        <span class="badge-qty" id="qty-total">0</span>
+    </button>
+
+    <!-- TOAST -->
+    <div id="toast-add">
+        <i class="fa-solid fa-check me-1"></i> Adicionado ao pedido!
+    </div>
+
+    <!-- MODAL CARRINHO -->
+    <div class="modal fade" id="modalCarrinho" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-basket-shopping me-2"></i>Seu Pedido
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="itens-carrinho"></div>
+                    <div class="total-row">
+                        <span>Total</span>
+                        <span class="total-val" id="valor-total">R$ 0,00</span>
+                    </div>
+                    <select class="select-pgto" id="forma-pagamento">
+                        <option value=""> Forma de pagamento</option>
+                        <option value="pix">PIX</option>
+                        <option value="credito">Cartão de Crédito</option>
+                        <option value="debito">Cartão de Débito</option>
+                        <option value="dinheiro">Dinheiro</option>
+                    </select>
+                    <button class="btn-finalizar" id="btn-finalizar">
+                        <i class="fa-solid fa-paper-plane"></i> Fazer Pedido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+{% endblock %}
+
+{% block script %}
+    {{ vite('resources/js/pages/cardapio.js') }}
+{% endblock %}

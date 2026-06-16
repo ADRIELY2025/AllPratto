@@ -36,10 +36,11 @@ $app->group('/authentication', function (\Slim\Routing\RouteCollectorProxy $grou
 // ══════════════════════════════════════════════
 //  Cardápio Digital (público — sem middleware)
 // ══════════════════════════════════════════════
-$app->get('/cardapio',        Cardapio::class . ':index');
-$app->get('/cardapio/mesa/{id}',        Cardapio::class . ':index');
-$app->get('/cardapio/itens',  Cardapio::class . ':getItens');
-$app->post('/cardapio/pedido', Cardapio::class . ':salvarPedido');
+$app->group('/cardapio', function (\Slim\Routing\RouteCollectorProxy $group) {
+    $group->get('/mesa/{id}', Cardapio::class . ':index');
+    $group->get('/itens',     Cardapio::class . ':getItens');
+    $group->post('/pedido',   Cardapio::class . ':salvarPedido');
+});
 
 // ══════════════════════════════════════════════
 //  Clientes

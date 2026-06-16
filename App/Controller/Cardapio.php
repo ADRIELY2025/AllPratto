@@ -6,38 +6,36 @@ namespace App\Controller;
 
 final class Cardapio extends Base
 {
-    // GET /cardapio?mesa=N
-    public function index($request, $response)
-    {
-        $params     = $request->getQueryParams();
-        $mesaNum    = isset($params['mesa']) ? (int) $params['mesa'] : null;
-        $mesaValida = false;
-        $mesaId     = null;
+    public function index($request, $response, $args)
+{
+    // Pega o id direto da rota /cardapio/mesa/{id}
+    $mesaNum    = isset($args['id']) ? (int) $args['id'] : null;
+    $mesaValida = false;
+    $mesaId     = null;
 
-        if ($mesaNum !== null && $mesaNum >= 1) {
-            // Busca a mesa pelo número para obter o id real
-            $qb   = \App\Database\DB::select('id, numero, status')->from('mesa');
-            $mesa = $qb
-                ->where('numero = ' . $qb->createPositionalParameter($mesaNum, \Doctrine\DBAL\ParameterType::INTEGER))
-                ->andWhere('ativo = true')
-                ->fetchAssociative();
+    if ($mesaNum !== null && $mesaNum >= 1) {
+        $qb   = \App\Database\DB::select('id, numero, status')->from('mesa');
+        $mesa = $qb
+            ->where('numero = ' . $qb->createPositionalParameter($mesaNum, \Doctrine\DBAL\ParameterType::INTEGER))
+            ->andWhere('ativo = true')
+            ->fetchAssociative();
 
-            if ($mesa && $mesa['status'] !== 'inativa') {
-                $mesaValida = true;
-                $mesaId     = (int) $mesa['id'];
-            }
+        if ($mesa && $mesa['status'] !== 'inativa') {
+            $mesaValida = true;
+            $mesaId     = (int) $mesa['id'];
         }
-
-        return $this->getTwig()
-            ->render($response, $this->setView('cardapio/index'), [
-                'mesa'       => $mesaValida ? $mesaNum : null,
-                'mesa_id'    => $mesaId,
-                'mesaValida' => $mesaValida,
-                'nomeLocal'  => 'AllPratto',
-            ])
-            ->withHeader('Content-Type', 'text/html')
-            ->withStatus(200);
     }
+
+    return $this->getTwig()
+        ->render($response, $this->setView('cardapio'), [
+            'mesa'       => $mesaValida ? $mesaNum : null,
+            'mesa_id'    => $mesaId,
+            'mesaValida' => $mesaValida,
+            'nomeLocal'  => 'AllPratto',
+        ])
+        ->withHeader('Content-Type', 'text/html')
+        ->withStatus(200);
+}
     // GET /cardapio/itens → JSON
     public function getItens($request, $response)
     {
@@ -94,9 +92,6 @@ final class Cardapio extends Base
             ], 500);
         }
     }
-
-    // POST /cardapio/pedido → JSON
-    // Delega para Pedido::insert que salva no banco e marca a mesa como ocupada
     public function salvarPedido($request, $response)
     {
         $body = $request->getParsedBody();
