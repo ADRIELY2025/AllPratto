@@ -155,7 +155,7 @@ async function criarVenda(clienteId) {
     fd.append('desconto', 0);
     fd.append('acrescimo', 0);
     fd.append('observacao', document.getElementById('observacao')?.value || '');
-    fd.append('estado_venda', 'aberto');
+    fd.append('estado_venda', 'PRE_VENDA');
 
     try {
         const response = await requests.setBody(fd).post('/sale/insert');
@@ -429,7 +429,7 @@ async function fsmConclude() {
         fd.append('desconto', valDesc);
         fd.append('acrescimo', valAcr);
         fd.append('observacao', observacao);
-        fd.append('estado_venda', 'finalizado');
+        fd.append('estado_venda', 'VENDA');
 
         const result = await requests.setBody(fd).post('/sale/update');
         if (!result?.status) throw new Error(result?.msg || 'Erro ao finalizar venda.');
