@@ -11,6 +11,64 @@ final class Pedido extends Base
     require __DIR__ . '/../View/pages/cozinha.html';
     return $response;
 }
+
+public function listarCozinha($request, $response)
+{
+    try {
+
+        $pedidos = \App\Database\DB::select("
+            o.id,
+            o.id_mesa,
+            o.total,
+            o.status,
+            o.observacao,
+            o.criado_em,
+            m.numero AS mesa_numero
+        ")
+        ->from('"order"', 'o')
+        ->leftJoin('o', 'mesa', 'm', 'm.id = o.id_mesa')
+        ->where("o.status IN ('pendente','em_preparo')")
+        ->orderBy('o.criado_em', 'ASC')
+        ->fetchAllAssociative();
+
+        foreach ($pedidos as &$pedido) {
+
+            $itens = \App\Database\DB::select("
+                nome,
+                quantidade,
+                preco,
+                subtotal
+            ")
+            ->from('order_item')
+            ->where('order_id = :id')
+            ->setParameter('id', $pedido['id'])
+            ->fetchAllAssociative();
+
+            $pedido['itens'] = $itens;
+        }
+
+        return $this->json(
+            $response,
+            [
+                'status' => true,
+                'pedidos' => $pedidos
+            ]
+        );
+    }
+    catch(\Exception $e){
+
+        return $this->json(
+            $response,
+            [
+                'status' => false,
+                'msg' => $e->getMessage()
+            ],
+            500
+        );
+    }
+}
+
+
     // ──────────────────────────────────────────
     //  Página HTML da lista de pedidos (cozinha / admin)
     // ──────────────────────────────────────────
