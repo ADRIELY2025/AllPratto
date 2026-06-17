@@ -10,8 +10,12 @@ import 'datatables.net-bs5'
 import 'datatables.net-responsive-bs5'
 import 'datatables.net-staterestore-bs5'
 
-// Select2 — registra $.fn.select2
+//Select2 integrado com Bootstrap 5
 import 'select2'
+import 'select2/dist/css/select2.min.css'
+import 'select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css'
+import select2 from 'select2'
+select2(window, window.jQuery)
 
 // jQuery Validate — registra $.fn.validate
 import 'jquery-validation'

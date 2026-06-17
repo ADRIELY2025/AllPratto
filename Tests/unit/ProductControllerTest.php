@@ -23,7 +23,7 @@ test('product insert com dados válidos retorna 201 com status true', function (
 
     $response = (new ResponseFactory())->createResponse();
 
-    $result = (new app\controller\Product())->insert($request, $response);
+    $result = (new App\Controller\Product())->insert($request, $response);
 
     $result->getBody()->rewind();
 

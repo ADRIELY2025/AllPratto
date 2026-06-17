@@ -22,7 +22,7 @@ test('customer insert com dados válidos retorna 201 com status true', function 
 
     $response = (new ResponseFactory())->createResponse();
 
-    $result = (new app\controller\Customer())->insert($request, $response);
+    $result = (new App\Controller\Customer())->insert($request, $response);
 
     $result->getBody()->rewind();
 
