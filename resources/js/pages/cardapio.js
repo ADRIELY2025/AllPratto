@@ -212,7 +212,8 @@ async function finalizarPedido() {
 
     try {
         const requests = new Requests();
-        const response = await requests.setJson({
+        requests.headers['Content-Type'] = 'application/json';
+        const response = await requests.setBody(JSON.stringify({
             mesa_id:   mesaId,
             pagamento: pgto,
             itens:     carrinho.map(i => ({
@@ -220,7 +221,7 @@ async function finalizarPedido() {
                 quantidade: i.qty,
                 preco:      i.produto.preco_venda,
             })),
-        }).post('/pedido');
+        })).post('/cardapio/pedido');
 
         if (!response.sucesso) {
             Swal.fire({

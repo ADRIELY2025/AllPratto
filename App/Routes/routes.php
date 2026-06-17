@@ -42,6 +42,9 @@ $app->group('/cardapio', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/pedido',   Cardapio::class . ':salvarPedido');
 });
 
+// Acesso interno ao cardápio sem QR Code (exige login da empresa)
+$app->get('/cardapio', Cardapio::class . ':index')->add(Middleware::web());
+
 // ══════════════════════════════════════════════
 //  Clientes
 // ══════════════════════════════════════════════
@@ -126,6 +129,7 @@ $app->group('/mesa', function (\Slim\Routing\RouteCollectorProxy $group) {
 //  Pedidos
 // ══════════════════════════════════════════════
 $app->group('/pedido', function (\Slim\Routing\RouteCollectorProxy $group) {
+     $group->get('/cozinha',         Pedido::class . ':cozinha')->add(Middleware::web());
     $group->get('/lista',           Pedido::class . ':list')->add(Middleware::web());
     $group->get('/detalhes/{id}',   Pedido::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',        Pedido::class . ':details')->add(Middleware::web());
@@ -134,6 +138,7 @@ $app->group('/pedido', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/update-status',  Pedido::class . ':updateStatus')->add(Middleware::api());
     $group->post('/delete',         Pedido::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',    Pedido::class . ':listingdata')->add(Middleware::api());
+
 });
 
 // ══════════════════════════════════════════════

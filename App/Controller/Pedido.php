@@ -6,6 +6,11 @@ namespace App\Controller;
 
 final class Pedido extends Base
 {
+    public function cozinha($request, $response)
+{
+    require __DIR__ . '/../View/pages/cozinha.html';
+    return $response;
+}
     // ──────────────────────────────────────────
     //  Página HTML da lista de pedidos (cozinha / admin)
     // ──────────────────────────────────────────

@@ -26,8 +26,6 @@ arch('Sem funções perigosas no código')
         'proc_open',
     ]);
 
-
-
 # Garantir que classes são finais ou abstratas
 arch('Controller devem ser classes finais')
     ->expect('App\Controller')

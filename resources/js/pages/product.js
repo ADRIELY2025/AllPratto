@@ -11,6 +11,7 @@ const inputCustoOperacional = document.getElementById('custo_operacional');
 const inputMargemLucro      = document.getElementById('margem_lucro');
 const inputPrecoVenda       = document.getElementById('preco_venda');
 
+
 // ─── Máscaras ────────────────────────────────────────────────────────────────
 if (window.Inputmask) {
     Inputmask('currency', {
