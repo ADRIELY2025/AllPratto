@@ -12,13 +12,19 @@ test('product insert com dados válidos retorna 201 com status true', function (
         ->createRequest('POST', '/product')
         ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
         ->withParsedBody([
-            'descricao'   => 'Caneta Azul BIC',
-            'codigoBarras' => '7891234560001',
-            'sku'          => 'CANETA-AZUL-001',
-            'valorCusto'   => '1,50',
-            'valorVenda'   => '3,00',
-            'estoque'      => '100',
-            'ativo'        => 'true',
+            'nome'                 => ' ',
+            'codigoBarra'          => '7891234560001',
+            'grupo'                => 'Papelaria',
+            'unidade'              => 'UN',
+            'precoCompra'          => '1,50',
+            'totalImposto'         => '0,15',
+            'margemLucro'          => '50,00',
+            'custoOperacional'     => '0,20',
+            'valorVendaSugerido'   => '2,78',
+            'precoVenda'           => '3,00',
+            'tempoPreparo'         => null,
+            'descricao'            => 'Caneta esferográfica azul',
+            'ativo'                => 'true',
         ]);
 
     $response = (new ResponseFactory())->createResponse();
@@ -33,5 +39,9 @@ test('product insert com dados válidos retorna 201 com status true', function (
 
     expect($json['status'])->toBeTrue();
 
-    expect($json['msg'])->toContain('Salvo com sucesso');
+    expect($json['msg'])->toBe('Salvo com sucesso!');
+
+    expect($json)->toHaveKey('id');
+
+    expect($json['id'])->toBeGreaterThan(0);
 });
