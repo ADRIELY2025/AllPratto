@@ -12,9 +12,10 @@ use App\Controller\Supplier;
 use App\Controller\Company;
 use App\Controller\Product;
 use App\Controller\PaymentTerms;
+use App\Controller\Kitchen;
 
-$app->post('/',     App\controller\Home::class . ':home')->add(Middleware::web());
-$app->get('/home', App\controller\Home::class . ':home')->add(Middleware::web());
+$app->post('/',     App\Controller\Home::class . ':home')->add(Middleware::web());
+$app->get('/home', App\Controller\Home::class . ':home')->add(Middleware::web());
 
 $app->get('/', function ($request, $response) {
     return $response->withHeader('Location', '/login')->withStatus(302);
@@ -118,7 +119,9 @@ $app->group('/home/grafico', function (\Slim\Routing\RouteCollectorProxy $group)
 $app->get('/home/resultado-vendas',    App\Controller\Home::class . ':resultadoVendas')  ->add(Middleware::api());
 $app->get('/home/resultado-marketing', App\Controller\Home::class . ':resultadoMarketing')->add(Middleware::api());
 
-
+// ══════════════════════════════════════════════
+//  Condições de Pagamento
+// ══════════════════════════════════════════════
 $app->group('/payment', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/lista',          PaymentTerms::class . ':list')->add(Middleware::web());
     $group->get('/detalhes/{id}',  PaymentTerms::class . ':details')->add(Middleware::web());
@@ -127,4 +130,18 @@ $app->group('/payment', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/update',        PaymentTerms::class . ':update')->add(Middleware::api());
     $group->post('/delete',        PaymentTerms::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   PaymentTerms::class . ':listingdata')->add(Middleware::api());
+});
+// ══════════════════════════════════════════════
+//  Cozinha
+// ══════════════════════════════════════════════
+$app->group('/kitchen', function (\Slim\Routing\RouteCollectorProxy $group) {
+    $group->get('',                Kitchen::class . ':list')->add(Middleware::web());  // ← FIX: rota raiz /kitchen
+    $group->get('/lista',          Kitchen::class . ':list')->add(Middleware::web());
+    $group->get('/detalhes/{id}',  Kitchen::class . ':details')->add(Middleware::web());
+    $group->get('/detalhes',       Kitchen::class . ':details')->add(Middleware::web());
+    $group->post('/insert',        Kitchen::class . ':insert')->add(Middleware::api());
+    $group->post('/update',        Kitchen::class . ':update')->add(Middleware::api());
+    $group->post('/delete',        Kitchen::class . ':delete')->add(Middleware::api());
+    $group->post('/listingdata',   Kitchen::class . ':listingdata')->add(Middleware::api());
+    $group->post('/finalizar',     Kitchen::class . ':finalizar')->add(Middleware::api());
 });
