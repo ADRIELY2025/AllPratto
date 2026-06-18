@@ -25,18 +25,25 @@
 
                 <div class="card-body">
                     <div class="row">
-
+                        <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6 col-md-12">
+                            <label class="form-label fw-bold">Sale</label>
+                            <select class="form-select" id="id_sale" name="id_sale">
+                                <option value="">Selecione uma venda...</option>
+                                {% if sale.id_sale %}
+                                <option value="{{ sale.id_sale }}" selected>{{ sale.nome_venda }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
                         <div class="col-lg-6 col-md-12">
                             <div class="form-floating mb-3">
                                 <select class="form-select" id="codigo" name="codigo" required>
                                     <option value="" disabled {% if not paymentTerm.codigo %}selected{% endif %}>Selecione...</option>
                                     <option value="01" {% if paymentTerm.codigo == '01' %}selected{% endif %}>Dinheiro</option>
-                                    <option value="02" {% if paymentTerm.codigo == '02' %}selected{% endif %}>Cheque</option>
                                     <option value="03" {% if paymentTerm.codigo == '03' %}selected{% endif %}>Cartão de Crédito</option>
                                     <option value="04" {% if paymentTerm.codigo == '04' %}selected{% endif %}>Cartão de Débito</option>
-                                    <option value="15" {% if paymentTerm.codigo == '15' %}selected{% endif %}>Boleto Bancário</option>
                                     <option value="17" {% if paymentTerm.codigo == '17' %}selected{% endif %}>PIX</option>
-                                    <option value="99" {% if paymentTerm.codigo == '99' %}selected{% endif %}>Outros</option>
                                 </select>
                                 <label for="codigo">Forma de Pagamento</label>
                             </div>
@@ -67,25 +74,38 @@
                     </h6>
 
                     <div class="row align-items-end mb-3">
-                        <div class="col-lg-4 col-md-5">
+                        <div class="col-lg-3 col-md-6">
                             <div class="form-floating">
                                 <input type="number" class="form-control" id="parcela"
                                     placeholder="1" min="1">
                                 <label for="parcela">Qtd. Parcelas</label>
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-5">
+                        <div class="col-lg-3 col-md-6">
                             <div class="form-floating">
                                 <input type="number" class="form-control" id="intervalo"
                                     placeholder="30" min="0">
                                 <label for="intervalo">Intervalo (Dias)</label>
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-2 d-grid mt-2 mt-md-0">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="valor_total"
+                                    placeholder="0,00" min="0" step="0.01">
+                                <label for="valor_total">Valor Total (R$)</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 d-grid mt-2 mt-md-0">
                             <button id="btnAddParcela" type="button" class="btn btn-outline-primary" style="height:58px">
                                 <i class="fa-solid fa-plus"></i> Adicionar
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Aviso de bloqueio para À Vista / PIX -->
+                    <div id="avisoAVista" class="alert alert-info d-none py-2 mb-3">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        Forma de pagamento <strong id="nomeForma"></strong> não permite parcelamento.
                     </div>
 
                     <table class="table table-bordered table-sm table-striped">
@@ -94,12 +114,13 @@
                                 <th>Parcela</th>
                                 <th>Qtd.</th>
                                 <th>Intervalo (Dias)</th>
+                                <th>Valor por Parcela</th>
                                 <th class="text-center">Ação</th>
                             </tr>
                         </thead>
                         <tbody id="tbInstallments">
                             <tr>
-                                <td colspan="4" class="text-center text-muted">Nenhuma parcela adicionada.</td>
+                                <td colspan="5" class="text-center text-muted">Nenhuma parcela adicionada.</td>
                             </tr>
                         </tbody>
                     </table>
