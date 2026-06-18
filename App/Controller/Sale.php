@@ -58,6 +58,12 @@ final class Sale extends Base
             ? (int) $form['id_cliente']
             : null;
 
+        // estado_venda usa o ENUM stock_movement_venda (PRE_VENDA | ORCAMENTO | VENDA).
+        // Uma venda recém-criada (ainda em edição/carrinho) começa sempre como PRE_VENDA.
+        $estadoVenda = in_array($form['estado_venda'] ?? null, ['PRE_VENDA', 'ORCAMENTO', 'VENDA'], true)
+            ? $form['estado_venda']
+            : 'PRE_VENDA';
+
         $data = [
             'id_cliente'    => $idCliente,
             'total_bruto'   => $this->toDecimal($form['total_bruto']   ?? 0),
@@ -65,7 +71,7 @@ final class Sale extends Base
             'desconto'      => $this->toDecimal($form['desconto']      ?? 0),
             'acrescimo'     => $this->toDecimal($form['acrescimo']     ?? 0),
             'observacao'    => $form['observacao'] ?? null,
-            'estado_venda'  => $form['estado_venda'] ?? 'aberto',
+            'estado_venda'  => $estadoVenda,
         ];
 
         try {
@@ -92,20 +98,38 @@ final class Sale extends Base
             return $this->json($response, ['status' => false, 'msg' => 'Por favor informe o ID da venda.', 'id' => 0], 403);
         }
 
-        $idCliente = isset($form['id_cliente']) && $form['id_cliente'] !== ''
-            ? (int) $form['id_cliente']
-            : null;
+        // ATENÇÃO: monta o array só com os campos que vieram na requisição.
+        // O modal de finalização (fsmConclude) não envia "id_cliente", por exemplo —
+        // se enviássemos sempre todos os campos com fallback para null/0, esse update
+        // apagaria o cliente já vinculado à venda. Update parcial = sem efeitos colaterais.
+        $data = [];
 
-        $data = [
-            'id_cliente'    => $idCliente,
-            'total_bruto'   => $this->toDecimal($form['total_bruto']   ?? 0),
-            'total_liquido' => $this->toDecimal($form['total_liquido'] ?? 0),
-            'desconto'      => $this->toDecimal($form['desconto']      ?? 0),
-            'acrescimo'     => $this->toDecimal($form['acrescimo']     ?? 0),
-            'observacao'    => $form['observacao'] ?? null,
-            'estado_venda'  => $form['estado_venda'] ?? null,
-            'atualizado_em' => date('Y-m-d H:i:s'),
-        ];
+        if (isset($form['id_cliente']) && $form['id_cliente'] !== '') {
+            $data['id_cliente'] = (int) $form['id_cliente'];
+        }
+        if (isset($form['total_bruto'])) {
+            $data['total_bruto'] = $this->toDecimal($form['total_bruto']);
+        }
+        if (isset($form['total_liquido'])) {
+            $data['total_liquido'] = $this->toDecimal($form['total_liquido']);
+        }
+        if (isset($form['desconto'])) {
+            $data['desconto'] = $this->toDecimal($form['desconto']);
+        }
+        if (isset($form['acrescimo'])) {
+            $data['acrescimo'] = $this->toDecimal($form['acrescimo']);
+        }
+        if (isset($form['observacao'])) {
+            $data['observacao'] = $form['observacao'];
+        }
+        // estado_venda usa o ENUM stock_movement_venda — só aceita os valores válidos.
+        // É essa transição (qualquer estado -> 'VENDA') que dispara, via trigger no banco,
+        // a baixa automática de estoque referente a todos os itens já lançados na venda.
+        if (isset($form['estado_venda']) && in_array($form['estado_venda'], ['PRE_VENDA', 'ORCAMENTO', 'VENDA'], true)) {
+            $data['estado_venda'] = $form['estado_venda'];
+        }
+
+        $data['atualizado_em'] = date('Y-m-d H:i:s');
 
         try {
             $updated = \App\Database\DB::connection()->update('sale', $data, ['id' => (int) $id]);
@@ -137,74 +161,6 @@ final class Sale extends Base
             }
 
             return $this->json($response, ['status' => true, 'msg' => 'Venda removida com sucesso!', 'id' => $id]);
-        } catch (\Exception $e) {
-            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
-        }
-    }
-
-    // ──────────────────────────────────────────────
-    //  CRUD – Item da Venda
-    // ──────────────────────────────────────────────
-
-    public function insertItem($request, $response)
-    {
-        $form    = $request->getParsedBody();
-        $idVenda = $form['id_venda'] ?? null;
-
-        if (is_null($idVenda) || $idVenda === '') {
-            return $this->json($response, ['status' => false, 'msg' => 'Informe o ID da venda.', 'id' => 0], 403);
-        }
-
-        $idProduto = isset($form['id_produto']) && $form['id_produto'] !== ''
-            ? (int) $form['id_produto']
-            : null;
-
-        $data = [
-            'id_venda'         => (int) $idVenda,
-            'id_produto'       => $idProduto,
-            'nome'             => $form['nome']             ?? null,
-            'descricao'        => $form['descricao']        ?? null,
-            'quantidade'       => $this->toDecimal($form['quantidade']       ?? 0),
-            'total_bruto'      => $this->toDecimal($form['total_bruto']      ?? 0),
-            'unitario_bruto'   => $this->toDecimal($form['unitario_bruto']   ?? 0),
-            'total_liquido'    => $this->toDecimal($form['total_liquido']    ?? 0),
-            'unitario_liquido' => $this->toDecimal($form['unitario_liquido'] ?? 0),
-            'desconto'         => $this->toDecimal($form['desconto']         ?? 0),
-            'acrescimo'        => $this->toDecimal($form['acrescimo']        ?? 0),
-        ];
-
-        try {
-            $conn = \App\Database\DB::connection();
-            $conn->insert('item_sale', $data);
-            $id = (int) $conn->lastInsertId();
-
-            if (!$id) {
-                return $this->json($response, ['status' => false, 'msg' => 'Não foi possível inserir o item.', 'id' => 0], 500);
-            }
-
-            return $this->json($response, ['status' => true, 'msg' => 'Item inserido com sucesso!', 'id' => $id], 201);
-        } catch (\Exception $e) {
-            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
-        }
-    }
-
-    public function deleteItem($request, $response)
-    {
-        $form = $request->getParsedBody();
-        $id   = $form['id'] ?? null;
-
-        if (is_null($id) || $id === '') {
-            return $this->json($response, ['status' => false, 'msg' => 'Informe o ID do item.', 'id' => 0], 403);
-        }
-
-        try {
-            $deleted = \App\Database\DB::connection()->delete('item_sale', ['id' => (int) $id]);
-
-            if (!$deleted) {
-                return $this->json($response, ['status' => false, 'msg' => 'Nenhum item removido.', 'id' => $id], 403);
-            }
-
-            return $this->json($response, ['status' => true, 'msg' => 'Item removido com sucesso!', 'id' => $id]);
         } catch (\Exception $e) {
             return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
         }
@@ -424,15 +380,17 @@ final class Sale extends Base
                 ->setMaxResults($length)
                 ->fetchAllAssociative();
 
+            // estado_venda é o ENUM stock_movement_venda do banco — os rótulos abaixo
+            // precisam refletir exatamente os labels válidos (PRE_VENDA | ORCAMENTO | VENDA).
             $estadoLabel = [
-                'aberto'     => '<span class="badge bg-warning text-dark">Aberto</span>',
-                'finalizado' => '<span class="badge bg-success">Finalizado</span>',
-                'cancelado'  => '<span class="badge bg-danger">Cancelado</span>',
+                'PRE_VENDA' => '<span class="badge bg-warning text-dark">Em edição</span>',
+                'ORCAMENTO' => '<span class="badge bg-info text-dark">Orçamento</span>',
+                'VENDA'     => '<span class="badge bg-success">Finalizada</span>',
             ];
 
             $rows = [];
             foreach ($sales as $key => $value) {
-                $estado = $value['estado_venda'] ?? 'aberto';
+                $estado = $value['estado_venda'] ?? 'PRE_VENDA';
                 $rows[$key] = [
                     $value['id'],
                     $value['nome_cliente'] ?? '<span class="text-muted">Sem cliente</span>',
