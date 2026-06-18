@@ -186,7 +186,7 @@ final class Users extends Base
             1 => 'nome',
             2 => 'cpf',
             3 => 'rg',
-            4 => 'email',
+            4 => 'senha',
             5 => 'ativo',
             6 => 'criado_em',
             7 => 'atualizado_em',
@@ -218,7 +218,7 @@ final class Users extends Base
 
                 $query->where('CAST(id AS TEXT) ILIKE :term')
                     ->orWhere('nome ILIKE :term')
-                    ->orWhere('email ILIKE :term')
+                    ->orWhere('senha ILIKE :term')
                     ->orWhere("TO_CHAR(criado_em, 'DD/MM/YYYY HH24:MI:SS') ILIKE :term")
                     ->orWhere("TO_CHAR(atualizado_em, 'DD/MM/YYYY HH24:MI:SS') ILIKE :term");
             }
@@ -241,7 +241,7 @@ final class Users extends Base
                     $value['nome'],
                     $value['cpf'] ?? '',
                     $value['rg'] ?? '',
-                    $value['email'] ?? '',
+                    $value['senha'] ?? '',
                     ((isset($value['ativo']) && ($value['ativo'] === true || $value['ativo'] == 1)) ? 'Ativo' : 'Inativo'),
                     (new \DateTime($value['criado_em']))->format('d/m/Y H:i:s'),
                     (new \DateTime($value['atualizado_em']))->format('d/m/Y H:i:s'),
