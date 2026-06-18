@@ -61,9 +61,14 @@ final class Product extends Base
             'excluido'               => false,
         ];
 
+        $types = [
+            'ativo'    => \Doctrine\DBAL\ParameterType::BOOLEAN,
+            'excluido' => \Doctrine\DBAL\ParameterType::BOOLEAN,
+        ];
+
         try {
             $conn = \App\Database\DB::connection();
-            $conn->insert('product', $data);
+            $conn->insert('product', $data, $types);
             $id = (int) $conn->lastInsertId();
 
             if (!$id) {
@@ -102,8 +107,12 @@ final class Product extends Base
             'atualizado_em'          => date('Y-m-d H:i:s'),
         ];
 
+        $types = [
+            'ativo' => \Doctrine\DBAL\ParameterType::BOOLEAN,
+        ];
+
         try {
-            $updated = \App\Database\DB::connection()->update('product', $data, ['id' => (int) $id]);
+            $updated = \App\Database\DB::connection()->update('product', $data, ['id' => (int) $id], $types);
 
             if (!$updated) {
                 return $this->json($response, ['status' => false, 'msg' => 'Nenhum registro alterado.', 'id' => 0], 403);

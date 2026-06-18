@@ -1,0 +1,315 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item"><a href="/sale/lista">Lista de vendas</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Venda</li>
+</ol>
+{% endblock %}
+
+{% block main %}
+<input type="hidden" id="action" value="{{ action }}">
+<input type="hidden" id="sale-id" value="{{ id }}">
+
+<div class="col-12 mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/sale/lista" class="btn btn-warning me-2">
+                <i class="fa-solid fa-chevron-left"></i> Voltar
+            </a>
+        </div>
+        <span class="badge bg-primary fs-6">
+            Status: <strong id="sale-status">Em edição</strong>
+        </span>
+    </div>
+</div>
+
+<div class="col-12">
+    <div class="row gy-4">
+
+        <!-- ─── COLUNA PRINCIPAL ─── -->
+        <div class="col-lg-9">
+
+            <!-- Card: Dados da venda -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h2 class="h6 mb-0"><i class="fa-solid fa-file-invoice-dollar me-1"></i> Dados da Venda</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Cliente</label>
+                            <select class="form-select" id="id_cliente" name="id_cliente">
+                                <option value="">Selecione um cliente...</option>
+                                {% if sale.id_cliente %}
+                                <option value="{{ sale.id_cliente }}" selected>{{ sale.nome_cliente }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Observação</label>
+                            <textarea class="form-control" id="observacao" name="observacao" rows="2"
+                                placeholder="Observações sobre a venda...">{{ sale.observacao }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card: Adicionar Item -->
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-light">
+                    <h2 class="h6 mb-0 text-primary">
+                        <i class="fa-solid fa-plus-circle me-1"></i> Adicionar Item
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form id="item-sale-form">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label for="id_produto" class="form-label small fw-bold">Produto</label>
+                                <select id="id_produto" name="id_produto" class="form-select w-100" required>
+                                    <option value="">Buscar produto...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="quantidade" class="form-label small fw-bold">Quantidade</label>
+                                <input type="text" id="quantidade" name="quantidade"
+                                    class="form-control" required value="1,00" autocomplete="off">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="unitario_liquido" class="form-label small fw-bold">Preço Unitário</label>
+                                <input type="text" id="unitario_liquido" name="unitario_liquido"
+                                    class="form-control" readonly
+                                    style="background-color: #e9ecef; cursor: not-allowed;">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="valor-total" class="form-label small fw-bold">Valor Total</label>
+                                <input type="text" id="valor-total" name="valor-total"
+                                    class="form-control" readonly
+                                    style="background-color: #e9ecef; cursor: not-allowed;">
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <button type="submit" class="btn btn-primary w-100 py-2" id="insert-item">
+                                    <i class="fa-solid fa-plus me-1"></i> Inserir
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Card: Itens da Venda -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Itens da Venda</h2>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="sale-items-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:70px;">#ID</th>
+                                    <th>Produto</th>
+                                    <th class="text-end">Qtd</th>
+                                    <th class="text-end">Unitário</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-center" style="width:90px;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr id="empty-row">
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fa-solid fa-inbox fa-lg mb-1 d-block"></i>
+                                        Nenhum item adicionado.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /col-lg-9 -->
+
+        <!-- ─── COLUNA LATERAL ─── -->
+        <div class="col-lg-3" style="position: sticky; top: 1rem; align-self: flex-start;">
+
+            <!-- Resumo -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h2 class="h6 mb-0"><i class="fa-solid fa-receipt me-1"></i> Resumo</h2>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-7">Subtotal</dt>
+                        <dd class="col-5 text-end">R$ <span id="total_bruto">0,00</span></dd>
+
+                        <dt class="col-7 pt-2">Desconto</dt>
+                        <dd class="col-5 text-end pt-2">
+                            <div class="input-group input-group-sm justify-content-end"
+                                style="max-width: 140px; margin-left: auto;">
+                                <span class="input-group-text">%</span>
+                                <input type="number" id="desconto" class="form-control text-end"
+                                    value="0.00" min="0" max="100" step="0.01" placeholder="0.00">
+                            </div>
+                        </dd>
+
+                        <dt class="col-7 pt-2">Acréscimo</dt>
+                        <dd class="col-5 text-end pt-2">
+                            <div class="input-group input-group-sm justify-content-end"
+                                style="max-width: 140px; margin-left: auto;">
+                                <span class="input-group-text">%</span>
+                                <input type="number" id="acrescimo" class="form-control text-end"
+                                    value="0.00" min="0" max="100" step="0.01" placeholder="0.00">
+                            </div>
+                        </dd>
+
+                        <dt class="col-7 pt-2 border-top mt-2">Total</dt>
+                        <dd class="col-5 text-end pt-2 border-top mt-2 fw-bold fs-5">
+                            R$ <span id="total_liquido">0,00</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Ações -->
+            <div class="card shadow-sm">
+                <div class="card-body d-grid gap-2">
+                    <button id="finalize-sale" class="btn btn-success py-2">
+                        <i class="fa-solid fa-check me-1"></i> Finalizar Venda
+                    </button>
+                    <button id="clear-sale" class="btn btn-outline-danger">
+                        <i class="fa-solid fa-trash me-1"></i> Limpar Tudo
+                    </button>
+                </div>
+            </div>
+
+        </div><!-- /col-lg-3 -->
+
+    </div><!-- /row -->
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODAL — Finalizar Venda
+════════════════════════════════════════════════ -->
+<div class="modal fade" id="finalizeSaleModal" tabindex="-1"
+    data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <!-- Header -->
+            <div class="modal-header bg-light">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0">
+                        <i class="fa-solid fa-bag-shopping me-2 text-success"></i>Finalizar Venda
+                    </h5>
+                    <small class="text-muted" id="fsm-cliente-nome">—</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+
+            <!-- Barra de totais -->
+            <div class="border-bottom border-top bg-light px-4 py-3">
+                <div class="row text-center g-0">
+                    <div class="col-4">
+                        <div class="text-muted small mb-1">Total da Venda</div>
+                        <div class="fw-bold fs-5" id="fsm-total-venda">R$ 0,00</div>
+                    </div>
+                    <div class="col-4 border-start border-end">
+                        <div class="text-muted small mb-1">Total Pago</div>
+                        <div class="fw-bold fs-5 text-success" id="fsm-total-pago">R$ 0,00</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small mb-1">Diferença</div>
+                        <div class="fw-bold fs-5 text-warning" id="fsm-diferenca">R$ 0,00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-4">
+
+                <!-- Adicionar Pagamento -->
+                <h6 class="text-muted text-uppercase fw-bold small mb-3">
+                    <i class="fa-solid fa-credit-card me-1"></i>Adicionar Pagamento
+                </h6>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold">Forma de Pagamento</label>
+                                <select class="form-select" id="fsm-payment-term">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3" id="fsm-parcelas-col" style="display:none;">
+                                <label class="form-label small fw-bold">Parcelas</label>
+                                <select class="form-select" id="fsm-parcela">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </div>
+
+                            <div class="col" id="fsm-valor-col">
+                                <label class="form-label small fw-bold">Valor (R$)</label>
+                                <input type="text" class="form-control" id="fsm-valor"
+                                    placeholder="0,00" autocomplete="off">
+                            </div>
+
+                            <div class="col-auto">
+                                <button class="btn btn-primary" id="fsm-add-payment" type="button">
+                                    <i class="fa-solid fa-plus me-1"></i>Adicionar
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de pagamentos adicionados -->
+                <h6 class="text-muted text-uppercase fw-bold small mb-3">
+                    <i class="fa-solid fa-list-check me-1"></i>Pagamentos Adicionados
+                </h6>
+                <div class="card shadow-sm">
+                    <div class="card-body p-0">
+
+                        <div id="fsm-empty-payments" class="text-center text-muted py-4">
+                            <i class="fa-solid fa-inbox d-block fs-4 mb-1"></i>
+                            Nenhum pagamento adicionado.
+                        </div>
+
+                        <table class="table table-hover align-middle mb-0"
+                            id="fsm-payments-table" style="display:none;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Forma</th>
+                                    <th>Parcelas</th>
+                                    <th class="text-end">Valor</th>
+                                    <th class="text-center" style="width:60px;">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fsm-payments-tbody"></tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+            </div><!-- /modal-body -->
+
+            <!-- Footer -->
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-xmark me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="fsm-conclude-btn" disabled>
+                    <i class="fa-solid fa-circle-check me-1"></i>Concluir Venda
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/sale.js') }}
+{% endblock %}

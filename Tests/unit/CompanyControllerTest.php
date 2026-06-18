@@ -12,24 +12,23 @@ test('company insert com dados válidos retorna 201 com status true', function (
         ->createRequest('POST', '/company')
         ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
         ->withParsedBody([
-            'nomeExibicao'      => 'Empresa Teste ',
-            'nomeLegal'         => 'Empresa Teste  ',
-            'cnpj'              => '12.345.678/0001-99',
-            'inscricaoEstadual' => '123456789',
-            'telefone'          => '(68) 3212-0000',
-            'email'             => 'contato@empresateste.com',
-            'endereco'          => 'Rua Floriano Peixoto',
-            'numero'            => '1500',
-            'bairro'            => 'Centro',
-            'cidade'            => 'Rio Branco',
-            'estado'            => 'AC',
-            'cep'               => '69900-000',
-            'ativo'             => 'true',
+        'nome_fantasia'       => 'Test Company',
+        'razao_social'        => 'Test Company Ltda',
+        'cnpj'                => '12345678901234',
+        'inscricao_estadual'  => '123456789012',
+        'telefone'            => '11999999999',
+        'email'               => 'test@example.com',
+        'endereco'            => 'Test Address',
+        'numero'              => '123',
+        'bairro'              => 'Test Neighborhood',
+        'cidade'              => 'Test City',
+        'estado'              => 'Test State',
+        'cep'                 => 'Test CEP',
         ]);
 
     $response = (new ResponseFactory())->createResponse();
 
-    $result = (new app\controller\Company())->insert($request, $response);
+    $result = (new App\Controller\Company())->insert($request, $response);
 
     $result->getBody()->rewind();
 
