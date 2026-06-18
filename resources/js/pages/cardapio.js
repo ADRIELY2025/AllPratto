@@ -1,13 +1,49 @@
 import '../../css/cardapio.css';
-import * as bootstrap from 'bootstrap';
 import Swal from 'sweetalert2';
 import Requests from '../components/requests.js';
 
-
 // ── ESTADO ──────────────────────────────────────────────────────
-let produtos = {};  // { categoria: [...] } — vindo da API
+let produtos = {};  // { categoria: [...] } — vindo da API, agrupado pelo campo "grupo"
 let carrinho = [];  // [{ produto, qty }]
 let catAtiva = 'todos';
+
+// ── CATEGORIAS — ordem e ícone sugeridos ──────────────────────────
+// O nome real da categoria vem do campo "grupo" cadastrado em cada
+// produto. Aqui só damos uma ordem e um ícone bonitos quando o nome
+// bate com um destes; qualquer outro nome aparece do mesmo jeito,
+// só entra depois, em ordem alfabética.
+const ORDEM_CATEGORIAS = ['entrada', 'prato principal', 'principal', 'sobremesa', 'bebida'];
+
+const ICONES_CATEGORIA = {
+    'entrada':         'fa-solid fa-seedling',
+    'prato principal': 'fa-solid fa-utensils',
+    'principal':       'fa-solid fa-utensils',
+    'sobremesa':        'fa-solid fa-ice-cream',
+    'bebida':           'fa-solid fa-wine-glass',
+};
+
+function normalizar(texto) {
+    return (texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function iconeCategoria(nome) {
+    return ICONES_CATEGORIA[normalizar(nome)] || 'fa-solid fa-bowl-food';
+}
+
+function categoriasOrdenadas() {
+    return Object.keys(produtos).sort((a, b) => {
+        const ia = ORDEM_CATEGORIAS.indexOf(normalizar(a));
+        const ib = ORDEM_CATEGORIAS.indexOf(normalizar(b));
+        if (ia === -1 && ib === -1) return a.localeCompare(b);
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+    });
+}
 
 // ── HELPERS ─────────────────────────────────────────────────────
 function formatBRL(valor) {
@@ -23,11 +59,11 @@ function todosOsProdutos() {
 // ── CARREGAR ITENS DA API ────────────────────────────────────────
 async function carregarItens() {
     const lista = document.getElementById('lista-produtos');
-    lista.innerHTML = '<div class="loading-itens"><i class="fa-solid fa-spinner fa-spin"></i> Carregando cardápio...</div>';
+    lista.innerHTML = '<div class="loading-itens"><i class="fa-solid fa-spinner fa-spin"></i>Carregando cardápio...</div>';
 
     try {
-        const requests  = new Requests();
-       const response = await requests.get('/cardapio/itens');
+        const requests = new Requests();
+        const response = await requests.get('/cardapio/itens');
 
         if (!response.sucesso) {
             Swal.fire({
@@ -37,12 +73,13 @@ async function carregarItens() {
                 timer: 3000,
                 timerProgressBar: true,
             });
-            lista.innerHTML = '<div class="alert alert-danger m-3"><i class="fa-solid fa-triangle-exclamation me-2"></i>Não foi possível carregar o cardápio.</div>';
+            lista.innerHTML = '<div class="estado-erro"><i class="fa-solid fa-triangle-exclamation"></i>Não foi possível carregar o cardápio.</div>';
             return;
         }
 
         produtos = response.dados;
         renderCategorias();
+        renderDestaques();
         renderProdutos();
 
     } catch (error) {
@@ -53,19 +90,20 @@ async function carregarItens() {
             timer: 3000,
             timerProgressBar: true,
         });
+        lista.innerHTML = '<div class="estado-erro"><i class="fa-solid fa-triangle-exclamation"></i>Não foi possível carregar o cardápio.</div>';
     }
 }
 
 // ── RENDER CATEGORIAS ────────────────────────────────────────────
 function renderCategorias() {
     const bar = document.getElementById('categorias-bar');
-    bar.innerHTML = '<button class="cat-btn active" data-cat="todos">Todos</button>';
+    bar.innerHTML = '<button class="cat-btn active" data-cat="todos"><i class="fa-solid fa-circle-check"></i> Todos</button>';
 
-    Object.keys(produtos).forEach(cat => {
-        const btn        = document.createElement('button');
-        btn.className    = 'cat-btn';
-        btn.dataset.cat  = cat;
-        btn.textContent  = cat;
+    categoriasOrdenadas().forEach(cat => {
+        const btn       = document.createElement('button');
+        btn.className   = 'cat-btn';
+        btn.dataset.cat = cat;
+        btn.innerHTML   = `<i class="${iconeCategoria(cat)}"></i> ${cat}`;
         bar.appendChild(btn);
     });
 
@@ -76,6 +114,42 @@ function renderCategorias() {
             catAtiva = btn.dataset.cat;
             renderProdutos();
         });
+    });
+}
+
+// ── RENDER DESTAQUES (pratos mais pedidos) ────────────────────────
+// Depende do campo booleano "destaque" em cada produto. Se nenhum
+// item tiver destaque = true, a seção fica oculta automaticamente.
+function renderDestaques() {
+    const secao = document.getElementById('secao-destaques');
+    const lista = document.getElementById('destaques-lista');
+
+    const destacados = todosOsProdutos().filter(p => p.destaque);
+
+    if (destacados.length === 0) {
+        secao.classList.add('oculto');
+        lista.innerHTML = '';
+        return;
+    }
+
+    secao.classList.remove('oculto');
+
+    lista.innerHTML = destacados.map(p => `
+        <div class="destaque-card" data-id="${p.id}">
+            <span class="destaque-ribbon"><i class="fa-solid fa-star"></i> Mais pedido</span>
+            ${p.imagem_url
+                ? `<img src="${p.imagem_url}" class="destaque-img" alt="${p.nome}">`
+                : `<div class="destaque-img sem-foto"><i class="fa-solid fa-bowl-food"></i></div>`
+            }
+            <div class="destaque-corpo">
+                <div class="destaque-nome">${p.nome}</div>
+                <div class="destaque-preco">${formatBRL(p.preco_venda)}</div>
+            </div>
+        </div>
+    `).join('');
+
+    lista.querySelectorAll('.destaque-card').forEach(card => {
+        card.addEventListener('click', () => adicionarAoCarrinho(Number(card.dataset.id)));
     });
 }
 
@@ -187,6 +261,46 @@ function showToast() {
     toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
+// ── PAINEL LATERAL (pedido + pagamento) ───────────────────────────
+const painel        = document.getElementById('modalCarrinho');
+const painelOverlay = document.getElementById('painel-overlay');
+
+function abrirPainel() {
+    renderCarrinho();
+    painel.classList.add('aberto');
+    painelOverlay.classList.add('aberto');
+    painel.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+}
+
+function fecharPainel() {
+    painel.classList.remove('aberto');
+    painelOverlay.classList.remove('aberto');
+    painel.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('btn-carrinho').addEventListener('click', abrirPainel);
+document.getElementById('btn-fechar-painel').addEventListener('click', fecharPainel);
+painelOverlay.addEventListener('click', fecharPainel);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPainel(); });
+
+// ── FORMA DE PAGAMENTO (cards de rádio) ───────────────────────────
+const opcoesPagamento = document.getElementById('forma-pagamento');
+
+function pagamentoSelecionado() {
+    const marcado = opcoesPagamento.querySelector('input[name="pagamento"]:checked');
+    return marcado ? marcado.value : '';
+}
+
+opcoesPagamento.querySelectorAll('input[name="pagamento"]').forEach(input => {
+    input.addEventListener('change', () => {
+        opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
+            card.classList.toggle('selecionado', card.contains(input) && input.checked);
+        });
+    });
+});
+
 // ── FINALIZAR PEDIDO ─────────────────────────────────────────────
 async function finalizarPedido() {
     if (carrinho.length === 0) {
@@ -194,7 +308,7 @@ async function finalizarPedido() {
         return;
     }
 
-    const pgto = document.getElementById('forma-pagamento').value;
+    const pgto = pagamentoSelecionado();
     if (!pgto) {
         Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Selecione a forma de pagamento.', timer: 2000, timerProgressBar: true });
         return;
@@ -217,7 +331,8 @@ async function finalizarPedido() {
             mesa_id:   mesaId,
             pagamento: pgto,
             itens:     carrinho.map(i => ({
-                produto_id: i.produto.id,
+                id:         i.produto.id,
+                nome:       i.produto.nome,
                 quantidade: i.qty,
                 preco:      i.produto.preco_venda,
             })),
@@ -244,7 +359,7 @@ async function finalizarPedido() {
 
         carrinho = [];
         atualizarUI();
-        bootstrap.Modal.getInstance(document.getElementById('modalCarrinho')).hide();
+        fecharPainel();
 
     } catch (error) {
         Swal.fire({
@@ -259,12 +374,6 @@ async function finalizarPedido() {
         btnFinalizar.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Fazer Pedido';
     }
 }
-
-// ── EVENTOS ──────────────────────────────────────────────────────
-document.getElementById('btn-carrinho').addEventListener('click', () => {
-    renderCarrinho();
-    new bootstrap.Modal(document.getElementById('modalCarrinho')).show();
-});
 
 document.getElementById('btn-finalizar').addEventListener('click', finalizarPedido);
 

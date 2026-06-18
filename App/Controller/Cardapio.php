@@ -91,6 +91,7 @@ final class Cardapio extends Base
                 'erro'    => 'Erro ao buscar itens: ' . $e->getMessage(),
             ], 500);
         }
+        
     }
     public function salvarPedido($request, $response)
     {
@@ -109,7 +110,12 @@ final class Cardapio extends Base
 
         $requestModificado = $request->withParsedBody($novoBody);
 
-        $resultado = (new Pedido())->insert($requestModificado, $response);
+        // Importante: passamos uma resposta NOVA e isolada aqui, e não a $response
+        // recebida pela função. Se reaproveitássemos a mesma $response, o corpo
+        // escrito pelo Pedido::insert() ficaria colado ao JSON que o salvarPedido()
+        // escreve mais abaixo, gerando dois JSONs concatenados na mesma resposta
+        // (o erro "Unexpected non-whitespace character after JSON" no front-end).
+        $resultado = (new Pedido())->insert($requestModificado, new \Slim\Psr7\Response());
 
         // Pedido::insert retorna status/msg/id — adaptamos para o padrão do cardápio
         $dados = json_decode((string) $resultado->getBody(), true);
