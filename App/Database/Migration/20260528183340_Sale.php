@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 // CORRIGIDO: id_cliente era BIGINT sem FK. Agora referencia customer(id).
 // estado_venda usa o ENUM stock_movement_venda em vez de VARCHAR solto.
 
-final class Version20260528183259 extends AbstractMigration
+final class Version20260528183340 extends AbstractMigration
 {
     public function getDescription(): string
     {

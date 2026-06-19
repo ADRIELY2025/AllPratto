@@ -7,6 +7,31 @@ namespace App\Database\Migration;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
+/*
+ * CORREÇÃO DE ARQUITETURA — fluxo de Venda x Estoque
+ * ─────────────────────────────────────────────────────────────────────────
+ * Problema observado:
+ *   Ao inserir um item em uma venda (INSERT INTO item_sale), o trigger
+ *   trg_sale_to_stock_movement disparava IMEDIATAMENTE um INSERT em
+ *   stock_movement, mesmo com a venda ainda em rascunho (PRE_VENDA).
+ *   Isso fazia o estoque ser baixado item a item, durante a digitação do
+ *   carrinho, e qualquer falha nessa cadeia (ex.: REFRESH MATERIALIZED VIEW
+ *   public.mvw_estoque falhando) impedia o item de ser salvo — é exatamente
+ *   o erro relatado ("relation public.mvw_estoque does not exist").
+ *
+ * Correção:
+ *   1. O trigger deixa de existir em item_sale (inserir/remover item nunca
+ *      mais toca em estoque).
+ *   2. Um novo trigger passa a existir em sale, disparando SÓ quando
+ *      estado_venda muda PARA 'VENDA' (ou seja: quando o usuário conclui a
+ *      venda no modal de pagamento). Nesse momento, todos os itens já
+ *      lançados na venda geram seus respectivos registros de saída em
+ *      stock_movement, de uma vez só.
+ *   3. mvw_estoque é recriada de forma defensiva (IF NOT EXISTS), garantindo
+ *      que ela exista independente do estado em que o banco já estava.
+ *   4. sale.estado_venda passa a ter DEFAULT 'PRE_VENDA' — se a aplicação
+ *      um dia deixar de enviar esse campo, o banco já assume o valor certo.
+ */
 final class Version20260617120000 extends AbstractMigration
 {
     public function getDescription(): string

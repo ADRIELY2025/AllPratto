@@ -1,406 +1,520 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel da Cozinha — AllPratto</title>
+
+<title>Painel da Cozinha</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
-:root {
-    --verde: #2d6a4f;
-    --verde-light: #52b788;
-    --laranja: #f77f00;
-    --vermelho: #d62828;
-    --azul: #2563eb;
-    --bg: #f4f6f8;
-    --card: #ffffff;
-    --texto: #1f2937;
-    --muted: #6b7280;
-    --radius: 18px;
-    --shadow: 0 10px 30px rgba(0,0,0,.08);
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--texto); }
 
-/* HEADER */
-.header {
-    position: sticky; top: 0; z-index: 100;
-    background: white;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 18px 24px;
-    box-shadow: 0 2px 15px rgba(0,0,0,.06);
-}
-.logo { font-size: 1.4rem; font-weight: 800; }
-.stats { display: flex; gap: 12px; flex-wrap: wrap; }
-.badge {
-    background: #eef2ff; color: #3730a3;
-    padding: 8px 14px; border-radius: 999px;
-    font-weight: 700; font-size: .9rem;
-}
-.header-actions { display: flex; gap: 8px; align-items: center; }
-.btn-refresh, .btn-back {
-    border: none; padding: 10px 18px; border-radius: 10px;
-    font-weight: 700; cursor: pointer; font-size: .9rem; transition: .2s;
-}
-.btn-refresh { background: var(--verde); color: white; }
-.btn-refresh:hover { background: #1f513d; }
-.btn-back { background: #e5e7eb; color: var(--texto); }
-.btn-back:hover { background: #d1d5db; }
+:root{
+    --verde:#2d6a4f;
+    --verde-light:#52b788;
+    --laranja:#f77f00;
+    --vermelho:#d62828;
+    --azul:#2563eb;
 
-/* EMPTY STATE */
-.empty-state {
-    text-align: center; padding: 80px 20px; color: var(--muted);
-    grid-column: 1 / -1;
-}
-.empty-state .icon { font-size: 4rem; margin-bottom: 16px; }
+    --bg:#f4f6f8;
+    --card:#ffffff;
 
-/* GRID */
-.pedidos-grid {
-    max-width: 1800px; margin: auto; padding: 24px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 20px;
+    --texto:#1f2937;
+    --muted:#6b7280;
+
+    --radius:18px;
+
+    --shadow:
+        0 10px 30px rgba(0,0,0,.08);
 }
 
-/* CARD */
-.pedido {
-    background: var(--card); border-radius: var(--radius);
-    box-shadow: var(--shadow); overflow: hidden;
-    display: flex; flex-direction: column; transition: .2s;
-}
-.pedido:hover { transform: translateY(-4px); }
-.pedido-topo { background: var(--verde); color: white; padding: 18px; }
-.pedido-topo.preparo { background: #1d4ed8; }
-.pedido-topo.pronto  { background: #15803d; }
-.numero { font-size: 1.4rem; font-weight: 800; }
-.mesa   { margin-top: 4px; opacity: .9; }
-.info   { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
-.status-badge {
-    padding: 8px 14px; border-radius: 999px;
-    font-size: .8rem; font-weight: 800;
-}
-.status-badge.novo    { background: #fff4d6; color: #946200; }
-.status-badge.preparo { background: #dbeafe; color: #1d4ed8; }
-.status-badge.pronto  { background: #dcfce7; color: #166534; }
-.tempo { font-size: 1rem; font-weight: 800; }
-
-/* ITENS */
-.itens { padding: 20px; flex: 1; }
-.itens h4 { margin-bottom: 15px; font-size: .95rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-.item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 0; border-bottom: 1px solid #eee;
-}
-.item:last-child { border: none; }
-.qtd {
-    background: var(--verde-light); color: white;
-    width: 34px; height: 34px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; font-weight: 800; flex-shrink: 0;
-}
-.nome-prato { flex: 1; margin-left: 12px; font-weight: 700; }
-.subtotal   { font-size: .85rem; color: var(--muted); }
-.obs {
-    margin-top: 15px; background: #fff8e7;
-    border-left: 5px solid #f59e0b;
-    padding: 12px; border-radius: 10px; font-size: .9rem;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-/* ACOES */
-.acoes {
-    display: flex; gap: 8px;
-    padding: 16px 20px; border-top: 1px solid #eee; flex-wrap: wrap;
-}
-.btn-acao {
-    flex: 1; border: none; padding: 12px 8px;
-    border-radius: 12px; font-weight: 800;
-    cursor: pointer; transition: .2s; font-size: .85rem; white-space: nowrap;
-}
-.btn-imprimir  { background: #f3f4f6; }
-.btn-imprimir:hover { background: #e5e7eb; }
-.btn-pronto    { background: var(--verde); color: white; }
-.btn-pronto:hover { background: #1f513d; }
-.btn-preparo   { background: #2563eb; color: white; }
-.btn-preparo:hover { background: #1d4ed8; }
-.btn-pdf       { background: #dc2626; color: white; }
-.btn-pdf:hover { background: #b91c1c; }
-.btn-cancelar  { background: #f3f4f6; color: #dc2626; }
-.btn-cancelar:hover { background: #fee2e2; }
-
-/* TOAST */
-#toast {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #1f2937; color: white;
-    padding: 12px 24px; border-radius: 999px;
-    font-weight: 700; font-size: .9rem;
-    opacity: 0; pointer-events: none; transition: opacity .3s;
-    z-index: 9999;
-}
-#toast.show { opacity: 1; }
-
-/* LOADING */
-.loading-overlay {
-    position: fixed; inset: 0; background: rgba(255,255,255,.8);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 1000; font-size: 1.2rem; font-weight: 700; color: var(--verde);
-}
-.spinner {
-    width: 40px; height: 40px;
-    border: 4px solid #e5e7eb;
-    border-top-color: var(--verde);
-    border-radius: 50%; animation: spin .8s linear infinite; margin-right: 12px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 768px) {
-    .header { flex-direction: column; gap: 12px; }
-    .pedidos-grid { grid-template-columns: 1fr; padding: 16px; }
-    .acoes { flex-direction: column; }
+body{
+    font-family:'Nunito',sans-serif;
+    background:var(--bg);
+    color:var(--texto);
 }
 
-@media print {
-    body * { visibility: hidden; }
-    .pedido-imprimir, .pedido-imprimir * { visibility: visible; }
-    .pedido-imprimir { position: absolute; left: 0; top: 0; width: 100%; }
+/* ===========================
+   HEADER
+=========================== */
+
+.header{
+    position:sticky;
+    top:0;
+    z-index:100;
+
+    background:white;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:18px 24px;
+
+    box-shadow:0 2px 15px rgba(0,0,0,.06);
 }
+
+.logo{
+    font-size:1.4rem;
+    font-weight:800;
+}
+
+.stats{
+    display:flex;
+    gap:12px;
+}
+
+.badge{
+    background:#eef2ff;
+    color:#3730a3;
+
+    padding:8px 14px;
+
+    border-radius:999px;
+
+    font-weight:700;
+    font-size:.9rem;
+}
+
+/* ===========================
+   GRID PEDIDOS
+=========================== */
+
+.pedidos-grid{
+
+    max-width:1800px;
+
+    margin:auto;
+
+    padding:24px;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(auto-fill,minmax(360px,1fr));
+
+    gap:20px;
+}
+
+/* ===========================
+   CARD PEDIDO
+=========================== */
+
+.pedido{
+
+    background:var(--card);
+
+    border-radius:var(--radius);
+
+    box-shadow:var(--shadow);
+
+    overflow:hidden;
+
+    display:flex;
+    flex-direction:column;
+
+    transition:.2s;
+}
+
+.pedido:hover{
+    transform:translateY(-4px);
+}
+
+.pedido-topo{
+
+    background:var(--verde);
+
+    color:white;
+
+    padding:18px;
+}
+
+.numero{
+    font-size:1.4rem;
+    font-weight:800;
+}
+
+.mesa{
+    margin-top:4px;
+    opacity:.9;
+}
+
+.info{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    margin-top:12px;
+}
+
+.status{
+
+    padding:8px 14px;
+    border-radius:999px;
+
+    font-size:.8rem;
+    font-weight:800;
+}
+
+.status.novo{
+    background:#fff4d6;
+    color:#946200;
+}
+
+.status.preparo{
+    background:#dbeafe;
+    color:#1d4ed8;
+}
+
+.status.pronto{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.tempo{
+    font-size:1rem;
+    font-weight:800;
+}
+
+/* ===========================
+   ITENS
+=========================== */
+
+.itens{
+    padding:20px;
+}
+
+.itens h4{
+    margin-bottom:15px;
+}
+
+.item{
+
+    display:flex;
+    justify-content:space-between;
+
+    padding:12px 0;
+
+    border-bottom:1px solid #eee;
+}
+
+.item:last-child{
+    border:none;
+}
+
+.qtd{
+
+    background:var(--verde-light);
+    color:white;
+
+    width:34px;
+    height:34px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:50%;
+
+    font-weight:800;
+}
+
+.nome-prato{
+    flex:1;
+    margin-left:12px;
+    font-weight:700;
+}
+
+.obs{
+
+    margin-top:15px;
+
+    background:#fff8e7;
+
+    border-left:5px solid #f59e0b;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    font-size:.9rem;
+}
+
+/* ===========================
+   RODAPE
+=========================== */
+
+.acoes{
+
+    display:flex;
+    gap:10px;
+
+    padding:20px;
+    border-top:1px solid #eee;
+}
+
+.btn{
+
+    flex:1;
+
+    border:none;
+
+    padding:14px;
+
+    border-radius:12px;
+
+    font-weight:800;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.btn-imprimir{
+    background:#f3f4f6;
+}
+
+.btn-imprimir:hover{
+    background:#e5e7eb;
+}
+
+.btn-pronto{
+    background:var(--verde);
+    color:white;
+}
+
+.btn-pronto:hover{
+    background:#1f513d;
+}
+
+/* ===========================
+   RESPONSIVO
+=========================== */
+
+@media(max-width:768px){
+
+    .header{
+        flex-direction:column;
+        gap:12px;
+    }
+
+    .pedidos-grid{
+        grid-template-columns:1fr;
+        padding:16px;
+    }
+
+    .acoes{
+        flex-direction:column;
+    }
+}
+
+/* ===========================
+   IMPRESSÃO
+=========================== */
+
+@media print{
+
+    body *{
+        visibility:hidden;
+    }
+
+    .pedido-imprimir,
+    .pedido-imprimir *{
+        visibility:visible;
+    }
+
+    .pedido-imprimir{
+        position:absolute;
+        left:0;
+        top:0;
+        width:100%;
+    }
+}
+
 </style>
 </head>
 <body>
 
-<div id="loading-overlay" class="loading-overlay">
-    <div class="spinner"></div> Carregando pedidos...
-</div>
-
 <header class="header">
-    <div class="logo">🍽️ Painel da Cozinha</div>
-    <div class="stats" id="stats">
-        <div class="badge" id="stat-total">0 Pedidos</div>
-        <div class="badge" id="stat-preparo">0 Em preparo</div>
-        <div class="badge" id="stat-pronto">0 Prontos</div>
+
+    <div class="logo">
+        🍽️ Painel da Cozinha
     </div>
-    <div class="header-actions">
-        <button class="btn-back" onclick="window.location.href='/home'">← Voltar</button>
-        <button class="btn-refresh" onclick="carregarPedidos()">↻ Atualizar</button>
+
+    <div class="stats">
+        <div class="badge">12 Pedidos</div>
+        <div class="badge">4 Em preparo</div>
+        <div class="badge">3 Prontos</div>
     </div>
+
 </header>
 
-<section class="pedidos-grid" id="grid-pedidos">
+<section class="pedidos-grid">
+
+    <!-- PEDIDO 001 -->
+
+    <article class="pedido">
+
+        <div class="pedido-topo">
+
+            <div class="numero">
+                Pedido #001
+            </div>
+
+            <div class="mesa">
+                Mesa 08
+            </div>
+
+            <div class="info">
+
+                <div class="status novo">
+                    NOVO
+                </div>
+
+                <div class="tempo">
+                    05 min
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="itens">
+
+            <h4>Itens do Pedido</h4>
+
+            <div class="item">
+                <div class="qtd">2</div>
+                <div class="nome-prato">
+                    Filé à Parmegiana
+                </div>
+            </div>
+
+            <div class="item">
+                <div class="qtd">1</div>
+                <div class="nome-prato">
+                    Suco de Laranja
+                </div>
+            </div>
+
+            <div class="obs">
+                <strong>Observação:</strong>
+                Sem cebola e molho separado.
+            </div>
+
+        </div>
+
+        <div class="acoes">
+
+            <button
+            class="btn btn-imprimir"
+            onclick="imprimirPedido(this)">
+                🖨 Imprimir
+            </button>
+
+            <button
+            class="btn btn-pronto">
+                ✔ Pedido Pronto
+            </button>
+
+        </div>
+
+    </article>
+
+    <!-- PEDIDO 002 -->
+
+    <article class="pedido">
+
+        <div class="pedido-topo">
+
+            <div class="numero">
+                Pedido #002
+            </div>
+
+            <div class="mesa">
+                Delivery
+            </div>
+
+            <div class="info">
+
+                <div class="status preparo">
+                    EM PREPARO
+                </div>
+
+                <div class="tempo">
+                    18 min
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="itens">
+
+            <h4>Itens do Pedido</h4>
+
+            <div class="item">
+                <div class="qtd">3</div>
+                <div class="nome-prato">
+                    Hambúrguer Artesanal
+                </div>
+            </div>
+
+            <div class="item">
+                <div class="qtd">2</div>
+                <div class="nome-prato">
+                    Batata Frita
+                </div>
+            </div>
+
+        </div>
+
+        <div class="acoes">
+
+            <button
+            class="btn btn-imprimir"
+            onclick="imprimirPedido(this)">
+                🖨 Imprimir
+            </button>
+
+            <button
+            class="btn btn-pronto">
+                ✔ Pedido Pronto
+            </button>
+
+        </div>
+
+    </article>
+
 </section>
 
-<div id="toast"></div>
-
 <script>
-const INTERVALO_AUTO = 30000; // 30 segundos
 
-function showToast(msg, cor = '#1f2937') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.style.background = cor;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
-}
+function imprimirPedido(botao){
 
-function tempoDecorrido(criadoEm) {
-    const criado = new Date(criadoEm.replace(' ', 'T'));
-    const diff   = Math.floor((Date.now() - criado.getTime()) / 60000);
-    if (diff < 1) return 'agora';
-    if (diff === 1) return '1 min';
-    return diff + ' min';
-}
+    const pedido =
+        botao.closest('.pedido');
 
-function classeStatus(status) {
-    if (status === 'em_preparo') return 'preparo';
-    if (status === 'pronto')     return 'pronto';
-    return '';
-}
+    document
+        .querySelectorAll('.pedido')
+        .forEach(card =>
+            card.classList.remove('pedido-imprimir')
+        );
 
-function labelStatus(status) {
-    const m = { pendente: 'NOVO', em_preparo: 'EM PREPARO', pronto: 'PRONTO' };
-    return m[status] ?? status.toUpperCase();
-}
+    pedido.classList.add('pedido-imprimir');
 
-function renderPedidos(pedidos) {
-    const grid = document.getElementById('grid-pedidos');
-
-    // Estatísticas
-    const total   = pedidos.length;
-    const preparo = pedidos.filter(p => p.status === 'em_preparo').length;
-    const pronto  = pedidos.filter(p => p.status === 'pronto').length;
-    document.getElementById('stat-total').textContent   = total   + ' Pedido' + (total !== 1 ? 's' : '');
-    document.getElementById('stat-preparo').textContent = preparo + ' Em preparo';
-    document.getElementById('stat-pronto').textContent  = pronto  + ' Pronto'  + (pronto !== 1 ? 's' : '');
-
-    if (!pedidos.length) {
-        grid.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">✅</div>
-                <h2>Tudo em dia!</h2>
-                <p>Nenhum pedido pendente no momento.</p>
-            </div>`;
-        return;
-    }
-
-    grid.innerHTML = pedidos.map(pedido => {
-        const cls    = classeStatus(pedido.status);
-        const label  = labelStatus(pedido.status);
-        const tempo  = tempoDecorrido(pedido.criado_em);
-        const itensH = (pedido.itens || []).map(i => `
-            <div class="item">
-                <div class="qtd">${i.quantidade}</div>
-                <div class="nome-prato">${i.nome}</div>
-                <div class="subtotal">R$ ${parseFloat(i.subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-            </div>`).join('');
-
-        const obsH = pedido.observacao
-            ? `<div class="obs"><strong>Obs:</strong> ${pedido.observacao}</div>`
-            : '';
-
-        const btnProximo = pedido.status === 'pendente'
-            ? `<button class="btn-acao btn-preparo" onclick="atualizarStatus(${pedido.id}, 'em_preparo')">🔥 Em Preparo</button>`
-            : pedido.status === 'em_preparo'
-            ? `<button class="btn-acao btn-pronto" onclick="atualizarStatus(${pedido.id}, 'pronto')">✔ Pronto</button>`
-            : `<button class="btn-acao btn-pronto" onclick="atualizarStatus(${pedido.id}, 'entregue')">🛎 Entregue</button>`;
-
-        return `
-            <article class="pedido" id="pedido-${pedido.id}" data-id="${pedido.id}">
-                <div class="pedido-topo ${cls}">
-                    <div class="numero">Pedido #${pedido.id}</div>
-                    <div class="mesa">Mesa ${pedido.mesa_numero ?? pedido.id_mesa}</div>
-                    <div class="info">
-                        <div class="status-badge ${cls || 'novo'}">${label}</div>
-                        <div class="tempo">⏱ ${tempo}</div>
-                    </div>
-                </div>
-                <div class="itens">
-                    <h4>Itens do Pedido</h4>
-                    ${itensH}
-                    ${obsH}
-                </div>
-                <div class="acoes">
-                    <button class="btn-acao btn-pdf" onclick="gerarPdfPedido(${pedido.id})">
-                        📄 PDF
-                    </button>
-                    <button class="btn-acao btn-imprimir" onclick="imprimirPedido(${pedido.id})">
-                        🖨 Imprimir
-                    </button>
-                    ${btnProximo}
-                    <button class="btn-acao btn-cancelar" onclick="atualizarStatus(${pedido.id}, 'cancelado')">
-                        ✕
-                    </button>
-                </div>
-            </article>`;
-    }).join('');
-}
-
-async function carregarPedidos() {
-    document.getElementById('loading-overlay').style.display = 'flex';
-    try {
-        const res    = await fetch('/kitchen/listar');
-        const data   = await res.json();
-        if (data.status) {
-            renderPedidos(data.pedidos ?? []);
-        }
-    } catch (e) {
-        showToast('Erro ao carregar pedidos', '#dc2626');
-    } finally {
-        document.getElementById('loading-overlay').style.display = 'none';
-    }
-}
-
-async function atualizarStatus(id, status) {
-    try {
-        const res  = await fetch('/kitchen/update-status', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ id, status }),
-        });
-        const data = await res.json();
-        if (data.status) {
-            const labels = { em_preparo: 'Em preparo!', pronto: 'Pedido pronto!', entregue: 'Pedido entregue!', cancelado: 'Pedido cancelado.' };
-            showToast(labels[status] ?? 'Atualizado!', status === 'cancelado' ? '#dc2626' : '#2d6a4f');
-            carregarPedidos();
-        } else {
-            showToast(data.msg || 'Erro ao atualizar.', '#dc2626');
-        }
-    } catch (e) {
-        showToast('Erro de rede.', '#dc2626');
-    }
-}
-
-function imprimirPedido(id) {
-    const card = document.getElementById('pedido-' + id);
-    if (!card) return;
-    document.querySelectorAll('.pedido').forEach(c => c.classList.remove('pedido-imprimir'));
-    card.classList.add('pedido-imprimir');
     window.print();
 }
 
-async function gerarPdfPedido(id) {
-    const card = document.getElementById('pedido-' + id);
-    if (!card) return;
-
-    // Monta conteúdo
-    const numero  = card.querySelector('.numero')?.textContent ?? '';
-    const mesa    = card.querySelector('.mesa')?.textContent ?? '';
-    const statusEl = card.querySelector('.status-badge')?.textContent ?? '';
-    const tempo   = card.querySelector('.tempo')?.textContent ?? '';
-    const obs     = card.querySelector('.obs')?.textContent ?? '';
-    const itens   = [...card.querySelectorAll('.item')].map(i => ({
-        qtd:  i.querySelector('.qtd')?.textContent ?? '',
-        nome: i.querySelector('.nome-prato')?.textContent ?? '',
-        sub:  i.querySelector('.subtotal')?.textContent ?? '',
-    }));
-
-    const win = window.open('', '_blank');
-    const linhas = itens.map(i =>
-        `<tr><td style="text-align:center">${i.qtd}</td><td>${i.nome}</td><td style="text-align:right">${i.sub}</td></tr>`
-    ).join('');
-
-    win.document.write(`
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8">
-            <title>${numero} — AllPratto</title>
-            <style>
-                body { font-family: Arial, sans-serif; padding: 30px; color: #111; }
-                h1 { color: #2d6a4f; margin-bottom: 4px; }
-                .sub { color: #6b7280; margin-bottom: 20px; font-size: .9rem; }
-                table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-                th { background: #2d6a4f; color: white; padding: 10px; text-align: left; }
-                td { padding: 10px; border-bottom: 1px solid #eee; }
-                .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
-                .novo    { background: #fff4d6; color: #946200; }
-                .preparo { background: #dbeafe; color: #1d4ed8; }
-                .pronto  { background: #dcfce7; color: #166534; }
-                .total   { font-weight: bold; font-size: 1.1rem; margin-top: 20px; text-align: right; }
-                .obs-box { background: #fff8e7; border-left: 4px solid #f59e0b; padding: 10px; margin-top: 16px; border-radius: 6px; }
-                .footer  { margin-top: 30px; font-size: .8rem; color: #9ca3af; text-align: center; }
-                @media print { body { padding: 10px; } }
-            </style>
-        </head>
-        <body>
-            <h1>🍽️ AllPratto — Cozinha</h1>
-            <div class="sub">Gerado em: ${new Date().toLocaleString('pt-BR')}</div>
-            <p><strong>${numero}</strong> &nbsp;|&nbsp; ${mesa} &nbsp;|&nbsp; ${tempo}</p>
-            <p>Status: <span class="badge">${statusEl}</span></p>
-            <table>
-                <thead><tr><th style="width:50px">Qtd</th><th>Item</th><th style="text-align:right">Subtotal</th></tr></thead>
-                <tbody>${linhas}</tbody>
-            </table>
-            ${obs ? `<div class="obs-box"><strong>Observação:</strong> ${obs.replace('Obs:', '').trim()}</div>` : ''}
-            <div class="footer">AllPratto Sistema de Gestão — Painel da Cozinha</div>
-        </body>
-        </html>`);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); }, 400);
-}
-
-// Atualização automática
-carregarPedidos();
-setInterval(carregarPedidos, INTERVALO_AUTO);
 </script>
+
 </body>
 </html>
