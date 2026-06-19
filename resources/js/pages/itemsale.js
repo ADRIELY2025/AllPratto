@@ -1,13 +1,3 @@
-/**
- * itemsale.js
- * Módulo dedicado ao gerenciamento de itens da venda (tabela #sale-items-table).
- * Responsabilidades:
- *   - Manter o array local de itens (saleItems)
- *   - Renderizar / atualizar a tabela
- *   - Persistir itens no banco via /sale/item/insert e /sale/item/delete
- *   - Calcular totais do rodapé (subtotal / desconto / acréscimo)
- */
-
 import Requests from '../components/requests.js';
 
 // ─── Estado local dos itens ───────────────────────────────────────────────────
