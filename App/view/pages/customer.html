@@ -24,43 +24,43 @@
                 <div class="card-body">
                     <div class="row">
 
-                        
-                        <div class="col-lg-6 col-md-6">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control"
-                                id="nome" name="nome"
-                                placeholder="Nome ou nome fantasia"
-                                value="{{ customer.nome_fantasia }}" required>
-                                <label for="nome">Nome ou nome fantasia</label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control"
-                                id="sobrenomeRazao" name="sobrenomeRazao"
-                                placeholder="Sobrenome ou razão social"
-                                value="{{ customer.sobrenome_razao }}">
-                                <label for="sobrenomeRazao">Sobrenome ou razão social</label>
-                            </div>
-                        </div>
                         <div class="col-lg-6 col-md-6">
                             <div class="form-floating mb-3">
                                 <input autofocus type="text" class="form-control"
-                                    id="cpfcnpj" name="cpfcnpj"
+                                    id="numeroDocumento" name="numeroDocumento"
                                     placeholder="CPF ou CNPJ"
                                     value="{{ customer.cpf_cnpj }}" required>
-                                <label for="cpfcnpj">CPF ou CNPJ</label>
+                                <label for="numeroDocumento">CPF ou CNPJ</label>
                             </div>
                         </div>
-                        
+
                         <div class="col-lg-6 col-md-6">
                             <div class="form-floating mb-3">
                                 <input type="text" class="form-control"
-                                    id="rgie" name="rgie"
+                                    id="nomeExibicao" name="nomeExibicao"
+                                    placeholder="Nome ou nome fantasia"
+                                    value="{{ customer.nome_fantasia }}" required>
+                                <label for="nomeExibicao">Nome ou nome fantasia</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control"
+                                    id="nomeLegal" name="nomeLegal"
+                                    placeholder="Sobrenome ou razão social"
+                                    value="{{ customer.sobrenome_razao }}">
+                                <label for="nomeLegal">Sobrenome ou razão social</label>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control"
+                                    id="registroSecundario" name="registroSecundario"
                                     placeholder="RG ou Inscrição Estadual"
                                     value="{{ customer.rg_ie }}">
-                                <label for="rgie">RG ou Inscrição Estadual</label>
+                                <label for="registroSecundario">RG ou Inscrição Estadual</label>
                             </div>
                         </div>
 

@@ -1,0 +1,235 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item"><a href="/product/lista">Lista de produtos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+        {% if action == 'e' %}Editar Produto{% else %}Novo Produto{% endif %}
+    </li>
+</ol>
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid py-2">
+
+    <div class="d-flex align-items-center gap-2 mb-4">
+        <i class="fa-solid fa-box fa-lg text-success"></i>
+        <h4 class="mb-0 fw-semibold">
+            {% if action == 'e' %}Editar Produto{% else %}Novo Produto{% endif %}
+        </h4>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-bottom d-flex align-items-center gap-2 py-3">
+            <a href="/product/lista" class="btn btn-warning btn-sm">
+                <i class="fa-solid fa-chevron-left"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card-body p-4">
+            <form id="form">
+                <input type="hidden" id="action" name="action" value="{{ action }}">
+                <input type="hidden" id="id"     name="id"     value="{{ id }}">
+
+                {# Identificação #}
+                <div class="row g-3 mb-3">
+                    <div class="col-8">
+                        <div class="form-floating">
+                            <input autofocus type="text" class="form-control"
+                                id="nome" name="nome" placeholder="x"
+                                value="{{ product.nome }}" required>
+                            <label for="nome">Nome do produto</label>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="codigo_barra" name="codigo_barra" placeholder="x"
+                                value="{{ product.codigo_barra }}">
+                            <label for="codigo_barra">Código de barras</label>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="grupo" name="grupo" placeholder="x"
+                                value="{{ product.grupo }}">
+                            <label for="grupo">Grupo</label>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="unidade" name="unidade" placeholder="x"
+                                value="{{ product.unidade }}" required>
+                            <label for="unidade">Unidade do produto</label>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="tempo_preparo" name="tempo_preparo" placeholder="x"
+                                value="{{ product.tempo_preparo }}">
+                            <label for="tempo_preparo">Tempo de preparo</label>
+                        </div>
+                    </div>
+
+                    {#
+  Bloco de imagem para adicionar no Product.html
+  Cole logo após o bloco de "Identificação" (após o campo tempo_preparo e o checkbox ativo),
+  antes do bloco de "Precificação".
+#}
+
+{# ── Imagem do produto ── #}
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <hr class="my-0">
+        <p class="text-muted small mb-2 mt-2 text-uppercase fw-semibold">
+            <i class="fa-solid fa-image me-1"></i>Imagem do produto
+        </p>
+    </div>
+
+    <div class="col-lg-4 col-md-6">
+
+        {# Preview — mostra imagem atual ou um placeholder #}
+        <div class="mb-2">
+            <img id="preview-imagem"
+                src="{{ product.imagem_url ? product.imagem_url ~ '?v=' ~ 'now'|date('U') : '/img/sem-imagem.png' }}"
+                alt="Imagem do produto"
+                class="img-thumbnail"
+                style="width: 180px; height: 180px; object-fit: cover;">
+        </div>
+
+        {# Input de arquivo — só aparece depois que o produto está salvo #}
+        {% if action == 'e' %}
+            <input type="file" class="form-control form-control-sm"
+                id="inputImagem" name="imagem"
+                accept="image/jpeg,image/png,image/webp">
+            <div class="form-text">JPG, PNG ou WEBP. Máx. 2 MB.</div>
+            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn-upload-imagem">
+                <i class="fa-solid fa-upload me-1"></i> Enviar imagem
+            </button>
+        {% else %}
+            <p class="text-muted small">Salve o produto primeiro para poder enviar uma imagem.</p>
+        {% endif %}
+
+    </div>
+</div>
+                    <div class="col-12 d-flex align-items-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                id="ativo" name="ativo" value="true"
+                                {% if product.ativo or action != 'e' %} checked {% endif %}>
+                            <label class="form-check-label fw-medium" for="ativo">Produto ativo?</label>
+                        </div>
+                    </div>
+                </div>
+
+                {# Precificação #}
+                <div class="row g-3 mb-3">
+                    <div class="col-12"><hr class="my-0"><p class="text-muted small mb-0 mt-2 text-uppercase fw-semibold"><i class="fa-solid fa-tag me-1"></i>Precificação</p></div>
+                    <div class="col-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="preco_compra" name="preco_compra" placeholder="x"
+                                value="{{ product.preco_compra ?? '' }}">
+                            <label for="preco_compra">Preço de compra</label>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="total_imposto" name="total_imposto" placeholder="x"
+                                value="{{ product.total_imposto ?? '' }}">
+                            <label for="total_imposto">Total de imposto (%)</label>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="custo_operacional" name="custo_operacional" placeholder="x"
+                                value="{{ product.custo_operacional ?? '' }}">
+                            <label for="custo_operacional">Custo operacional (%)</label>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="margem_lucro" name="margem_lucro" placeholder="x"
+                                value="{{ product.margem_lucro ?? '' }}">
+                            <label for="margem_lucro">Margem de lucro (%)</label>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control"
+                                id="preco_venda" name="preco_venda" placeholder="x"
+                                value="{{ product.preco_venda ?? '' }}" required>
+                            <label for="preco_venda">Preço de venda</label>
+                        </div>
+                    </div>
+                </div>
+
+                {# Resultado do Cálculo #}
+                <div id="resultado-row" class="d-none mb-4">
+                    <div class="card border-0 bg-light">
+                        <div class="card-header bg-transparent border-bottom py-2">
+                            <span class="fw-semibold text-muted small text-uppercase">
+                                <i class="fa-solid fa-calculator me-1"></i>Resultado do Cálculo
+                            </span>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-borderless mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-muted small ps-3">Total de imposto</th>
+                                        <th class="text-muted small">Custo operacional</th>
+                                        <th class="text-muted small">Margem de lucro</th>
+                                        <th class="text-muted small">Preço de venda sugerido</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="fw-semibold ps-3" id="val-imposto">—</td>
+                                        <td class="fw-semibold" id="val-custo">—</td>
+                                        <td class="fw-semibold" id="val-margem">—</td>
+                                        <td class="fw-semibold text-success fs-5" id="val-venda">—</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {# Descrição #}
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="form-floating">
+                            <textarea class="form-control" placeholder="x"
+                                id="descricao" name="descricao"
+                                style="height:100px">{{ product.descricao }}</textarea>
+                            <label for="descricao">Descrição do produto</label>
+                        </div>
+                    </div>
+                </div>
+
+                {# Ações #}
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success px-4" id="insert">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Salvar
+                    </button>
+                    <a href="/product/lista" class="btn btn-outline-secondary px-4">
+                        <i class="fa-solid fa-xmark me-2"></i>Cancelar
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/product.js') }}
+{% endblock %}

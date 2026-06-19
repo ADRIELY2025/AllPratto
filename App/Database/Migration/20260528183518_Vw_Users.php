@@ -51,6 +51,6 @@ final class Version20260528183518 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        $this->addSql('DROP VIEW IF EXISTS public.vw_user');
+       
     }
 }

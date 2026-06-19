@@ -30,7 +30,7 @@ final class Version20260528183907 extends AbstractMigration
                 k.id_mesa,
                 m.numero        AS numero_mesa,
                 k.id_cliente,
-                TRIM(CONCAT(c.nome, ' ', c.sobrenome)) AS nome_cliente,
+                TRIM(CONCAT(c.nome_fantasia, ' ', c.sobrenome_razao)) AS nome_cliente,
                 k.id_produto,
                 k.product_name,
                 k.quantidade,

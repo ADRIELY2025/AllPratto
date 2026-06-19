@@ -171,29 +171,3 @@ document.getElementById('insert').addEventListener('click', async () => {
 
 // ─── Ao abrir a página em modo edição, carrega parcelas
 loadInstallments();
-
-// ─── Select2 para Sale
-$('#id_sale').select2({
-    placeholder: 'Selecione uma venda...',
-    allowClear: true,
-    width: '100%',
-    ajax: {
-        url: '/sale/find-sale',
-        type: 'POST',
-        dataType: 'json',
-        delay: 300,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        data(params) {
-            return { term: params.term ?? '', limit: 50, offset: 0 };
-        },
-        processResults(res) {
-            if (!res.status) return { results: [] };
-            return {
-                results: res.data.map(s => ({
-                    id:   s.id_sale,
-                    text: s.nome_venda,
-                })),
-            };
-        },
-    },
-});

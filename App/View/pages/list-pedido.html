@@ -3,7 +3,7 @@
 {% block breadcrumbs %}
 <ol class="breadcrumb float-sm-end">
     <li class="breadcrumb-item"><a href="/">Início</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Lista de usuários</li>
+    <li class="breadcrumb-item active" aria-current="page">Lista de pedidos</li>
 </ol>
 {% endblock %}
 
@@ -11,22 +11,14 @@
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <a href="/users/detalhes" class="btn btn-outline-success">
-                    <i class="fa-solid fa-plus"></i>
-                    Cadastro
-                </a>
-            </div>
             <div class="card-body">
-                <table class="table table-bordered table-striped table-hover" id="table-users">
+                <table class="table table-bordered table-striped table-hover" id="table-pedido">
                     <thead>
                         <tr>
                             <th>Código</th>
-                            <th>Nome</th>
-                            <th>CPF</th>
-                            <th>RG</th>
-                            <th>E-mail</th>
-                            <th>Ativo?</th>
+                            <th>Mesa</th>
+                            <th>Total</th>
+                            <th>Status</th>
                             <th>Criado em</th>
                             <th>Atualizado em</th>
                             <th>Ação</th>
@@ -44,5 +36,5 @@
 {% endblock %}
 
 {% block script %}
-{{ vite('resources/js/pages/list-users.js') }}
+{{ vite('resources/js/pages/list-pedido.js') }}
 {% endblock %}

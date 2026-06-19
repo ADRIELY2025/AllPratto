@@ -46,10 +46,10 @@ final class Supplier extends Base
         $form = $request->getParsedBody();
 
         $FieldsAndValues = [
-            'nome_fantasia' => $form['nome'],
-            'razao_social' => $form['razaosocial'] ?? '',
-            'cnpj' => $form['cnpj'] ?? '',
-            'inscricao_estadual' => $form['inscricao_estadual'] ?? '',
+            'nome_fantasia' => $form['nomeExibicao'],
+            'razao_social' => $form['nomeLegal'] ?? '',
+            'cnpj' => $form['numeroDocumento'] ?? '',
+            'inscricao_estadual' => $form['registroSecundario'] ?? '',
             'telefone' => $form['telefone'] ?? '',
             'email' => $form['email'] ?? '',
             'ativo' => ($form['ativo'] === 'true') ? true : false

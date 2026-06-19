@@ -16,6 +16,8 @@ session_start();
 # Definido aqui centralmente para evitar repetição e proteger contra Host Header Injection
 define('HOST', $_SERVER['HTTP_HOST']);
 
+define('PROTOCOL', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'http');
+
 define('ROOT', dirname(__FILE__, 3));
 #DIRETÓRIO DAS VIEWS
 define('DIR_VIEWS', ROOT . '/App/View');
