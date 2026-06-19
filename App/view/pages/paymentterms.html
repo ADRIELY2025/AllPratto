@@ -16,12 +16,13 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
+            <div class="card shadow-sm">
+
+                <div class="card-header d-flex align-items-center gap-2 py-3">
                     <a href="/payment/lista" class="btn btn-warning">
-                        <i class="fa-solid fa-chevron-left"></i>
-                        Voltar
+                        <i class="fa-solid fa-chevron-left"></i> Voltar
                     </a>
+                    <span class="fw-semibold text-muted ms-1">Condição de Pagamento</span>
                 </div>
 
                 {% if id_sale %}
@@ -32,11 +33,11 @@
                 {% endif %}
 
                 <div class="card-body">
-                    <div class="row">
-                        <div class="card-body">
-                    <div class="row g-3">
+
+                    
+                    <div class="row g-3 mb-4">
                         <div class="col-lg-6 col-md-12">
-                            <div class="form-floating mb-3">
+                            <div class="form-floating">
                                 <select class="form-select" id="codigo" name="codigo" required>
                                     <option value="" disabled {% if not paymentTerm.codigo %}selected{% endif %}>Selecione...</option>
                                     <option value="01" {% if paymentTerm.codigo == '01' %}selected{% endif %}>Dinheiro</option>
@@ -49,7 +50,7 @@
                         </div>
 
                         <div class="col-lg-3 col-md-6">
-                            <div class="form-floating mb-3">
+                            <div class="form-floating">
                                 <input type="text" class="form-control" id="titulo" name="titulo"
                                     placeholder="Ex: À Vista" value="{{ paymentTerm.titulo }}" required>
                                 <label for="titulo">Título (Ex: À Vista)</label>
@@ -57,81 +58,96 @@
                         </div>
 
                         <div class="col-lg-3 col-md-6">
-                            <div class="form-floating mb-3">
+                            <div class="form-floating">
                                 <input type="text" class="form-control" id="atalho" name="atalho"
                                     placeholder="Atalho" value="{{ paymentTerm.atalho }}">
                                 <label for="atalho">Atalho</label>
                             </div>
                         </div>
-
                     </div>
 
-                    <hr>
+                    <hr class="my-3">
 
+                    
                     <h6 class="fw-bold mb-3">
                         <i class="fa-solid fa-calendar-days me-1"></i> Parcelas
                     </h6>
 
-                    <div class="row align-items-end mb-3">
-                        <div class="col-lg-3 col-md-6">
+                    
+                    <div id="avisoSemParcela" class="alert alert-warning d-none py-2 mb-3 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>
+                            <strong id="nomeFormaPagamento"></strong> não permite parcelamento.
+                            Informe apenas o <strong>Valor Total</strong> e clique em <strong>Adicionar</strong>.
+                        </span>
+                    </div>
+
+                    <div class="row g-3 align-items-end mb-3">
+
+                        
+                        <div class="col-lg-3 col-md-6" id="wrapParcela">
                             <div class="form-floating">
                                 <input type="number" class="form-control" id="parcela"
                                     placeholder="1" min="1">
                                 <label for="parcela">Qtd. Parcelas</label>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6">
+
+                        
+                        <div class="col-lg-3 col-md-6" id="wrapIntervalo">
                             <div class="form-floating">
                                 <input type="number" class="form-control" id="intervalo"
                                     placeholder="30" min="0">
                                 <label for="intervalo">Intervalo (Dias)</label>
                             </div>
                         </div>
+
+                        
                         <div class="col-lg-3 col-md-6">
                             <div class="form-floating">
                                 <input type="number" class="form-control" id="valor_total"
-                                    placeholder="0,00" min="0" step="0.01">
+                                    placeholder="0.00" min="0" step="0.01">
                                 <label for="valor_total">Valor Total (R$)</label>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6 d-grid mt-2 mt-md-0">
+
+                        
+                        <div class="col-lg-3 col-md-6 d-grid">
                             <button id="btnAddParcela" type="button" class="btn btn-outline-primary" style="height:58px">
                                 <i class="fa-solid fa-plus"></i> Adicionar
                             </button>
                         </div>
+
                     </div>
 
-                    <!-- Aviso de bloqueio para À Vista / PIX -->
-                    <div id="avisoAVista" class="alert alert-info d-none py-2 mb-3">
-                        <i class="fa-solid fa-circle-info me-1"></i>
-                        Forma de pagamento <strong id="nomeForma"></strong> não permite parcelamento.
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm table-striped align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width:120px">Parcela</th>
+                                    <th style="width:80px">Qtd.</th>
+                                    <th>Intervalo (Dias)</th>
+                                    <th>Valor por Parcela</th>
+                                    <th class="text-center" style="width:100px">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbInstallments">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">Nenhuma parcela adicionada.</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <table class="table table-bordered table-sm table-striped">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Parcela</th>
-                                <th>Qtd.</th>
-                                <th>Intervalo (Dias)</th>
-                                <th>Valor por Parcela</th>
-                                <th class="text-center">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbInstallments">
-                            <tr>
-                                <td colspan="5" class="text-center text-muted">Nenhuma parcela adicionada.</td>
-                            </tr>
-                        </tbody>
-                    </table>
 
                 </div>
 
                 <div class="card-footer">
                     <button id="insert" type="button" class="btn btn-success">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        Salvar
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar
                     </button>
                 </div>
+
             </div>
         </div>
     </div>
