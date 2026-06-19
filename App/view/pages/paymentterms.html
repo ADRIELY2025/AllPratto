@@ -82,9 +82,22 @@
                         </span>
                     </div>
 
+                    {# Valor total da venda (passado pelo controller) #}
+                    <input type="hidden" id="total_venda_raw" value="{{ total_venda }}">
+
+                    {% if total_venda %}
+                    <div class="alert alert-secondary py-2 mb-3 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-receipt text-primary"></i>
+                        <span>Valor total da venda:
+                            <strong class="text-primary fs-6">
+                                R$ {{ total_venda|number_format(2, ',', '.') }}
+                            </strong>
+                        </span>
+                    </div>
+                    {% endif %}
+
                     <div class="row g-3 align-items-end mb-3">
 
-                        
                         <div class="col-lg-3 col-md-6" id="wrapParcela">
                             <div class="form-floating">
                                 <input type="number" class="form-control" id="parcela"
@@ -93,25 +106,22 @@
                             </div>
                         </div>
 
-                        
                         <div class="col-lg-3 col-md-6" id="wrapIntervalo">
                             <div class="form-floating">
                                 <input type="number" class="form-control" id="intervalo"
-                                    placeholder="30" min="0">
-                                <label for="intervalo">Intervalo (Dias)</label>
+                                    placeholder="30" min="0" max="40">
+                                <label for="intervalo">Intervalo (Dias) <small class="text-muted">máx. 40</small></label>
                             </div>
                         </div>
 
-                        
                         <div class="col-lg-3 col-md-6">
                             <div class="form-floating">
-                                <input type="number" class="form-control" id="valor_total"
-                                    placeholder="0.00" min="0" step="0.01">
-                                <label for="valor_total">Valor Total (R$)</label>
+                                <input type="text" class="form-control bg-light fw-semibold" id="valor_total"
+                                    placeholder="0,00" readonly tabindex="-1">
+                                <label for="valor_total">Valor por Parcela (R$)</label>
                             </div>
                         </div>
 
-                        
                         <div class="col-lg-3 col-md-6 d-grid">
                             <button id="btnAddParcela" type="button" class="btn btn-outline-primary" style="height:58px">
                                 <i class="fa-solid fa-plus"></i> Adicionar

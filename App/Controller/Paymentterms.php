@@ -25,12 +25,22 @@ final class PaymentTerms extends Base
         // id_sale pode vir como query param (ex: /payment/detalhes?id_sale=42)
         $queryParams = $request->getQueryParams();
         $idSale      = $queryParams['id_sale'] ?? null;
+        $totalVenda  = null;
 
         if (!is_null($id)) {
             $qb = \App\Database\DB::select('*')->from('payment_terms');
             $paymentTerm = $qb
                 ->where('id = ' . $qb->createPositionalParameter($id, \Doctrine\DBAL\ParameterType::INTEGER))
                 ->fetchAssociative();
+        }
+
+        // Busca o total_liquido da venda para exibir o valor fixo
+        if (!is_null($idSale)) {
+            $qbSale = \App\Database\DB::select('total_liquido')->from('sale');
+            $sale   = $qbSale
+                ->where('id = ' . $qbSale->createPositionalParameter((int) $idSale, \Doctrine\DBAL\ParameterType::INTEGER))
+                ->fetchAssociative();
+            $totalVenda = $sale['total_liquido'] ?? null;
         }
 
         return $this->getTwig()
@@ -40,6 +50,7 @@ final class PaymentTerms extends Base
                 'action'      => $action,
                 'paymentTerm' => $paymentTerm,
                 'id_sale'     => $idSale,
+                'total_venda' => $totalVenda,
             ])
             ->withHeader('Content-Type', 'text/html')
             ->withStatus(200);

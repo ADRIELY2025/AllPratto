@@ -2,28 +2,56 @@ import Requests from '../components/requests.js';
 import Validate  from '../components/validate.js';
 
 // ─── Elementos
-const Action       = document.getElementById('action');
-const Id           = document.getElementById('id');
-const Codigo       = document.getElementById('codigo');
-const Titulo       = document.getElementById('titulo');
-const BtnAdd       = document.getElementById('btnAddParcela');
-const TbBody       = document.getElementById('tbInstallments');
-const AvisoEl      = document.getElementById('avisoSemParcela');
-const NomeFormaEl  = document.getElementById('nomeFormaPagamento');
-const WrapParcela  = document.getElementById('wrapParcela');
-const WrapIntervalo= document.getElementById('wrapIntervalo');
-const InputParcela = document.getElementById('parcela');
-const InputInterv  = document.getElementById('intervalo');
-const InputValor   = document.getElementById('valor_total');
+const Action        = document.getElementById('action');
+const Id            = document.getElementById('id');
+const Codigo        = document.getElementById('codigo');
+const Titulo        = document.getElementById('titulo');
+const BtnAdd        = document.getElementById('btnAddParcela');
+const TbBody        = document.getElementById('tbInstallments');
+const AvisoEl       = document.getElementById('avisoSemParcela');
+const NomeFormaEl   = document.getElementById('nomeFormaPagamento');
+const WrapParcela   = document.getElementById('wrapParcela');
+const WrapIntervalo = document.getElementById('wrapIntervalo');
+const InputParcela  = document.getElementById('parcela');
+const InputInterv   = document.getElementById('intervalo');
+const InputValor    = document.getElementById('valor_total');   // readonly — valor por parcela calculado
+const TotalVendaRaw = document.getElementById('total_venda_raw');
 
-// Formas que NÃO permitem parcelamento (somente à vista)
+// Valor total da venda vindo do servidor (float)
+const TOTAL_VENDA = parseFloat(TotalVendaRaw?.value || '0') || 0;
+
+// Formas que NÃO permitem parcelamento
 const SEM_PARCELAMENTO = ['01', '17']; // Dinheiro, PIX
+
+const MAX_INTERVALO = 40;
 
 let installments = [];
 
-// ─── Verifica se a forma atual bloqueia parcela/intervalo
+// ─── Formata número como moeda BR
+function fmtBRL(value) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+}
+
+// ─── Verifica se forma atual bloqueia parcelas
 function isSemParcelamento() {
     return SEM_PARCELAMENTO.includes(Codigo.value);
+}
+
+// ─── Recalcula o campo "Valor por Parcela" com base na qtd digitada
+function recalcularValorParcela() {
+    if (!TOTAL_VENDA) return;
+
+    if (isSemParcelamento()) {
+        InputValor.value = fmtBRL(TOTAL_VENDA);
+        return;
+    }
+
+    const qtd = parseInt(InputParcela.value) || 0;
+    if (qtd > 0) {
+        InputValor.value = fmtBRL(TOTAL_VENDA / qtd);
+    } else {
+        InputValor.value = '';
+    }
 }
 
 // ─── Atualiza UI conforme forma de pagamento selecionada
@@ -31,11 +59,9 @@ function atualizarCamposForma() {
     const bloqueado = isSemParcelamento();
     const nomeForma = Codigo.options[Codigo.selectedIndex]?.text ?? '';
 
-    // Aviso
     AvisoEl.classList.toggle('d-none', !bloqueado);
     if (bloqueado) NomeFormaEl.textContent = nomeForma;
 
-    // Bloquear / desbloquear qtd. parcelas e intervalo
     InputParcela.disabled = bloqueado;
     InputInterv.disabled  = bloqueado;
 
@@ -44,12 +70,12 @@ function atualizarCamposForma() {
         InputInterv.value  = '';
         WrapParcela.style.opacity   = '0.4';
         WrapIntervalo.style.opacity = '0.4';
-        InputValor.focus();
     } else {
         WrapParcela.style.opacity   = '1';
         WrapIntervalo.style.opacity = '1';
-        InputParcela.focus();
     }
+
+    recalcularValorParcela();
 }
 
 // ─── Render da tabela
@@ -62,9 +88,8 @@ function renderInstallments() {
     }
 
     installments.forEach((item, index) => {
-        const valorFmt = item.valor_total
-            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.valor_total / item.parcela)
-            : '—';
+        const valorParcela = item.parcela > 0 ? TOTAL_VENDA / item.parcela : TOTAL_VENDA;
+        const valorFmt = fmtBRL(valorParcela);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -112,10 +137,9 @@ async function loadInstallments() {
         const res = await requests.post('/payment/installment/list', { id_pagamento: Id.value });
         if (res.status && res.data) {
             installments = res.data.map(r => ({
-                id:          r.id,
-                parcela:     r.parcela,
-                intervalo:   r.intervalo,
-                valor_total: r.valor_total ?? null,
+                id:       r.id,
+                parcela:  r.parcela,
+                intervalo: r.intervalo,
             }));
             renderInstallments();
         }
@@ -160,29 +184,42 @@ Codigo.addEventListener('change', () => {
     atualizarCamposForma();
 });
 
+// ─── Recalcula ao digitar quantidade de parcelas
+InputParcela.addEventListener('input', recalcularValorParcela);
+
+// ─── Limita intervalo a MAX_INTERVALO
+InputInterv.addEventListener('input', () => {
+    const v = parseInt(InputInterv.value) || 0;
+    if (v > MAX_INTERVALO) {
+        InputInterv.value = MAX_INTERVALO;
+        Swal.fire({
+            icon: 'warning', title: 'Atenção',
+            text: `O intervalo máximo permitido é de ${MAX_INTERVALO} dias.`,
+            timer: 2500, timerProgressBar: true,
+        });
+    }
+});
+
 // ─── Adicionar parcela
 BtnAdd.addEventListener('click', async () => {
     const semParc   = isSemParcelamento();
     const parcela   = semParc ? 1 : (parseInt(InputParcela.value) || 0);
     const intervalo = semParc ? 0 : (parseInt(InputInterv.value)  || 0);
-    const valorTotal = parseFloat(InputValor.value) || 0;
 
-    // Validações
     if (!semParc && parcela <= 0) {
         Swal.fire({ icon: 'error', title: 'Atenção', text: 'Informe a quantidade de parcelas.', timer: 3000, timerProgressBar: true });
         InputParcela.focus();
         return;
     }
 
-    if (!semParc && intervalo < 0) {
-        Swal.fire({ icon: 'error', title: 'Atenção', text: 'Informe o intervalo em dias.', timer: 3000, timerProgressBar: true });
+    if (!semParc && (intervalo < 0 || intervalo > MAX_INTERVALO)) {
+        Swal.fire({ icon: 'error', title: 'Atenção', text: `O intervalo deve ser entre 0 e ${MAX_INTERVALO} dias.`, timer: 3000, timerProgressBar: true });
         InputInterv.focus();
         return;
     }
 
-    if (valorTotal <= 0) {
-        Swal.fire({ icon: 'error', title: 'Atenção', text: 'Informe o Valor Total (R$).', timer: 3000, timerProgressBar: true });
-        InputValor.focus();
+    if (!TOTAL_VENDA) {
+        Swal.fire({ icon: 'error', title: 'Atenção', text: 'Não foi possível identificar o valor total da venda.', timer: 3000, timerProgressBar: true });
         return;
     }
 
@@ -198,7 +235,7 @@ BtnAdd.addEventListener('click', async () => {
             id_pagamento: Id.value,
             parcela,
             intervalo,
-            valor_total: valorTotal,
+            valor_total: TOTAL_VENDA,
         });
 
         if (!res.status) {
@@ -206,7 +243,7 @@ BtnAdd.addEventListener('click', async () => {
             return;
         }
 
-        installments.push({ id: res.id, parcela, intervalo, valor_total: valorTotal });
+        installments.push({ id: res.id, parcela, intervalo });
         renderInstallments();
 
         InputParcela.value = '';
@@ -214,7 +251,6 @@ BtnAdd.addEventListener('click', async () => {
         InputValor.value   = '';
 
         if (!semParc) InputParcela.focus();
-        else InputValor.focus();
 
         Swal.fire({ icon: 'success', title: 'Adicionado!', text: 'Parcela salva com sucesso.', timer: 2000, timerProgressBar: true });
 
@@ -231,11 +267,9 @@ document.getElementById('insert').addEventListener('click', async () => {
 
     if (ok) {
         Swal.fire({
-            icon: 'success',
-            title: 'Sucesso',
+            icon: 'success', title: 'Sucesso',
             text: 'Condição de pagamento salva com sucesso!',
-            timer: 2500,
-            timerProgressBar: true,
+            timer: 2500, timerProgressBar: true,
         }).then(() => { window.location.href = '/payment/lista'; });
     }
 
@@ -243,5 +277,5 @@ document.getElementById('insert').addEventListener('click', async () => {
 });
 
 // ─── Init
-atualizarCamposForma(); // aplica estado inicial (caso haja valor pré-selecionado no edit)
+atualizarCamposForma();
 loadInstallments();
