@@ -13,15 +13,11 @@ use App\Controller\Product;
 use App\Controller\PaymentTerms;
 use App\Controller\Mesa;
 use App\Controller\Pedido;
-<<<<<<< HEAD
-use App\Controller\Purchase;
-=======
 use App\Controller\Sale;
 use App\Controller\ItemSale;
 use App\Controller\Installment;
 use App\Controller\Purchase;
 use App\Controller\Stock;
->>>>>>> 49be35b32c63f39c2e89ae6806ecc8a9ac32f671
 
 $app->post('/',     App\Controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home',  App\Controller\Home::class . ':home')->add(Middleware::web());
