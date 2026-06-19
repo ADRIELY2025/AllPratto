@@ -27,14 +27,23 @@ export const saleItems = [];
 // ─── Utilitários de formatação ────────────────────────────────────────────────
 
 export function stringParaFloat(valor) {
-    if (!valor) return 0;
-    return parseFloat(
-        valor.toString()
-            .replace('R$', '')
-            .replace(/\s/g, '')
-            .replace(/\./g, '')
-            .replace(',', '.')
-    ) || 0;
+    if (valor === null || valor === undefined || valor === '') return 0;
+
+    let str = valor.toString().trim();
+
+    // Remove prefixo R$ e espaços
+    str = str.replace(/R\$\s*/g, '').trim();
+
+    // Caso já seja um número válido (sem máscara), retorna direto
+    if (/^-?\d+(\.\d+)?$/.test(str)) {
+        return parseFloat(str) || 0;
+    }
+
+    // Formato brasileiro: 1.234,56 → separador de milhar é "." e decimal é ","
+    // Remove todos os pontos (separador de milhar) e troca vírgula por ponto
+    str = str.replace(/\./g, '').replace(',', '.');
+
+    return parseFloat(str) || 0;
 }
 
 export function floatParaBR(valor) {

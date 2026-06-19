@@ -4,16 +4,10 @@
  *   - Inicialização do Select2 (cliente e produto)
  *   - Criação/garantia da venda no banco
  *   - Formulário de item (delega inserção ao itemsale.js)
- *   - Modal de finalização
- *
- * CORREÇÕES aplicadas:
- *   1. Select2 agora importado explicitamente para garantir registro de $.fn.select2
- *      independente da ordem de carregamento do app.js.
- *   2. IDs de produto e cliente exibidos na tabela (via itemsale.js renderItems).
- *   3. Lógica de item movida para itemsale.js (insertItem, renderItems, clearItems).
+ *   - Finalização: atualiza estado para VENDA e redireciona para /payment/detalhes?id_sale=X
  */
 
-import 'select2';                          // garante $.fn.select2 neste chunk
+import 'select2';
 import Requests from '../components/requests.js';
 import {
     saleItems,
@@ -27,15 +21,15 @@ import {
 
 // ─── Estado global da venda ───────────────────────────────────────────────────
 
-let currentSaleId = null;
+let currentSaleId   = null;
 let currentClientId = null;
 
 // ─── Referências DOM ──────────────────────────────────────────────────────────
 
-const inputQuantidade = document.getElementById('quantidade');
+const inputQuantidade      = document.getElementById('quantidade');
 const inputUnitarioLiquido = document.getElementById('unitario_liquido');
-const inputValorTotal = document.getElementById('valor-total');
-const saleIdInput = document.getElementById('sale-id');
+const inputValorTotal      = document.getElementById('valor-total');
+const saleIdInput          = document.getElementById('sale-id');
 
 // ─── Status da venda ──────────────────────────────────────────────────────────
 
@@ -60,11 +54,7 @@ function initCustomerSelect() {
             delay: 250,
             cache: false,
             data: function (params) {
-                return {
-                    term: params.term || '',
-                    limit: 50,
-                    offset: 0,
-                };
+                return { term: params.term || '', limit: 50, offset: 0 };
             },
             processResults: function (json) {
                 return {
@@ -98,11 +88,7 @@ function initProductSelect() {
             delay: 250,
             cache: false,
             data: function (params) {
-                return {
-                    term: params.term || '',
-                    limit: 50,
-                    offset: 0,
-                };
+                return { term: params.term || '', limit: 50, offset: 0 };
             },
             processResults: function (json) {
                 return {
@@ -123,15 +109,12 @@ function initProductSelect() {
 
 function calcularTotal() {
     try {
-        const precoBruto = inputUnitarioLiquido?.inputmask
-            ? inputUnitarioLiquido.inputmask.unmaskedvalue()
-            : inputUnitarioLiquido?.value ?? '0';
-        const qtdBruta = inputQuantidade?.inputmask
-            ? inputQuantidade.inputmask.unmaskedvalue()
-            : inputQuantidade?.value ?? '0';
+        // Usa o value diretamente — stringParaFloat já lida com formato BR
+        const precoRaw = inputUnitarioLiquido?.value ?? '0';
+        const qtdRaw   = inputQuantidade?.value ?? '0';
 
-        const preco = stringParaFloat(precoBruto);
-        const qtd = stringParaFloat(qtdBruta);
+        const preco = stringParaFloat(precoRaw);
+        const qtd   = stringParaFloat(qtdRaw);
         const total = preco * qtd;
 
         if (inputValorTotal) {
@@ -142,27 +125,27 @@ function calcularTotal() {
     }
 }
 
-// ─── Criar venda no banco (chamada única por sessão) ──────────────────────────
+// ─── Criar venda no banco ─────────────────────────────────────────────────────
 
 async function criarVenda(clienteId) {
-    const id = Number(clienteId) || null;
+    const id       = Number(clienteId) || null;
     const requests = new Requests();
+    const fd       = new FormData();
 
-    const fd = new FormData();
     if (id) fd.append('id_cliente', id);
-    fd.append('total_bruto', 0);
+    fd.append('total_bruto',   0);
     fd.append('total_liquido', 0);
-    fd.append('desconto', 0);
-    fd.append('acrescimo', 0);
-    fd.append('observacao', document.getElementById('observacao')?.value || '');
-    fd.append('estado_venda', 'PRE_VENDA');
+    fd.append('desconto',      0);
+    fd.append('acrescimo',     0);
+    fd.append('observacao',    document.getElementById('observacao')?.value || '');
+    fd.append('estado_venda',  'PRE_VENDA');
 
     try {
         const response = await requests.setBody(fd).post('/sale/insert');
         if (!response?.status) {
             return { status: false, msg: response?.msg || 'Não foi possível criar a venda.' };
         }
-        currentSaleId = response.id;
+        currentSaleId   = response.id;
         currentClientId = id ? String(id) : '';
         updateSaleStatus();
         return { status: true, id: currentSaleId };
@@ -191,7 +174,7 @@ async function garantirVenda(clienteId) {
 
 function clearSale() {
     clearItems();
-    currentSaleId = null;
+    currentSaleId   = null;
     currentClientId = null;
     updateSaleStatus();
 
@@ -210,249 +193,9 @@ function clearSale() {
     updateTotals();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  MODAL DE FINALIZAÇÃO
-// ═══════════════════════════════════════════════════════════════════════════════
+// ─── Finalizar Venda ──────────────────────────────────────────────────────────
 
-let _fsmSaleId = null;
-let _fsmTotal = 0;
-let _fsmPagamentos = [];
-
-function fsmFmt(valor) {
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-function fsmParseInput(str) {
-    return parseFloat((str || '0').replace(/\./g, '').replace(',', '.')) || 0;
-}
-
-function fsmUpdateTotals() {
-    const totalPago = _fsmPagamentos.reduce((s, p) => s + p.valor, 0);
-    const dif = _fsmTotal - totalPago;
-
-    document.getElementById('fsm-total-venda').textContent = fsmFmt(_fsmTotal);
-    document.getElementById('fsm-total-pago').textContent = fsmFmt(totalPago);
-
-    const difEl = document.getElementById('fsm-diferenca');
-    difEl.textContent = fsmFmt(Math.abs(dif));
-    difEl.className = 'fw-bold fs-5 ' + (
-        dif < -0.005 ? 'text-danger' :
-            dif < 0.005 ? 'text-success' :
-                'text-warning'
-    );
-
-    document.getElementById('fsm-conclude-btn').disabled = dif > 0.005;
-}
-
-function fsmRenderList() {
-    const tbody = document.getElementById('fsm-payments-tbody');
-    const table = document.getElementById('fsm-payments-table');
-    const empty = document.getElementById('fsm-empty-payments');
-    tbody.innerHTML = '';
-
-    if (_fsmPagamentos.length === 0) {
-        table.style.display = 'none';
-        empty.style.display = 'block';
-        fsmUpdateTotals();
-        return;
-    }
-
-    table.style.display = '';
-    empty.style.display = 'none';
-
-    _fsmPagamentos.forEach((p, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="fw-semibold">${p.titulo}</td>
-            <td class="text-muted small">${p.parcelaLabel || '—'}</td>
-            <td class="text-end text-success fw-semibold">${fsmFmt(p.valor)}</td>
-            <td class="text-center">
-                <button class="btn btn-sm btn-outline-danger py-0 px-2 fsm-remove-btn"
-                        data-idx="${idx}" title="Remover">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    tbody.querySelectorAll('.fsm-remove-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            _fsmPagamentos.splice(parseInt(btn.dataset.idx), 1);
-            fsmRenderList();
-        });
-    });
-
-    fsmUpdateTotals();
-}
-
-async function fsmLoadPaymentTerms() {
-    const sel = document.getElementById('fsm-payment-term');
-    sel.innerHTML = '<option value="">Carregando...</option>';
-    try {
-        const res = await fetch('/sale/payment-terms', {
-            headers: { Accept: 'application/json' },
-            credentials: 'same-origin',
-        });
-        const json = await res.json();
-        sel.innerHTML = '<option value="">Selecione...</option>';
-        (json.data || []).forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.id;
-            opt.textContent = t.titulo + (t.codigo ? ` (${t.codigo})` : '');
-            sel.appendChild(opt);
-        });
-    } catch (e) {
-        sel.innerHTML = '<option value="">Erro ao carregar</option>';
-        console.error('fsmLoadPaymentTerms:', e);
-    }
-}
-
-async function fsmOnTermChange() {
-    const termId = document.getElementById('fsm-payment-term').value;
-    const parcelasCol = document.getElementById('fsm-parcelas-col');
-    const parcelaSel = document.getElementById('fsm-parcela');
-    const valorInput = document.getElementById('fsm-valor');
-
-    parcelasCol.style.display = 'none';
-    parcelaSel.innerHTML = '<option value="">Selecione...</option>';
-
-    if (!termId) return;
-
-    try {
-        const res = await fetch(`/sale/installments/${termId}`, {
-            headers: { Accept: 'application/json' },
-            credentials: 'same-origin',
-        });
-        const json = await res.json();
-        const rows = json.data || [];
-
-        if (rows.length > 0) {
-            parcelaSel.innerHTML = '<option value="">Selecione a parcela...</option>';
-            rows.forEach(inst => {
-                const opt = document.createElement('option');
-                opt.value = inst.id;
-                opt.dataset.parcela = inst.parcela;
-                opt.textContent = `${inst.parcela}x` + (inst.intervalo ? ` — ${inst.intervalo} dias` : '');
-                parcelaSel.appendChild(opt);
-            });
-            parcelasCol.style.display = 'block';
-            valorInput.value = '';
-        } else {
-            parcelasCol.style.display = 'none';
-            const totalPago = _fsmPagamentos.reduce((s, p) => s + p.valor, 0);
-            const restante = Math.max(0, _fsmTotal - totalPago);
-            valorInput.value = restante > 0 ? restante.toFixed(2).replace('.', ',') : '';
-            valorInput.focus();
-        }
-    } catch (e) {
-        console.error('fsmOnTermChange:', e);
-        parcelasCol.style.display = 'none';
-    }
-}
-
-function fsmAddPayment() {
-    const termSel = document.getElementById('fsm-payment-term');
-    const parcelaSel = document.getElementById('fsm-parcela');
-    const valorInput = document.getElementById('fsm-valor');
-
-    const termId = termSel.value;
-    const termTxt = termSel.selectedOptions[0]?.textContent || '';
-    const valor = fsmParseInput(valorInput.value);
-
-    if (!termId) { alert('Selecione uma forma de pagamento.'); return; }
-    if (valor <= 0) { alert('Informe um valor válido.'); valorInput.focus(); return; }
-
-    const parcelasVisiveis = document.getElementById('fsm-parcelas-col').style.display !== 'none';
-    let parcelaLabel = null;
-    if (parcelasVisiveis) {
-        if (!parcelaSel.value) { alert('Selecione a parcela.'); parcelaSel.focus(); return; }
-        parcelaLabel = parcelaSel.selectedOptions[0]?.textContent || null;
-    }
-
-    _fsmPagamentos.push({ titulo: termTxt, parcelaLabel, valor });
-
-    termSel.value = '';
-    parcelaSel.innerHTML = '<option value="">Selecione...</option>';
-    document.getElementById('fsm-parcelas-col').style.display = 'none';
-    valorInput.value = '';
-
-    fsmRenderList();
-}
-
-async function fsmOpen(saleId, totalLiquido, nomeCliente) {
-    _fsmSaleId = saleId;
-    _fsmTotal = parseFloat(totalLiquido) || 0;
-    _fsmPagamentos = [];
-
-    document.getElementById('fsm-cliente-nome').textContent =
-        nomeCliente ? `Cliente: ${nomeCliente}` : `Venda #${saleId}`;
-
-    document.getElementById('fsm-payment-term').value = '';
-    document.getElementById('fsm-parcela').innerHTML = '<option value="">Selecione...</option>';
-    document.getElementById('fsm-parcelas-col').style.display = 'none';
-    document.getElementById('fsm-valor').value = '';
-
-    fsmRenderList();
-    fsmUpdateTotals();
-    await fsmLoadPaymentTerms();
-
-    bootstrap.Modal.getOrCreateInstance(
-        document.getElementById('finalizeSaleModal')
-    ).show();
-}
-
-async function fsmConclude() {
-    if (_fsmPagamentos.length === 0) {
-        alert('Adicione pelo menos um pagamento antes de concluir.');
-        return;
-    }
-
-    const btn = document.getElementById('fsm-conclude-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
-
-    try {
-        const descontoPct = parseFloat(document.getElementById('desconto')?.value || 0) || 0;
-        const acrescimoPct = parseFloat(document.getElementById('acrescimo')?.value || 0) || 0;
-        const totalBruto = saleItems.reduce((s, i) => s + i.total, 0);
-        const valDesc = (totalBruto * descontoPct) / 100;
-        const valAcr = (totalBruto * acrescimoPct) / 100;
-        const totalLiquido = totalBruto - valDesc + valAcr;
-        const observacao = document.getElementById('observacao')?.value || '';
-
-        const requests = new Requests();
-        const fd = new FormData();
-        fd.append('id', _fsmSaleId);
-        fd.append('total_bruto', totalBruto);
-        fd.append('total_liquido', totalLiquido);
-        fd.append('desconto', valDesc);
-        fd.append('acrescimo', valAcr);
-        fd.append('observacao', observacao);
-        fd.append('estado_venda', 'VENDA');
-
-        const result = await requests.setBody(fd).post('/sale/update');
-        if (!result?.status) throw new Error(result?.msg || 'Erro ao finalizar venda.');
-
-        bootstrap.Modal.getInstance(document.getElementById('finalizeSaleModal')).hide();
-        clearSale();
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Venda Finalizada!',
-            text: `Venda #${_fsmSaleId} concluída com sucesso.`,
-            timer: 3000,
-            timerProgressBar: true,
-        });
-    } catch (e) {
-        console.error('fsmConclude:', e);
-        Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao concluir: ' + e.message });
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Concluir Venda';
-    }
-}
-
-function finalizeSale() {
+async function finalizeSale() {
     if (saleItems.length === 0) {
         Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Adicione pelo menos um item à venda.' });
         return;
@@ -469,15 +212,63 @@ function finalizeSale() {
         return;
     }
 
-    const nomeCliente = clienteSelect.selectedOptions[0]?.text || '';
-    const descPct = parseFloat(document.getElementById('desconto')?.value || 0) || 0;
-    const acrPct = parseFloat(document.getElementById('acrescimo')?.value || 0) || 0;
-    const totalBruto = saleItems.reduce((s, i) => s + i.total, 0);
-    const valDesc = (totalBruto * descPct) / 100;
-    const valAcr = (totalBruto * acrPct) / 100;
-    const totalLiquido = totalBruto - valDesc + valAcr;
+    // Confirmar finalização
+    const confirm = await Swal.fire({
+        icon: 'question',
+        title: 'Finalizar Venda?',
+        text: `A venda #${currentSaleId} será finalizada e você será redirecionado para cadastrar a forma de pagamento.`,
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fa-solid fa-check me-1"></i>Sim, finalizar',
+        cancelButtonText: 'Cancelar',
+    });
 
-    fsmOpen(currentSaleId, totalLiquido, nomeCliente);
+    if (!confirm.isConfirmed) return;
+
+    // Calcular totais
+    const descPct      = parseFloat(document.getElementById('desconto')?.value  || 0) || 0;
+    const acrPct       = parseFloat(document.getElementById('acrescimo')?.value || 0) || 0;
+    const totalBruto   = saleItems.reduce((s, i) => s + i.total, 0);
+    const valDesc      = (totalBruto * descPct)  / 100;
+    const valAcr       = (totalBruto * acrPct)   / 100;
+    const totalLiquido = totalBruto - valDesc + valAcr;
+    const observacao   = document.getElementById('observacao')?.value || '';
+
+    // Atualizar venda no banco com estado VENDA
+    const requests = new Requests();
+    const fd       = new FormData();
+    fd.append('id',            currentSaleId);
+    fd.append('total_bruto',   totalBruto);
+    fd.append('total_liquido', totalLiquido);
+    fd.append('desconto',      valDesc);
+    fd.append('acrescimo',     valAcr);
+    fd.append('observacao',    observacao);
+    fd.append('estado_venda',  'VENDA');
+
+    try {
+        const result = await requests.setBody(fd).post('/sale/update');
+        if (!result?.status) throw new Error(result?.msg || 'Erro ao finalizar venda.');
+
+        const saleId = currentSaleId;
+        clearSale();
+
+        // Modal de sucesso igual ao padrão do sistema
+        await Swal.fire({
+            icon: 'success',
+            title: 'Sucesso',
+            text: 'Salvo com sucesso!',
+            confirmButtonColor: '#6c63ff',
+            confirmButtonText: 'OK',
+        });
+
+        // Redirecionar para payment/detalhes com id_sale pré-selecionado
+        window.location.href = `/payment/detalhes?id_sale=${saleId}`;
+
+    } catch (e) {
+        console.error('finalizeSale:', e);
+        Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao concluir: ' + e.message });
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -524,14 +315,14 @@ document.addEventListener('DOMContentLoaded', function () {
     calcularTotal();
 
     // Desconto / Acréscimo
-    document.getElementById('desconto')?.addEventListener('input', updateTotals);
-    document.getElementById('acrescimo')?.addEventListener('input', updateTotals);
+    document.getElementById('desconto')?.addEventListener('input',   updateTotals);
+    document.getElementById('acrescimo')?.addEventListener('input',  updateTotals);
 
     // ── Ao selecionar produto → preenche preço ────────────────────────────────
     $('#id_produto').on('select2:select', async function (e) {
         const productId = e.params.data.id;
         try {
-            const res = await fetch(`/sale/find-product/${productId}`, {
+            const res     = await fetch(`/sale/find-product/${productId}`, {
                 headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
             });
@@ -554,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const clienteId = document.getElementById('id_cliente')?.value ?? '';
         const productId = document.getElementById('id_produto')?.value ?? '';
-        const quantity = inputQuantidade?.value ?? '0';
+        const quantity  = inputQuantidade?.value ?? '0';
         const unitPrice = inputUnitarioLiquido?.value ?? '0';
 
         if (!clienteId) {
@@ -562,7 +353,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Garante (ou cria) a venda
         const saleResult = await garantirVenda(clienteId);
         if (!saleResult.status) {
             Swal.fire({ icon: 'error', title: 'Erro', text: saleResult.msg });
@@ -574,7 +364,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Busca dados completos do produto
         let product;
         try {
             const res = await fetch(`/sale/find-product/${productId}`, {
@@ -592,7 +381,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Delega inserção ao módulo itemsale.js
         const inserted = await insertItem(product, currentSaleId, quantity, unitPrice);
         if (!inserted) return;
 
@@ -604,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function () {
             inputQuantidade.dispatchEvent(new Event('input'));
         }
         if (inputUnitarioLiquido) inputUnitarioLiquido.value = '';
-        if (inputValorTotal) inputValorTotal.value = '';
+        if (inputValorTotal)      inputValorTotal.value      = '';
         calcularTotal();
     });
 
@@ -626,28 +414,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Botão: Finalizar Venda ────────────────────────────────────────────────
     document.getElementById('finalize-sale')?.addEventListener('click', finalizeSale);
-
-    // ── Binds do modal ────────────────────────────────────────────────────────
-    document.getElementById('fsm-payment-term')
-        ?.addEventListener('change', fsmOnTermChange);
-
-    document.getElementById('fsm-add-payment')
-        ?.addEventListener('click', fsmAddPayment);
-
-    document.getElementById('fsm-valor')
-        ?.addEventListener('keydown', e => {
-            if (e.key === 'Enter') { e.preventDefault(); fsmAddPayment(); }
-        });
-
-    // Máscara simples no campo valor do modal
-    document.getElementById('fsm-valor')
-        ?.addEventListener('input', function () {
-            let v = this.value.replace(/\D/g, '');
-            if (!v) { this.value = ''; return; }
-            v = (parseInt(v) / 100).toFixed(2);
-            this.value = v.replace('.', ',');
-        });
-
-    document.getElementById('fsm-conclude-btn')
-        ?.addEventListener('click', fsmConclude);
 });
