@@ -10,10 +10,10 @@ use App\Controller\Customer;
 use App\Controller\Users;
 use App\Controller\Supplier;
 use App\Controller\Company;
+use App\Controller\ItemSale;
 use App\Controller\Product;
 use App\Controller\PaymentTerms;
 use App\Controller\Sale;
-use App\Controller\Purchase;
 
 $app->post('/',     App\Controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home', App\Controller\Home::class . ':home')->add(Middleware::web());
