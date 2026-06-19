@@ -1,0 +1,77 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Lista de Compras</li>
+</ol>
+{% endblock %}
+
+{% block main %}
+<div class="col-12">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fa-solid fa-cart-shopping me-2"></i>
+                Compras registradas automaticamente pelo Cardápio Digital
+            </h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped table-hover" id="table-purchase">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Fornecedor</th>
+                        <th>Total Bruto</th>
+                        <th>Total Líquido</th>
+                        <th>Desconto</th>
+                        <th>Acréscimo</th>
+                        <th>Observação</th>
+                        <th>Status</th>
+                        <th>Criado em</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<form id="form">
+    <input type="hidden" name="id" id="id">
+</form>
+
+<!-- Modal PDF inline -->
+<div class="modal fade" id="modalPdf" tabindex="-1" aria-labelledby="modalPdfLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPdfLabel">
+                    <i class="fa-solid fa-file-pdf me-2 text-danger"></i>
+                    Relatório de Compra
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="pdf-content">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Carregando...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-xmark me-1"></i> Fechar
+                </button>
+                <button type="button" class="btn btn-danger" id="btn-imprimir-pdf">
+                    <i class="fa-solid fa-print me-1"></i> Imprimir / Salvar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/list-purchase.js') }}
+{% endblock %}

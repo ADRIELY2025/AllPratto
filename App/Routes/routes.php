@@ -14,6 +14,7 @@ use App\Controller\Product;
 use App\Controller\PaymentTerms;
 use App\Controller\Mesa;
 use App\Controller\Pedido;
+use App\Controller\Purchase;
 
 $app->post('/',     App\controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home', App\controller\Home::class . ':home')->add(Middleware::web());
