@@ -19,7 +19,6 @@ final class Version20260528183259 extends AbstractMigration
         $this->addSql(<<<'SQL'
             CREATE TABLE payment_terms (
                 id            BIGSERIAL     PRIMARY KEY,
-                id_sale BIGINT       NULL REFERENCES sale(id)  ON DELETE CASCADE,
                 codigo        VARCHAR(50)   NULL,
                 titulo        VARCHAR(255)  NULL,
                 atalho        VARCHAR(50)   NULL,

@@ -7,6 +7,10 @@ namespace App\Database\Migration;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
+// CORRIGIDO: coluna `descricao` aparecia duas vezes no SELECT da view abaixo.
+// Também incorporados os campos do cardápio (categoria, emoji, etc.)
+// que antes ficavam em migration separada 20260603000001 — removendo o ALTER TABLE.
+
 final class Version20260528183236 extends AbstractMigration
 {
     public function getDescription(): string
@@ -18,24 +22,24 @@ final class Version20260528183236 extends AbstractMigration
     {
         $this->addSql(<<<'SQL'
             CREATE TABLE product (
-                id                   BIGSERIAL      PRIMARY KEY,
-                nome                 VARCHAR(255)   NOT NULL,
-                codigo_barra         VARCHAR(50)    NULL,
-                grupo                TEXT           NULL,
-                unidade              TEXT           NOT NULL DEFAULT '',
-                imagem_url           TEXT           NULL,
-                preco_compra         NUMERIC(18,4)  NOT NULL DEFAULT 0,
-                total_imposto        NUMERIC(18,4)  NOT NULL DEFAULT 0,
-                margem_lucro         NUMERIC(18,4)  NOT NULL DEFAULT 0,
-                custo_operacional    NUMERIC(18,4)  NOT NULL DEFAULT 0,
-                valor_venda_sugerido NUMERIC(18,4)  NOT NULL DEFAULT 0,
-                preco_venda          NUMERIC(18,4)  NOT NULL DEFAULT 0,
-                tempo_preparo        VARCHAR(30)    NULL,
-                descricao            VARCHAR(255)   NOT NULL DEFAULT '',
-                ativo                BOOLEAN        NOT NULL DEFAULT TRUE,
-                excluido             BOOLEAN        NOT NULL DEFAULT FALSE,
-                criado_em            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                atualizado_em        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP
+                id            BIGSERIAL        PRIMARY KEY,
+                nome            VARCHAR(255)    NOT NULL,
+                codigo_barra  VARCHAR(50)      NULL,
+                grupo         text      NULL,
+                unidade       text          NOT NULL DEFAULT 0,
+                imagem_url    TEXT             NULL,
+                preco_compra   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                total_imposto   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                margem_lucro   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                custo_operacional   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                valor_venda_sugerido   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                preco_venda   NUMERIC(18,4)    NOT NULL DEFAULT 0,
+                tempo_preparo VARCHAR(30)      NULL,
+                descricao     VARCHAR(255)     NOT NULL,
+                ativo         BOOLEAN          NOT NULL DEFAULT TRUE,
+                excluido         BOOLEAN          NOT NULL DEFAULT TRUE,
+                criado_em     TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         SQL);
     }

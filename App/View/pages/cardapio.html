@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{{ nomeLocal }} — Cardápio</title>
+    <link rel="icon" href="{{ icon }}" sizes="any">
+    {{ vite('resources/css/cardapio.css') }}
+</head>
+
+<body data-mesa-id="{{ mesa_id }}">
+
+    {% if not mesaValida %}
+    <div class="alerta-mesa">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Nenhuma mesa identificada. Use o QR Code da sua mesa.
+    </div>
+    {% endif %}
+
+    <!-- CABEÇALHO -->
+    <header class="topo">
+        <div class="topo-marca">
+            <img src="/img/logo.jpeg" alt="{{ nomeLocal }}" class="topo-logo">
+            <div class="topo-textos">
+                <span class="topo-nome">{{ nomeLocal }}</span>
+                <span class="topo-tagline">Cardápio Digital</span>
+            </div>
+        </div>
+
+        {% if mesaValida %}
+            <div class="badge-mesa">
+                <i class="fa-solid fa-chair"></i> Mesa {{ mesa }}
+            </div>
+        {% else %}
+            <div class="badge-mesa badge-mesa--erro">
+                <i class="fa-solid fa-triangle-exclamation"></i> Mesa inválida
+            </div>
+        {% endif %}
+    </header>
+
+    <!-- DIVISOR ORNAMENTAL -->
+    <div class="divisor-ornamento">
+        <span></span>
+        <i class="fa-solid fa-utensils"></i>
+        <span></span>
+    </div>
+
+    <!-- CATEGORIAS (JS preenche) -->
+    <nav class="categorias-bar" id="categorias-bar" aria-label="Categorias do cardápio"></nav>
+
+    <!-- DESTAQUES — pratos mais pedidos (JS preenche e mostra/oculta) -->
+    <section class="secao-destaques oculto" id="secao-destaques">
+        <h2 class="titulo-secao"><i class="fa-solid fa-star"></i> Destaques da casa</h2>
+        <div class="destaques-lista" id="destaques-lista"></div>
+    </section>
+
+    <!-- PRODUTOS (JS preenche) -->
+    <main class="produtos-grid" id="lista-produtos"></main>
+
+    <!-- BOTÃO FLUTUANTE -->
+    <button id="btn-carrinho" class="btn-flutuante oculto" type="button">
+        <i class="fa-solid fa-basket-shopping"></i>
+        <span>Ver pedido</span>
+        <span class="badge-qty" id="qty-total">0</span>
+    </button>
+
+    <!-- TOAST -->
+    <div id="toast-add">
+        <i class="fa-solid fa-check"></i> Adicionado ao pedido!
+    </div>
+
+    <!-- OVERLAY DO PAINEL LATERAL -->
+    <div class="painel-overlay" id="painel-overlay"></div>
+
+    <!-- PAINEL LATERAL — PEDIDO + FORMA DE PAGAMENTO -->
+    <aside class="painel-pedido" id="modalCarrinho" aria-hidden="true">
+        <div class="painel-cabecalho">
+            <h5 class="painel-titulo">
+                <i class="fa-solid fa-basket-shopping"></i> Seu Pedido
+            </h5>
+            <button type="button" class="btn-fechar-painel" id="btn-fechar-painel" aria-label="Fechar">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="painel-corpo">
+            <div id="itens-carrinho"></div>
+
+            <div class="total-row">
+                <span>Total</span>
+                <span class="total-val" id="valor-total">R$ 0,00</span>
+            </div>
+
+            <div class="pagamento-titulo">Forma de pagamento</div>
+            <div class="pagamento-opcoes" id="forma-pagamento">
+                <label class="pagamento-card">
+                    <input type="radio" name="pagamento" value="pix">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>PIX</span>
+                </label>
+                <label class="pagamento-card">
+                    <input type="radio" name="pagamento" value="credito">
+                    <i class="fa-regular fa-credit-card"></i>
+                    <span>Crédito</span>
+                </label>
+                <label class="pagamento-card">
+                    <input type="radio" name="pagamento" value="debito">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Débito</span>
+                </label>
+                <label class="pagamento-card">
+                    <input type="radio" name="pagamento" value="dinheiro">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <span>Dinheiro</span>
+                </label>
+            </div>
+
+            <button class="btn-finalizar" id="btn-finalizar" type="button">
+                <i class="fa-solid fa-paper-plane"></i> Fazer Pedido
+            </button>
+        </div>
+    </aside>
+
+    {{ vite('resources/js/pages/cardapio.js') }}
+</body>
+
+</html>
