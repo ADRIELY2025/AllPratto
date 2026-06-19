@@ -1,12 +1,3 @@
-/**
- * sale.js
- * Orquestra a página de Venda:
- *   - Inicialização do Select2 (cliente e produto)
- *   - Criação/garantia da venda no banco
- *   - Formulário de item (delega inserção ao itemsale.js)
- *   - Finalização: atualiza estado para VENDA e redireciona para /payment/detalhes?id_sale=X
- */
-
 import 'select2';
 import Requests from '../components/requests.js';
 import {

@@ -18,9 +18,13 @@ final class PaymentTerms extends Base
 
     public function details($request, $response, $args)
     {
-        $id = $args['id'] ?? null;
+        $id     = $args['id'] ?? null;
         $action = ($id === null) ? 'c' : 'e';
         $paymentTerm = [];
+
+        // id_sale pode vir como query param (ex: /payment/detalhes?id_sale=42)
+        $queryParams = $request->getQueryParams();
+        $idSale      = $queryParams['id_sale'] ?? null;
 
         if (!is_null($id)) {
             $qb = \App\Database\DB::select('*')->from('payment_terms');
@@ -35,6 +39,7 @@ final class PaymentTerms extends Base
                 'id'          => $id,
                 'action'      => $action,
                 'paymentTerm' => $paymentTerm,
+                'id_sale'     => $idSale,
             ])
             ->withHeader('Content-Type', 'text/html')
             ->withStatus(200);
