@@ -109,24 +109,45 @@ public function listarCozinha($request, $response)
             ->withStatus(200);
     }
 
-    // ──────────────────────────────────────────
-    //  Criar pedido (chamado pelo cardápio digital)
-    //  Body JSON: { mesa: 3, itens: [{id,nome,preco,quantidade}], pagamento: 'dinheiro' }
-    // ──────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────────────────
+    //  Criar pedido — fluxo completo em uma única transação
+    //
+    //  Body JSON: {
+    //    mesa:      <id da mesa>,
+    //    itens:     [{ id, nome, preco, quantidade }],
+    //    pagamento: 'dinheiro' | 'pix' | 'credito' | 'debito' | <qualquer string>,
+    //    observacao: '...' (opcional),
+    //    id_cliente: <id> (opcional)
+    //  }
+    //
+    //  O que esta transação grava:
+    //    1. "order"                  — o pedido em si
+    //    2.  order_item              — itens do pedido
+    //       → trigger do banco popula kitchen automaticamente ao inserir order_item
+    //    3.  sale                    — venda vinculada (estado PRE_VENDA → VENDA ao pagar)
+    //    4.  item_sale               — um item_sale por item do carrinho
+    //    5.  payment_terms           — busca ou cria o registro da forma de pagamento
+    //    6.  installment             — parcela única (à vista) ligada ao payment_terms
+    //    7.  purchase                — registro de compra (custo interno da retirada do estoque)
+    //    8.  item_purchase           — um item_purchase por item (custo de cada produto)
+    //    9.  installment_sale_purchase — vincula sale + purchase + payment_terms + installment
+    //   10.  mesa.status             — marca a mesa como 'ocupada'
+    // ──────────────────────────────────────────────────────────────────────────
     public function insert($request, $response)
     {
-        $form = $request->getParsedBody();
-
-        $idMesa    = isset($form['mesa'])   ? (int) $form['mesa']   : null;
-        $itens     = $form['itens']         ?? [];
-        $pagamento = $form['pagamento']     ?? null;
-        $observacao = $form['observacao']   ?? null;
+        $form      = $request->getParsedBody();
+        $idMesa    = isset($form['mesa'])      ? (int) $form['mesa']    : null;
+        $itens     = $form['itens']            ?? [];
+        $pagamento = trim((string) ($form['pagamento']  ?? 'dinheiro'));
+        $observacao = $form['observacao']      ?? null;
+        $idCliente = isset($form['id_cliente']) && $form['id_cliente'] !== ''
+            ? (int) $form['id_cliente'] : null;
 
         if (!$idMesa || empty($itens)) {
             return $this->json($response, ['status' => false, 'msg' => 'Mesa e itens são obrigatórios.', 'id' => 0], 400);
         }
 
-        // Verifica se a mesa existe
+        // ── Valida a mesa ────────────────────────────────────────────────────
         $qbMesa = \App\Database\DB::select('id, status')->from('mesa');
         $mesa   = $qbMesa
             ->where('id = ' . $qbMesa->createPositionalParameter($idMesa, \Doctrine\DBAL\ParameterType::INTEGER))
@@ -136,64 +157,217 @@ public function listarCozinha($request, $response)
             return $this->json($response, ['status' => false, 'msg' => 'Mesa não encontrada.', 'id' => 0], 404);
         }
 
-        // Calcula o total somando os itens recebidos
-        $total = 0;
+        // ── Calcula totais ───────────────────────────────────────────────────
+        $total = 0.0;
+        $itensNormalizados = [];
         foreach ($itens as $item) {
-            $qty    = max(1, (int) ($item['quantidade'] ?? 1));
-            $preco  = (float) ($item['preco'] ?? 0);
-            $total += $preco * $qty;
+            $qty   = max(1, (int)   ($item['quantidade'] ?? 1));
+            $preco = max(0, (float) ($item['preco']      ?? 0));
+            $sub   = round($preco * $qty, 4);
+            $total += $sub;
+            $itensNormalizados[] = [
+                'id'         => isset($item['id']) && $item['id'] !== '' ? (int) $item['id'] : null,
+                'nome'       => $item['nome'] ?? 'Item sem nome',
+                'preco'      => $preco,
+                'quantidade' => $qty,
+                'subtotal'   => $sub,
+            ];
         }
+        $total = round($total, 4);
 
         try {
             $conn = \App\Database\DB::connection();
 
-            // 1. Insere o pedido
-            $conn->insert('"order"', [
-                'id_mesa'          => $idMesa,
-                'id_cliente'       => isset($form['id_cliente']) && $form['id_cliente'] !== '' ? (int) $form['id_cliente'] : null,
-                'payment_terms_id' => null,
-                'total'            => $total,
-                'status'           => 'pendente',
-                'observacao'       => $observacao,
-            ]);
+            $ids = $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use (
+                $idMesa, $idCliente, $total, $itensNormalizados,
+                $pagamento, $observacao
+            ): array {
 
-            $pedidoId = (int) $conn->lastInsertId();
-
-            if (!$pedidoId) {
-                return $this->json($response, ['status' => false, 'msg' => 'Não foi possível criar o pedido.', 'id' => 0], 500);
-            }
-
-            // 2. Insere cada item do pedido
-            foreach ($itens as $item) {
-                $qty  = max(1, (int) ($item['quantidade'] ?? 1));
-                $preco = (float) ($item['preco'] ?? 0);
-
-                $conn->insert('order_item', [
-                    'order_id'   => $pedidoId,
-                    'product_id' => isset($item['id']) && $item['id'] !== '' ? (int) $item['id'] : null,
-                    'nome'       => $item['nome']    ?? 'Item sem nome',
-                    'preco'      => $preco,
-                    'quantidade' => $qty,
-                    'subtotal'   => $preco * $qty,
+                // ── 1. order ────────────────────────────────────────────────
+                $conn->insert('"order"', [
+                    'id_mesa'          => $idMesa,
+                    'id_cliente'       => $idCliente,
+                    'payment_terms_id' => null,   // atualizado abaixo após criar payment_terms
+                    'total'            => $total,
+                    'status'           => 'pendente',
+                    'observacao'       => $observacao,
                 ]);
-            }
+                $pedidoId = (int) $conn->lastInsertId();
 
-            // 3. Marca a mesa como ocupada
-            $conn->update('mesa', [
-                'status'        => 'ocupada',
-                'atualizado_em' => date('Y-m-d H:i:s'),
-            ], ['id' => $idMesa]);
+                // ── 2. order_item (trigger → kitchen automático) ─────────────
+                foreach ($itensNormalizados as $item) {
+                    $conn->insert('order_item', [
+                        'order_id'   => $pedidoId,
+                        'product_id' => $item['id'],
+                        'nome'       => $item['nome'],
+                        'preco'      => $item['preco'],
+                        'quantidade' => $item['quantidade'],
+                        'subtotal'   => $item['subtotal'],
+                    ]);
+                }
+
+                // ── 3. payment_terms — busca pelo título; cria se não existir ─
+                $ptLabel = $this->normalizarPagamento($pagamento);
+                $pt = \App\Database\DB::select('id')
+                    ->from('payment_terms')
+                    ->where('titulo = :titulo')
+                    ->setParameter('titulo', $ptLabel)
+                    ->fetchAssociative();
+
+                if (!$pt) {
+                    $conn->insert('payment_terms', [
+                        'codigo' => strtolower(str_replace(' ', '_', $ptLabel)),
+                        'titulo' => $ptLabel,
+                        'atalho' => strtoupper(substr($ptLabel, 0, 3)),
+                    ]);
+                    $ptId = (int) $conn->lastInsertId();
+                } else {
+                    $ptId = (int) $pt['id'];
+                }
+
+                // ── 4. installment — 1 parcela à vista ──────────────────────
+                // Verifica se já existe parcela única para este payment_terms
+                $inst = \App\Database\DB::select('id')
+                    ->from('installment')
+                    ->where('id_pagamento = :pid AND parcela = 1')
+                    ->setParameter('pid', $ptId)
+                    ->fetchAssociative();
+
+                if (!$inst) {
+                    $conn->insert('installment', [
+                        'id_pagamento' => $ptId,
+                        'parcela'      => 1,
+                        'intervalo'    => 0,
+                    ]);
+                    $installmentId = (int) $conn->lastInsertId();
+                } else {
+                    $installmentId = (int) $inst['id'];
+                }
+
+                // ── Atualiza order.payment_terms_id ─────────────────────────
+                $conn->update('"order"', ['payment_terms_id' => $ptId], ['id' => $pedidoId]);
+
+                // ── 5. sale ─────────────────────────────────────────────────
+                $conn->insert('sale', [
+                    'id_cliente'    => $idCliente,
+                    'total_bruto'   => $total,
+                    'total_liquido' => $total,
+                    'desconto'      => 0,
+                    'acrescimo'     => 0,
+                    'observacao'    => $observacao
+                        ? "Pedido #{$pedidoId} — Mesa {$idMesa} — {$observacao}"
+                        : "Pedido #{$pedidoId} — Mesa {$idMesa}",
+                    'estado_venda'  => 'PRE_VENDA',
+                ]);
+                $saleId = (int) $conn->lastInsertId();
+
+                // ── 6. item_sale ─────────────────────────────────────────────
+                foreach ($itensNormalizados as $item) {
+                    $conn->insert('item_sale', [
+                        'id_venda'         => $saleId,
+                        'id_produto'       => $item['id'],
+                        'nome'             => $item['nome'],
+                        'descricao'        => null,
+                        'quantidade'       => $item['quantidade'],
+                        'total_bruto'      => $item['subtotal'],
+                        'unitario_bruto'   => $item['preco'],
+                        'total_liquido'    => $item['subtotal'],
+                        'unitario_liquido' => $item['preco'],
+                        'desconto'         => 0,
+                        'acrescimo'        => 0,
+                    ]);
+                }
+
+                // ── 7. purchase (custo interno dos itens retirados) ──────────
+                $conn->insert('purchase', [
+                    'id_fornecedor'    => null,
+                    'total_bruto'      => $total,
+                    'total_liquido'    => $total,
+                    'desconto'         => 0,
+                    'acrescimo'        => 0,
+                    'observacao'       => "Saída automática — Pedido #{$pedidoId}",
+                    'data_cadastro'    => date('Y-m-d H:i:s'),
+                    'data_atualizacao' => date('Y-m-d H:i:s'),
+                ]);
+                $purchaseId = (int) $conn->lastInsertId();
+
+                // ── 8. item_purchase ─────────────────────────────────────────
+                foreach ($itensNormalizados as $item) {
+                    $conn->insert('item_purchase', [
+                        'nome'             => $item['nome'],
+                        'id_compra'        => $purchaseId,
+                        'id_produto'       => $item['id'],
+                        'quantidade'       => $item['quantidade'],
+                        'total_bruto'      => $item['subtotal'],
+                        'total_liquido'    => $item['subtotal'],
+                        'preco_unitario'   => $item['preco'],
+                        'desconto'         => 0,
+                        'acrescimo'        => 0,
+                        'data_cadastro'    => date('Y-m-d H:i:s'),
+                        'data_atualizacao' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+
+                // ── 9. installment_sale_purchase ─────────────────────────────
+                $conn->insert('installment_sale_purchase', [
+                    'id_payment'      => $ptId,
+                    'id_sale'         => $saleId,
+                    'id_purchase'     => $purchaseId,
+                    'id_installment'  => $installmentId,
+                    'total_parcelas'  => 1,
+                    'numero_parcela'  => 1,
+                    'valor_parcela'   => (int) round($total * 100), // centavos
+                    'valor_total'     => (int) round($total * 100),
+                    'status'          => 'aberto',
+                    'data_vencimento' => 0,
+                ]);
+
+                // ── 10. mesa → ocupada ────────────────────────────────────────
+                $conn->update('mesa', [
+                    'status'        => 'ocupada',
+                    'atualizado_em' => date('Y-m-d H:i:s'),
+                ], ['id' => $idMesa]);
+
+                return [
+                    'pedido_id'   => $pedidoId,
+                    'sale_id'     => $saleId,
+                    'purchase_id' => $purchaseId,
+                    'pt_id'       => $ptId,
+                ];
+            });
 
             return $this->json($response, [
-                'status'    => true,
-                'msg'       => 'Pedido enviado para a cozinha!',
-                'id'        => $pedidoId,
-                'mesa'      => $idMesa,
-                'total'     => $total,
+                'status'      => true,
+                'msg'         => 'Pedido enviado para a cozinha!',
+                'id'          => $ids['pedido_id'],
+                'sale_id'     => $ids['sale_id'],
+                'purchase_id' => $ids['purchase_id'],
+                'mesa'        => $idMesa,
+                'total'       => $total,
             ], 201);
-        } catch (\Exception $e) {
+
+        } catch (\Throwable $e) {
             return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
         }
+    }
+
+    // ──────────────────────────────────────────
+    //  Normaliza o valor de pagamento enviado
+    //  pelo cardápio para o título em payment_terms
+    // ──────────────────────────────────────────
+    private function normalizarPagamento(string $pagamento): string
+    {
+        $mapa = [
+            'pix'      => 'PIX',
+            'credito'  => 'Cartão de Crédito',
+            'debito'   => 'Cartão de Débito',
+            'dinheiro' => 'Dinheiro',
+            'credit'   => 'Cartão de Crédito',
+            'debit'    => 'Cartão de Débito',
+            'cash'     => 'Dinheiro',
+        ];
+        $chave = strtolower(trim($pagamento));
+        return $mapa[$chave] ?? ucfirst($pagamento);
     }
 
     // ──────────────────────────────────────────
