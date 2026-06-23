@@ -88,7 +88,7 @@ final class Mesa extends Base
             }
 
             // URL que será aberta pelo QRCode
-            $qrUrl = PROTOCOL . '://' . HOST . '/cardapio/mesa/' . $id;
+            $qrUrl = PROTOCOL . '://' . HOST . '/cardapio/mesa/' . $data['numero'];
 
             $qrDir = ROOT . '/storage/qrcode/' . $id;
 

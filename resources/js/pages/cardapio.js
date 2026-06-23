@@ -3,17 +3,12 @@ import Swal from 'sweetalert2';
 import Requests from '../components/requests.js';
 
 // ── ESTADO ──────────────────────────────────────────────────────
-let produtos = {};  // { categoria: [...] } — vindo da API, agrupado pelo campo "grupo"
-let carrinho = [];  // [{ produto, qty }]
+let produtos = {};
+let carrinho = [];
 let catAtiva = 'todos';
 
-// ── CATEGORIAS — ordem e ícone sugeridos ──────────────────────────
-// O nome real da categoria vem do campo "grupo" cadastrado em cada
-// produto. Aqui só damos uma ordem e um ícone bonitos quando o nome
-// bate com um destes; qualquer outro nome aparece do mesmo jeito,
-// só entra depois, em ordem alfabética.
+// ── CATEGORIAS ───────────────────────────────────────────────────
 const ORDEM_CATEGORIAS = ['entrada', 'prato principal', 'principal', 'sobremesa', 'bebida'];
-
 const ICONES_CATEGORIA = {
     'entrada':         'fa-solid fa-seedling',
     'prato principal': 'fa-solid fa-utensils',
@@ -23,17 +18,11 @@ const ICONES_CATEGORIA = {
 };
 
 function normalizar(texto) {
-    return (texto || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .trim();
+    return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
-
 function iconeCategoria(nome) {
     return ICONES_CATEGORIA[normalizar(nome)] || 'fa-solid fa-bowl-food';
 }
-
 function categoriasOrdenadas() {
     return Object.keys(produtos).sort((a, b) => {
         const ia = ORDEM_CATEGORIAS.indexOf(normalizar(a));
@@ -56,40 +45,24 @@ function todosOsProdutos() {
     return Object.values(produtos).flat();
 }
 
-// ── CARREGAR ITENS DA API ────────────────────────────────────────
+// ── CARREGAR ITENS ───────────────────────────────────────────────
 async function carregarItens() {
     const lista = document.getElementById('lista-produtos');
     lista.innerHTML = '<div class="loading-itens"><i class="fa-solid fa-spinner fa-spin"></i>Carregando cardápio...</div>';
-
     try {
         const requests = new Requests();
         const response = await requests.get('/cardapio/itens');
-
         if (!response.sucesso) {
-            Swal.fire({
-                icon:  'error',
-                title: 'Erro',
-                text:  response.erro || 'Erro ao carregar o cardápio.',
-                timer: 3000,
-                timerProgressBar: true,
-            });
+            Swal.fire({ icon: 'error', title: 'Erro', text: response.erro || 'Erro ao carregar o cardápio.', timer: 3000, timerProgressBar: true });
             lista.innerHTML = '<div class="estado-erro"><i class="fa-solid fa-triangle-exclamation"></i>Não foi possível carregar o cardápio.</div>';
             return;
         }
-
         produtos = response.dados;
         renderCategorias();
         renderDestaques();
         renderProdutos();
-
     } catch (error) {
-        Swal.fire({
-            icon:  'error',
-            title: 'Erro',
-            text:  `Restrição: ${error.message}`,
-            timer: 3000,
-            timerProgressBar: true,
-        });
+        Swal.fire({ icon: 'error', title: 'Erro', text: `Restrição: ${error.message}`, timer: 3000, timerProgressBar: true });
         lista.innerHTML = '<div class="estado-erro"><i class="fa-solid fa-triangle-exclamation"></i>Não foi possível carregar o cardápio.</div>';
     }
 }
@@ -98,15 +71,13 @@ async function carregarItens() {
 function renderCategorias() {
     const bar = document.getElementById('categorias-bar');
     bar.innerHTML = '<button class="cat-btn active" data-cat="todos"><i class="fa-solid fa-circle-check"></i> Todos</button>';
-
     categoriasOrdenadas().forEach(cat => {
-        const btn       = document.createElement('button');
-        btn.className   = 'cat-btn';
+        const btn = document.createElement('button');
+        btn.className = 'cat-btn';
         btn.dataset.cat = cat;
-        btn.innerHTML   = `<i class="${iconeCategoria(cat)}"></i> ${cat}`;
+        btn.innerHTML = `<i class="${iconeCategoria(cat)}"></i> ${cat}`;
         bar.appendChild(btn);
     });
-
     bar.querySelectorAll('.cat-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             bar.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
@@ -117,23 +88,17 @@ function renderCategorias() {
     });
 }
 
-// ── RENDER DESTAQUES (pratos mais pedidos) ────────────────────────
-// Depende do campo booleano "destaque" em cada produto. Se nenhum
-// item tiver destaque = true, a seção fica oculta automaticamente.
+// ── RENDER DESTAQUES ─────────────────────────────────────────────
 function renderDestaques() {
     const secao = document.getElementById('secao-destaques');
     const lista = document.getElementById('destaques-lista');
-
     const destacados = todosOsProdutos().filter(p => p.destaque);
-
     if (destacados.length === 0) {
         secao.classList.add('oculto');
         lista.innerHTML = '';
         return;
     }
-
     secao.classList.remove('oculto');
-
     lista.innerHTML = destacados.map(p => `
         <div class="destaque-card" data-id="${p.id}">
             <span class="destaque-ribbon"><i class="fa-solid fa-star"></i> Mais pedido</span>
@@ -147,7 +112,6 @@ function renderDestaques() {
             </div>
         </div>
     `).join('');
-
     lista.querySelectorAll('.destaque-card').forEach(card => {
         card.addEventListener('click', () => adicionarAoCarrinho(Number(card.dataset.id)));
     });
@@ -156,16 +120,11 @@ function renderDestaques() {
 // ── RENDER PRODUTOS ──────────────────────────────────────────────
 function renderProdutos() {
     const lista = document.getElementById('lista-produtos');
-
-    const filtrados = catAtiva === 'todos'
-        ? todosOsProdutos()
-        : (produtos[catAtiva] || []);
-
+    const filtrados = catAtiva === 'todos' ? todosOsProdutos() : (produtos[catAtiva] || []);
     if (filtrados.length === 0) {
         lista.innerHTML = '<div class="carrinho-vazio"><i class="fa-solid fa-bowl-food"></i>Nenhum item nesta categoria.</div>';
         return;
     }
-
     lista.innerHTML = filtrados.map(p => `
         <div class="produto-card" data-id="${p.id}">
             ${p.imagem_url
@@ -182,7 +141,6 @@ function renderProdutos() {
             </div>
         </div>
     `).join('');
-
     document.querySelectorAll('.btn-adicionar').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -191,15 +149,13 @@ function renderProdutos() {
     });
 }
 
-// ── CARRINHO ────────────────────────────────────────────────────
+// ── CARRINHO ─────────────────────────────────────────────────────
 function adicionarAoCarrinho(id) {
     const prod = todosOsProdutos().find(p => p.id === id);
     if (!prod) return;
-
     const item = carrinho.find(i => i.produto.id === id);
     if (item) item.qty++;
     else carrinho.push({ produto: prod, qty: 1 });
-
     atualizarUI();
     showToast();
 }
@@ -207,10 +163,8 @@ function adicionarAoCarrinho(id) {
 function alterarQty(id, delta) {
     const idx = carrinho.findIndex(i => i.produto.id === id);
     if (idx === -1) return;
-
     carrinho[idx].qty += delta;
     if (carrinho[idx].qty <= 0) carrinho.splice(idx, 1);
-
     atualizarUI();
     renderCarrinho();
 }
@@ -224,19 +178,12 @@ function atualizarUI() {
 
 function renderCarrinho() {
     const el = document.getElementById('itens-carrinho');
-
     if (carrinho.length === 0) {
-        el.innerHTML = `
-            <div class="carrinho-vazio">
-                <i class="fa-solid fa-basket-shopping"></i>
-                Nenhum item ainda.
-            </div>`;
+        el.innerHTML = `<div class="carrinho-vazio"><i class="fa-solid fa-basket-shopping"></i>Nenhum item ainda.</div>`;
         document.getElementById('valor-total').textContent = 'R$ 0,00';
         return;
     }
-
     const totalVal = carrinho.reduce((s, i) => s + i.produto.preco_venda * i.qty, 0);
-
     el.innerHTML = carrinho.map(i => `
         <div class="item-carrinho">
             <div class="item-nome">${i.produto.nome}</div>
@@ -248,7 +195,6 @@ function renderCarrinho() {
             <div class="item-preco">${formatBRL(i.produto.preco_venda * i.qty)}</div>
         </div>
     `).join('');
-
     document.getElementById('valor-total').textContent = formatBRL(totalVal);
 }
 
@@ -261,7 +207,7 @@ function showToast() {
     toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
-// ── PAINEL LATERAL (pedido + pagamento) ───────────────────────────
+// ── PAINEL LATERAL ────────────────────────────────────────────────
 const painel        = document.getElementById('modalCarrinho');
 const painelOverlay = document.getElementById('painel-overlay');
 
@@ -285,8 +231,13 @@ document.getElementById('btn-fechar-painel').addEventListener('click', fecharPai
 painelOverlay.addEventListener('click', fecharPainel);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPainel(); });
 
-// ── FORMA DE PAGAMENTO (cards de rádio) ───────────────────────────
+// ── FORMA DE PAGAMENTO ────────────────────────────────────────────
 const opcoesPagamento = document.getElementById('forma-pagamento');
+
+// Bloco de parcelamento (só visível em crédito/débito)
+const blocoParcelamento = document.getElementById('bloco-parcelamento');
+const inputParcelas     = document.getElementById('input-parcelas');
+const inputIntervalo    = document.getElementById('input-intervalo');
 
 function pagamentoSelecionado() {
     const marcado = opcoesPagamento.querySelector('input[name="pagamento"]:checked');
@@ -295,9 +246,20 @@ function pagamentoSelecionado() {
 
 opcoesPagamento.querySelectorAll('input[name="pagamento"]').forEach(input => {
     input.addEventListener('change', () => {
+        // Marca visual do card
         opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
             card.classList.toggle('selecionado', card.contains(input) && input.checked);
         });
+
+        // Mostra/oculta bloco de parcelamento
+        const exigeParcela = ['credito', 'debito'].includes(input.value);
+        blocoParcelamento.classList.toggle('oculto', !exigeParcela);
+
+        // Reseta valores ao ocultar
+        if (!exigeParcela) {
+            inputParcelas.value  = 1;
+            inputIntervalo.value = 30;
+        }
     });
 });
 
@@ -320,6 +282,16 @@ async function finalizarPedido() {
         return;
     }
 
+    // Captura parcelas/intervalo só quando crédito ou débito
+    const exigeParcela = ['credito', 'debito'].includes(pgto);
+    const parcelas  = exigeParcela ? Math.max(1, parseInt(inputParcelas.value)  || 1)  : 1;
+    const intervalo = exigeParcela ? Math.max(0, parseInt(inputIntervalo.value) || 30) : 0;
+
+    if (exigeParcela && parcelas < 1) {
+        Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Informe a quantidade de parcelas.', timer: 2000, timerProgressBar: true });
+        return;
+    }
+
     const btnFinalizar = document.getElementById('btn-finalizar');
     btnFinalizar.disabled = true;
     btnFinalizar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
@@ -330,7 +302,9 @@ async function finalizarPedido() {
         const response = await requests.setBody(JSON.stringify({
             mesa_id:   mesaId,
             pagamento: pgto,
-            itens:     carrinho.map(i => ({
+            parcelas,
+            intervalo,
+            itens: carrinho.map(i => ({
                 id:         i.produto.id,
                 nome:       i.produto.nome,
                 quantidade: i.qty,
@@ -339,13 +313,7 @@ async function finalizarPedido() {
         })).post('/cardapio/pedido');
 
         if (!response.sucesso) {
-            Swal.fire({
-                icon:  'error',
-                title: 'Erro',
-                text:  response.erro || 'Erro ao salvar pedido.',
-                timer: 3000,
-                timerProgressBar: true,
-            });
+            Swal.fire({ icon: 'error', title: 'Erro', text: response.erro || 'Erro ao salvar pedido.', timer: 3000, timerProgressBar: true });
             return;
         }
 
@@ -362,13 +330,7 @@ async function finalizarPedido() {
         fecharPainel();
 
     } catch (error) {
-        Swal.fire({
-            icon:  'error',
-            title: 'Erro',
-            text:  `Restrição: ${error.message}`,
-            timer: 3000,
-            timerProgressBar: true,
-        });
+        Swal.fire({ icon: 'error', title: 'Erro', text: `Restrição: ${error.message}`, timer: 3000, timerProgressBar: true });
     } finally {
         btnFinalizar.disabled = false;
         btnFinalizar.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Fazer Pedido';
