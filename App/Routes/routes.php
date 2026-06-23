@@ -112,6 +112,7 @@ $app->group('/product', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/delete',        Product::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   Product::class . ':listingdata')->add(Middleware::api());
     $group->post('/upload-imagem', Product::class . ':uploadImagem')->add(Middleware::api());
+    $group->post('/get-imagem', Product::class . ':getImagem')->add(Middleware::api());
 });
 
 // ══════════════════════════════════════════════
