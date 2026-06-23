@@ -1,16 +1,31 @@
 import Requests from '../components/requests.js';
 import Validate from '../components/validate.js';
 
+import { create, registerPlugin } from 'filepond';
+import 'filepond/dist/filepond.css';
+
+// Import the Image Preview plugin
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+
+// Register the plugin with FilePond
+registerPlugin(FilePondPluginImagePreview);
+
 const Action = document.getElementById('action');
-const Id     = document.getElementById('id');
+const Id = document.getElementById('id');
 const Insert = document.getElementById('insert');
 
-const inputPrecoCompra      = document.getElementById('preco_compra');
-const inputTotalImposto     = document.getElementById('total_imposto');
+const inputPrecoCompra = document.getElementById('preco_compra');
+const inputTotalImposto = document.getElementById('total_imposto');
 const inputCustoOperacional = document.getElementById('custo_operacional');
-const inputMargemLucro      = document.getElementById('margem_lucro');
-const inputPrecoVenda       = document.getElementById('preco_venda');
+const inputMargemLucro = document.getElementById('margem_lucro');
+const inputPrecoVenda = document.getElementById('preco_venda');
 
+const Imagem = document.querySelector('#imagem');
+
+
+create(Imagem, {
+    storeAsFile: true,
+});
 
 // ─── Máscaras ────────────────────────────────────────────────────────────────
 if (window.Inputmask) {
@@ -42,11 +57,11 @@ function parseMoney(val) {
 
 // ─── Calculadora de preço de venda ────────────────────────────────────────────
 function calcularPrecoVenda() {
-    const precoCompra      = parseMoney(inputPrecoCompra.value);
-    const totalImposto     = parseMoney(inputTotalImposto.value);
+    const precoCompra = parseMoney(inputPrecoCompra.value);
+    const totalImposto = parseMoney(inputTotalImposto.value);
     const custoOperacional = parseMoney(inputCustoOperacional.value);
-    const margemLucro      = parseMoney(inputMargemLucro.value);
-    const resultadoRow     = document.getElementById('resultado-row');
+    const margemLucro = parseMoney(inputMargemLucro.value);
+    const resultadoRow = document.getElementById('resultado-row');
 
     if (precoCompra <= 0 && margemLucro <= 0) {
         resultadoRow.classList.add('d-none');
@@ -54,25 +69,25 @@ function calcularPrecoVenda() {
     }
 
     try {
-        const taxRate       = totalImposto     / 100;
-        const marginRate    = margemLucro      / 100;
+        const taxRate = totalImposto / 100;
+        const marginRate = margemLucro / 100;
         const operatingRate = custoOperacional / 100;
-        const totalRate     = taxRate + marginRate + operatingRate;
-        const divisor       = 1 - totalRate;
+        const totalRate = taxRate + marginRate + operatingRate;
+        const divisor = 1 - totalRate;
 
         if (divisor <= 0.01) { resultadoRow.classList.add('d-none'); return; }
 
         const round2 = v => Math.round((v + Number.EPSILON) * 100) / 100;
         const precoSugerido = round2(precoCompra / divisor);
-        const valorImposto  = round2(precoSugerido * taxRate);
-        const valorCusto    = round2(precoSugerido * operatingRate);
-        const valorMargem   = round2(precoSugerido * marginRate);
+        const valorImposto = round2(precoSugerido * taxRate);
+        const valorCusto = round2(precoSugerido * operatingRate);
+        const valorMargem = round2(precoSugerido * marginRate);
 
         const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         document.getElementById('val-imposto').textContent = fmt(valorImposto);
-        document.getElementById('val-custo').textContent   = fmt(valorCusto);
-        document.getElementById('val-margem').textContent  = fmt(valorMargem);
-        document.getElementById('val-venda').textContent   = fmt(precoSugerido);
+        document.getElementById('val-custo').textContent = fmt(valorCusto);
+        document.getElementById('val-margem').textContent = fmt(valorMargem);
+        document.getElementById('val-venda').textContent = fmt(precoSugerido);
 
         resultadoRow.classList.remove('d-none');
     } catch {
@@ -96,37 +111,37 @@ async function applyChanges() {
 
     // Monta FormData manualmente para controlar cada campo
     const form = document.getElementById('form');
-    const formData = new FormData();
+    const formData = new FormData(form);
 
     // Campos texto — envia como estão (sem máscara nos campos de valor — limpamos abaixo)
-    formData.append('action',         Action.value);
-    formData.append('id',             Id.value);
-    formData.append('nome',           document.getElementById('nome').value);
-    formData.append('codigo_barra',    document.getElementById('codigo_barra').value);
-    formData.append('grupo',          document.getElementById('grupo').value);
-    formData.append('unidade',        document.getElementById('unidade').value);
-    formData.append('tempo_preparo',   document.getElementById('tempo_preparo').value);
-    formData.append('descricao',      document.getElementById('descricao').value);
+    /*formData.append('action', Action.value);
+    formData.append('id', Id.value);
+    formData.append('nome', document.getElementById('nome').value);
+    formData.append('codigo_barra', document.getElementById('codigo_barra').value);
+    formData.append('grupo', document.getElementById('grupo').value);
+    formData.append('unidade', document.getElementById('unidade').value);
+    formData.append('tempo_preparo', document.getElementById('tempo_preparo').value);
+    formData.append('descricao', document.getElementById('descricao').value);
 
     // Checkbox: envia 'true' se marcado, 'false' se não (evita campo vazio)
     formData.append('ativo', document.getElementById('ativo').checked ? 'true' : 'false');
     formData.append('destaque', document.getElementById('destaque').checked ? 'true' : 'false');
 
     // Valores numéricos — remove máscara antes de enviar
-    formData.append('preco_compra',        parseMoney(inputPrecoCompra.value));
-    formData.append('total_imposto',       parseMoney(inputTotalImposto.value));
-    formData.append('custo_operacional',   parseMoney(inputCustoOperacional.value));
-    formData.append('margem_lucro',        parseMoney(inputMargemLucro.value));
-    formData.append('preco_venda',         parseMoney(inputPrecoVenda.value));
+    formData.append('preco_compra', parseMoney(inputPrecoCompra.value));
+    formData.append('total_imposto', parseMoney(inputTotalImposto.value));
+    formData.append('custo_operacional', parseMoney(inputCustoOperacional.value));
+    formData.append('margem_lucro', parseMoney(inputMargemLucro.value));
+    formData.append('preco_venda', parseMoney(inputPrecoVenda.value));
 
     // Valor sugerido calculado
     const valVendaText = document.getElementById('val-venda')?.textContent ?? '0';
-    formData.append('valor_venda_sugerido', parseMoney(valVendaText.replace('R$', '')));
+    formData.append('valor_venda_sugerido', parseMoney(valVendaText.replace('R$', '')));*/
 
     const requests = new Requests();
     try {
         const url = (Action.value !== 'e') ? '/product/insert' : '/product/update';
-        const response = await requests.setBody(formData).post(url);
+        const response = await requests.setForm('form').post(url);
 
         if (!response?.status) {
             Swal.fire({ icon: 'error', title: 'Erro', text: response?.msg || 'Erro ao salvar.', timer: 3000, timerProgressBar: true });
@@ -147,13 +162,13 @@ async function applyChanges() {
         Swal.fire({ icon: 'error', title: 'Erro', text: `Erro: ${error.message}`, timer: 3000, timerProgressBar: true });
     } finally {
         $('button, input').prop('disabled', false);
-    }   
+    }
 }
 
 // ─── Upload de imagem ─────────────────────────────────────────────
-const btnUpload    = document.getElementById('btn-upload-imagem');
-const inputImagem  = document.getElementById('inputImagem');
-const previewImg   = document.getElementById('preview-imagem');
+const btnUpload = document.getElementById('btn-upload-imagem');
+const inputImagem = document.getElementById('inputImagem');
+const previewImg = document.getElementById('preview-imagem');
 
 // Pré-visualização local antes de enviar
 if (inputImagem) {
@@ -174,7 +189,7 @@ if (btnUpload) {
         }
 
         const formData = new FormData();
-        formData.append('id',     Id.value);
+        formData.append('id', Id.value);
         formData.append('imagem', file);
 
         btnUpload.disabled = true;

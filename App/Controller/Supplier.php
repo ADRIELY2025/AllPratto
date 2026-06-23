@@ -190,7 +190,7 @@ final class Supplier extends Base
             0 => 'id',
             1 => 'nome_fantasia',
             2 => 'razao_social',
-            3 => 'cnpj',
+            3 => 'cnpj_cpf',
             4 => 'telefone',
             5 => 'email',
             6 => 'criado_em',
@@ -224,7 +224,7 @@ final class Supplier extends Base
                 $query->where('CAST(id AS TEXT) ILIKE :term')
                     ->orWhere('nome_fantasia ILIKE :term')
                     ->orWhere('razao_social ILIKE :term')
-                    ->orWhere('cnpj ILIKE :term')
+                    ->orWhere('cnpj_cpf ILIKE :term')
                     ->orWhere('telefone ILIKE :term')
                     ->orWhere('email ILIKE :term')
                     ->orWhere("TO_CHAR(criado_em, 'DD/MM/YYYY HH24:MI:SS') ILIKE :term")
@@ -248,7 +248,7 @@ final class Supplier extends Base
                     $value['id'],
                     $value['nome_fantasia'],
                     $value['razao_social'],
-                    $value['cnpj'],
+                    $value['cnpj_cpf'],
                     $value['telefone'],
                     $value['email'],
                     (in_array($value['ativo'], [true, 't', '1', 1], true)) ? 'Ativo' : 'Inativo',

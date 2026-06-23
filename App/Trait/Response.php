@@ -19,4 +19,12 @@ trait Response
             ->withStatus($statusCode)
             ->withHeader('Content-Type', 'application/json');
     }
+    public function image($response, string $imageData, string $mimeType = 'image/jpeg'): \Psr\Http\Message\ResponseInterface
+    {
+        $response->getBody()->write($imageData);
+
+        return $response
+            ->withHeader('Content-Type', $mimeType)
+            ->withHeader('Content-Length', (string)strlen($imageData));
+    }
 }

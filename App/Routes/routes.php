@@ -112,6 +112,7 @@ $app->group('/product', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/delete',        Product::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   Product::class . ':listingdata')->add(Middleware::api());
     $group->post('/upload-imagem', Product::class . ':uploadImagem')->add(Middleware::api());
+    $group->post('/get-imagem', Product::class . ':getImagem')->add(Middleware::api());
 });
 
 // ══════════════════════════════════════════════
@@ -160,6 +161,24 @@ $app->get('/home/resultado-vendas',    App\Controller\Home::class . ':resultadoV
 $app->get('/home/resultado-marketing', App\Controller\Home::class . ':resultadoMarketing')->add(Middleware::api());
 
 // ══════════════════════════════════════════════
+//  Compras
+// ══════════════════════════════════════════════
+$app->group('/compra', function (\Slim\Routing\RouteCollectorProxy $group) {
+    $group->get('/lista',        Purchase::class . ':list')->add(Middleware::web());
+    $group->post('/delete',      Purchase::class . ':delete')->add(Middleware::api());
+    $group->post('/listingdata', Purchase::class . ':listingdata')->add(Middleware::api());
+    $group->get('/pdf/{id}',     Purchase::class . ':pdf')->add(Middleware::api());
+});
+
+// Alias /purchase/* (chamado pelo JS e URL direta)
+$app->group('/purchase', function (\Slim\Routing\RouteCollectorProxy $group) {
+    $group->get('/lista',        Purchase::class . ':list')->add(Middleware::web());
+    $group->post('/delete',      Purchase::class . ':delete')->add(Middleware::api());
+    $group->post('/listingdata', Purchase::class . ':listingdata')->add(Middleware::api());
+    $group->get('/pdf/{id}',     Purchase::class . ':pdf')->add(Middleware::api());
+});
+
+// ══════════════════════════════════════════════
 //  Formas de Pagamento
 // ══════════════════════════════════════════════
 $app->group('/payment', function (\Slim\Routing\RouteCollectorProxy $group) {
@@ -192,9 +211,11 @@ $app->group('/sale', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/delete',       Sale::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',  Sale::class . ':listingdata')->add(Middleware::api());
     // ── Buscas auxiliares (Select2 / ajax) ───
-    $group->post('/find-customer',    Sale::class . ':findCustomer')->add(Middleware::api());
-    $group->post('/find-product',     Sale::class . ':findProduct')->add(Middleware::api());
-    $group->get('/find-product/{id}', Sale::class . ':findProductById')->add(Middleware::api());
+    $group->post('/find-customer',        Sale::class . ':findCustomer')->add(Middleware::api());
+    $group->post('/find-product',         Sale::class . ':findProduct')->add(Middleware::api());
+    $group->get('/find-product/{id}',     Sale::class . ':findProductById')->add(Middleware::api());
+    $group->get('/payment-terms',         Sale::class . ':findPaymentTerms')->add(Middleware::api());
+    $group->get('/installments/{id}',     Sale::class . ':findInstallments')->add(Middleware::api());
     // ── CRUD Item da Venda ────────────────────
     $group->post('/item/insert',  ItemSale::class . ':insert')->add(Middleware::api());
     $group->post('/item/delete',  ItemSale::class . ':delete')->add(Middleware::api());

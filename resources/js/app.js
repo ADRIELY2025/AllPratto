@@ -39,3 +39,61 @@ window.flatpickr = flatpickr
 // 5. Importa o script do Echarts e registra globalmente
 import * as echarts from 'echarts'
 window.echarts = echarts
+
+// 7. Plugins e configuração global do FilePond — upload seguro e visualização de imagens
+//import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+//import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+//import FilePondPluginImageCrop from 'filepond-plugin-image-crop';
+//import FilePondPluginImageResize from 'filepond-plugin-image-resize';
+//import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
+
+
+// Registro único no boot — reutiliza o FilePond já importado no passo 6.
+// Ordem importa: validação → orientação → preview → crop → resize → transform.
+FilePond.registerPlugin(
+    //FilePondPluginFileValidateType,
+    //FilePondPluginImageExifOrientation,
+    FilePondPluginImagePreview,
+    //FilePondPluginImageCrop,
+    //FilePondPluginImageResize,
+    //FilePondPluginImageTransform,
+);
+
+// Defaults globais seguros e performáticos — cada página pode sobrescrever.
+FilePond.setOptions({
+    // Segurança: primeira linha no cliente (a barreira real continua no servidor).
+    acceptedFileTypes: ['image/png', 'image/jpeg', 'image/webp'],
+    maxParallelUploads: 2,
+
+    // Visualização.
+    allowImagePreview: true,
+    imagePreviewHeight: 220,
+
+    // Performance: reduz e re-encoda a imagem ANTES do upload.
+    allowImageResize: true,
+    imageResizeTargetWidth: 1600,
+    imageResizeTargetHeight: 1600,
+    imageResizeMode: 'contain',
+    imageResizeUpscale: false,
+    imageTransformOutputQuality: 80,
+
+    // Rótulos em pt-BR.
+    labelIdle: 'Arraste e solte a imagem ou <span class="filepond--label-action">selecione</span>',
+    labelInvalidField: 'Campo contém arquivos inválidos',
+    labelFileWaitingForSize: 'Calculando tamanho',
+    labelFileLoading: 'Carregando',
+    labelFileLoadError: 'Erro ao carregar',
+    labelFileProcessing: 'Enviando',
+    labelFileProcessingComplete: 'Envio concluído',
+    labelFileProcessingError: 'Erro no envio',
+    labelFileProcessingAborted: 'Envio cancelado',
+    labelTapToCancel: 'toque para cancelar',
+    labelTapToRetry: 'toque para repetir',
+    labelTapToUndo: 'toque para desfazer',
+    labelFileTypeNotAllowed: 'Tipo de arquivo inválido',
+    fileValidateTypeLabelExpectedTypes: 'Esperado {allButLastType} ou {lastType}',
+
+    // Estético.
+    credits: false,
+});
