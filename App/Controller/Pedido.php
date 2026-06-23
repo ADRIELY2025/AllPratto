@@ -324,43 +324,22 @@ public function listarCozinha($request, $response)
                     // Última parcela absorve centavos de arredondamento
                     $valorEsta = $valorParcelaCentavos + ($p === $totalParcelas ? $resto : 0);
 
-                    // Vencimento: timestamp Unix — parcela 1 = hoje, demais = hoje + intervalo*(p-1)
+                    // Vencimento: data 'YYYY-MM-DD' — parcela 1 = hoje, demais = hoje + intervalo*(p-1)
                     $diasOffset     = $intervalo * ($p - 1);
-                    $dataVencimento = (int) strtotime("+{$diasOffset} days", strtotime(date('Y-m-d')));
+                    $dataVencimento = date('Y-m-d', strtotime("+{$diasOffset} days"));
 
-                    // Usa executeStatement com types explícitos para evitar que o Doctrine DBAL 4
-                    // infira data_vencimento (INTEGER grande) como TIMESTAMP no PostgreSQL
-                    $conn->executeStatement(
-                        'INSERT INTO installment_sale_purchase
-                            (id_payment, id_sale, id_purchase, id_installment,
-                             total_parcelas, numero_parcela, valor_parcela, valor_total,
-                             status, data_vencimento)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                        [
-                            $ptId,
-                            $saleId,
-                            $purchaseId,
-                            $installmentIds[$p],
-                            $totalParcelas,
-                            $p,
-                            $valorEsta,
-                            $valorCentavos,
-                            'aberto',
-                            $dataVencimento,
-                        ],
-                        [
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                            \Doctrine\DBAL\ParameterType::STRING,
-                            \Doctrine\DBAL\ParameterType::INTEGER,
-                        ]
-                    );
+                    $conn->insert('installment_sale_purchase', [
+                        'id_payment'      => $ptId,
+                        'id_sale'         => $saleId,
+                        'id_purchase'     => $purchaseId,
+                        'id_installment'  => $installmentIds[$p],
+                        'total_parcelas'  => $totalParcelas,
+                        'numero_parcela'  => $p,
+                        'valor_parcela'   => $valorEsta,
+                        'valor_total'     => $valorCentavos,
+                        'status'          => 'aberto',
+                        'data_vencimento' => $dataVencimento,
+                    ]);
                 }
 
                 // ── 10. mesa → ocupada ────────────────────────────────────────
