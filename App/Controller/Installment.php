@@ -10,7 +10,7 @@ final class Installment extends Base
     {
         $form = $request->getParsedBody();
 
-        $idPagamento = $form['id_pagamento'] ?? null;
+        $idPagamento = $form['id'] ?? null;
         $parcela     = isset($form['parcela'])   ? (int) $form['parcela']   : null;
         $intervalo   = isset($form['intervalo'])  ? (int) $form['intervalo'] : null;
         $valorTotal  = isset($form['valor_total']) ? (float) $form['valor_total'] : null;

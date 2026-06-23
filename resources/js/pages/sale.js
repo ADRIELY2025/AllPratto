@@ -1,4 +1,5 @@
 import 'select2';
+import * as bootstrap from 'bootstrap';
 import Requests from '../components/requests.js';
 import {
     saleItems,
@@ -184,6 +185,171 @@ function clearSale() {
     updateTotals();
 }
 
+// ─── Modal de Condição de Pagamento ──────────────────────────────────────────
+
+let selectedPaymentTermId   = null;
+let selectedPaymentTermName = '';
+let currentTotalLiquido     = 0;
+
+async function loadPaymentTerms() {
+    const container = document.getElementById('payment-terms-list');
+    if (!container) return;
+
+    container.innerHTML = '<div class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span> Carregando...</div>';
+
+    try {
+        const res   = await fetch('/sale/payment-terms', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        const json  = await res.json();
+        const terms = json.data || [];
+
+        if (!terms.length) {
+            container.innerHTML = '<div class="alert alert-warning mb-0">Nenhuma condição de pagamento cadastrada.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        terms.forEach(term => {
+            const btn = document.createElement('button');
+            btn.type      = 'button';
+            btn.className = 'btn btn-outline-success';
+            btn.dataset.id    = term.id;
+            btn.dataset.title = term.titulo;
+            btn.innerHTML = `<i class="fa-solid fa-credit-card me-1"></i> ${term.titulo}`;
+            if (term.atalho) btn.innerHTML += ` <small class="text-muted">(${term.atalho})</small>`;
+            btn.addEventListener('click', () => selectPaymentTerm(term.id, term.titulo));
+            container.appendChild(btn);
+        });
+
+    } catch (e) {
+        container.innerHTML = '<div class="alert alert-danger mb-0">Erro ao carregar condições de pagamento.</div>';
+    }
+}
+
+// Parcelas carregadas da condição selecionada (usadas para recalcular ao mudar qtd)
+let _loadedInstallments = [];
+
+async function selectPaymentTerm(termId, termTitle) {
+    // Destaca botão selecionado
+    document.querySelectorAll('#payment-terms-list .btn').forEach(b => {
+        b.classList.toggle('btn-success',         b.dataset.id == termId);
+        b.classList.toggle('btn-outline-success', b.dataset.id != termId);
+    });
+
+    selectedPaymentTermId   = termId;
+    selectedPaymentTermName = termTitle;
+
+    const section    = document.getElementById('installments-section');
+    const nameEl     = document.getElementById('selected-term-name');
+    const tbody      = document.getElementById('installments-tbody');
+    const totalEl    = document.getElementById('installments-total');
+    const confirmBtn = document.getElementById('confirm-payment-btn');
+
+    if (nameEl) nameEl.textContent = termTitle;
+    section?.classList.remove('d-none');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center"><span class="spinner-border spinner-border-sm"></span></td></tr>';
+    confirmBtn.disabled = true;
+
+    // Remove seletor de parcelas anterior, se houver
+    document.getElementById('parcelas-selector-row')?.remove();
+
+    try {
+        const res          = await fetch(`/sale/installments/${termId}`, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        const json         = await res.json();
+        const installments = json.data || [];
+        _loadedInstallments = installments;
+
+        if (!installments.length) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">Sem parcelas cadastradas — pagamento à vista.</td></tr>';
+            if (totalEl) totalEl.textContent = formatBRL(currentTotalLiquido);
+            confirmBtn.disabled = false;
+            return;
+        }
+
+        // Se há mais de 1 parcela disponível, exibe seletor de quantidade
+        if (installments.length > 1) {
+            const selectorRow = document.createElement('div');
+            selectorRow.id        = 'parcelas-selector-row';
+            selectorRow.className = 'mb-3';
+            selectorRow.innerHTML = `
+                <label class="form-label fw-bold small">
+                    <i class="fa-solid fa-hashtag me-1"></i> Número de parcelas
+                </label>
+                <select id="parcelas-qty-select" class="form-select form-select-sm" style="max-width:220px;">
+                    ${installments.map((inst, idx) =>
+                        `<option value="${idx + 1}">${idx + 1}x de ${formatBRL(currentTotalLiquido / (idx + 1))}</option>`
+                    ).join('')}
+                </select>
+            `;
+            // Insere o seletor antes da tabela de parcelas
+            const table = document.getElementById('installments-table');
+            table?.parentElement?.insertBefore(selectorRow, table);
+
+            document.getElementById('parcelas-qty-select')?.addEventListener('change', function () {
+                renderInstallmentRows(parseInt(this.value));
+            });
+        }
+
+        renderInstallmentRows(installments.length);
+        confirmBtn.disabled = false;
+
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-danger text-center">Erro ao carregar parcelas.</td></tr>';
+    }
+}
+
+function renderInstallmentRows(qty) {
+    const installments = _loadedInstallments.slice(0, qty);
+    const tbody  = document.getElementById('installments-tbody');
+    const totalEl = document.getElementById('installments-total');
+    if (!tbody) return;
+
+    const parcelValue = currentTotalLiquido / qty;
+    let soma = 0;
+
+    tbody.innerHTML = '';
+    installments.forEach((inst, idx) => {
+        soma += parcelValue;
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + (inst.intervalo || 30) * (idx + 1));
+        const dateStr = dueDate.toLocaleDateString('pt-BR');
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td>${dateStr}</td>
+            <td class="text-end">${formatBRL(parcelValue)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if (totalEl) totalEl.textContent = formatBRL(soma);
+}
+
+function formatBRL(value) {
+    return 'R$ ' + value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+async function openPaymentModal(totalLiquido) {
+    selectedPaymentTermId   = null;
+    selectedPaymentTermName = '';
+    currentTotalLiquido     = totalLiquido;
+
+    const modalTotalEl = document.getElementById('modal-total-venda');
+    if (modalTotalEl) modalTotalEl.textContent = totalLiquido.toFixed(2).replace('.', ',');
+
+    const section = document.getElementById('installments-section');
+    section?.classList.add('d-none');
+
+    const confirmBtn = document.getElementById('confirm-payment-btn');
+    if (confirmBtn) confirmBtn.disabled = true;
+
+    await loadPaymentTerms();
+
+    const modalEl = document.getElementById('modalPaymentTerms');
+    const modal   = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+}
+
 // ─── Finalizar Venda ──────────────────────────────────────────────────────────
 
 async function finalizeSale() {
@@ -203,21 +369,29 @@ async function finalizeSale() {
         return;
     }
 
-    // Confirmar finalização
-    const confirm = await Swal.fire({
-        icon: 'question',
-        title: 'Finalizar Venda?',
-        text: `A venda #${currentSaleId} será finalizada e você será redirecionado para cadastrar a forma de pagamento.`,
-        showCancelButton: true,
-        confirmButtonColor: '#198754',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: '<i class="fa-solid fa-check me-1"></i>Sim, finalizar',
-        cancelButtonText: 'Cancelar',
-    });
-
-    if (!confirm.isConfirmed) return;
-
     // Calcular totais
+    const descPct      = parseFloat(document.getElementById('desconto')?.value  || 0) || 0;
+    const acrPct       = parseFloat(document.getElementById('acrescimo')?.value || 0) || 0;
+    const totalBruto   = saleItems.reduce((s, i) => s + i.total, 0);
+    const valDesc      = (totalBruto * descPct)  / 100;
+    const valAcr       = (totalBruto * acrPct)   / 100;
+    const totalLiquido = totalBruto - valDesc + valAcr;
+
+    // Abre o modal de condição de pagamento
+    await openPaymentModal(totalLiquido);
+}
+
+async function confirmPaymentAndFinalize() {
+    if (!selectedPaymentTermId) {
+        Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Selecione uma condição de pagamento.' });
+        return;
+    }
+
+    // Fechar modal
+    const modalEl = document.getElementById('modalPaymentTerms');
+    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+
+    // Calcular totais novamente para garantir
     const descPct      = parseFloat(document.getElementById('desconto')?.value  || 0) || 0;
     const acrPct       = parseFloat(document.getElementById('acrescimo')?.value || 0) || 0;
     const totalBruto   = saleItems.reduce((s, i) => s + i.total, 0);
@@ -229,35 +403,36 @@ async function finalizeSale() {
     // Atualizar venda no banco com estado VENDA
     const requests = new Requests();
     const fd       = new FormData();
-    fd.append('id',            currentSaleId);
-    fd.append('total_bruto',   totalBruto);
-    fd.append('total_liquido', totalLiquido);
-    fd.append('desconto',      valDesc);
-    fd.append('acrescimo',     valAcr);
-    fd.append('observacao',    observacao);
-    fd.append('estado_venda',  'VENDA');
+    const parcelasQty = parseInt(document.getElementById('parcelas-qty-select')?.value || '1');
+
+    fd.append('id',                currentSaleId);
+    fd.append('total_bruto',       totalBruto);
+    fd.append('total_liquido',     totalLiquido);
+    fd.append('desconto',          valDesc);
+    fd.append('acrescimo',         valAcr);
+    fd.append('observacao',        observacao);
+    fd.append('estado_venda',      'VENDA');
+    fd.append('id_payment_terms',  selectedPaymentTermId);
+    fd.append('num_parcelas',      parcelasQty);
 
     try {
         const result = await requests.setBody(fd).post('/sale/update');
         if (!result?.status) throw new Error(result?.msg || 'Erro ao finalizar venda.');
 
-        const saleId = currentSaleId;
         clearSale();
 
-        // Modal de sucesso igual ao padrão do sistema
         await Swal.fire({
             icon: 'success',
             title: 'Sucesso',
-            text: 'Salvo com sucesso!',
-            confirmButtonColor: '#6c63ff',
+            text: `Venda finalizada com "${selectedPaymentTermName}"!`,
+            confirmButtonColor: '#198754',
             confirmButtonText: 'OK',
         });
 
-        // Redirecionar para payment/detalhes com id_sale pré-selecionado
-        window.location.href = `/payment/detalhes?id_sale=${saleId}`;
+        window.location.href = '/sale/lista';
 
     } catch (e) {
-        console.error('finalizeSale:', e);
+        console.error('confirmPaymentAndFinalize:', e);
         Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao concluir: ' + e.message });
     }
 }
@@ -405,4 +580,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Botão: Finalizar Venda ────────────────────────────────────────────────
     document.getElementById('finalize-sale')?.addEventListener('click', finalizeSale);
+
+    // ── Botão: Confirmar condição de pagamento no modal ───────────────────────
+    document.getElementById('confirm-payment-btn')?.addEventListener('click', confirmPaymentAndFinalize);
 });

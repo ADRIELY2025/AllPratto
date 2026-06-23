@@ -23,7 +23,7 @@ final class Users extends Base
         $user = [];
 
         if (!is_null($id)) {
-            $qb = \app\database\DB::select('*')->from('users');
+            $qb = \App\Database\DB::select('*')->from('users');
 
             $user = $qb
                 ->where('id = ' . $qb->createPositionalParameter($id, \Doctrine\DBAL\ParameterType::INTEGER))
@@ -52,7 +52,7 @@ final class Users extends Base
         ];
 
         try {
-            $IsInserted = \app\database\DB::connection()->insert('users', $FieldsAndValues);
+            $IsInserted = \App\Database\DB::connection()->insert('users', $FieldsAndValues);
 
             if (!$IsInserted) {
                 return $this->json($response, [
@@ -62,7 +62,7 @@ final class Users extends Base
                 ], 500);
             }
 
-            $id = \app\database\DB::select('id')
+            $id = \App\Database\DB::select('id')
                 ->from('users')
                 ->orderBy('id', 'DESC')
                 ->setMaxResults(1)
@@ -106,7 +106,7 @@ final class Users extends Base
         }
 
         try {
-            $IsUpdated = \app\database\DB::connection()->update(
+            $IsUpdated = \App\Database\DB::connection()->update(
                 'users',
                 $FieldsAndValues,
                 ['id' => $id]
@@ -149,7 +149,7 @@ final class Users extends Base
         }
 
         try {
-            $IsDeleted = \app\database\DB::connection()->delete('users', ['id' => $id]);
+            $IsDeleted = \App\Database\DB::connection()->delete('users', ['id' => $id]);
 
             if (!$IsDeleted) {
                 return $this->json($response, [
@@ -186,7 +186,7 @@ final class Users extends Base
             1 => 'nome',
             2 => 'cpf',
             3 => 'rg',
-            4 => 'email',
+            4 => 'id',   // email vem de MAX() na view — não pode ordenar, usa id como fallback
             5 => 'ativo',
             6 => 'criado_em',
             7 => 'atualizado_em',
@@ -207,11 +207,11 @@ final class Users extends Base
         $orderField = $columns[$posField];
 
         try {
-            $totalRecords = (int) \app\database\DB::select('COUNT(*)')
+            $totalRecords = (int) \App\Database\DB::select('COUNT(*)')
                 ->from('vw_user')
                 ->fetchOne();
 
-            $query = \app\database\DB::select('*')->from('vw_user');
+            $query = \App\Database\DB::select('*')->from('vw_user');
 
             if (!is_null($term) && $term !== '') {
                 $query->setParameter('term', '%' . $term . '%');

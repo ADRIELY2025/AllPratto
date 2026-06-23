@@ -189,6 +189,75 @@
 </div>
 
 
+<!-- ─── Modal: Condição de Pagamento ─── -->
+<div class="modal fade" id="modalPaymentTerms" tabindex="-1" aria-labelledby="modalPaymentTermsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalPaymentTermsLabel">
+                    <i class="fa-solid fa-money-bill-wave me-2"></i> Condição de Pagamento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Total da venda -->
+                <div class="alert alert-info d-flex align-items-center gap-2 mb-3">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Total da venda: <strong>R$ <span id="modal-total-venda">0,00</span></strong></span>
+                </div>
+
+                <!-- Seleção da condição -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Selecione a condição de pagamento</label>
+                    <div id="payment-terms-list" class="d-flex flex-wrap gap-2">
+                        <div class="text-muted">
+                            <span class="spinner-border spinner-border-sm me-1"></span> Carregando...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parcelas (aparece após selecionar condição) -->
+                <div id="installments-section" class="d-none">
+                    <hr>
+                    <h6 class="fw-bold mb-3">
+                        <i class="fa-solid fa-calendar-check me-1"></i> Parcelas
+                        <span class="badge bg-secondary ms-1" id="selected-term-name"></span>
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle" id="installments-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:60px">#</th>
+                                    <th>Vencimento</th>
+                                    <th class="text-end">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="installments-tbody">
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light fw-bold">
+                                    <td colspan="2" class="text-end">Total:</td>
+                                    <td class="text-end" id="installments-total">R$ 0,00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-xmark me-1"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="confirm-payment-btn" disabled>
+                    <i class="fa-solid fa-check me-1"></i> Confirmar e Finalizar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block script %}

@@ -33,3 +33,4 @@ storage/
 # versione apenas .env.example
 .env                       
 docker/redis/dump.rdb
+docker/redis/dump.rdb

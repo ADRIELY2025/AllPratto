@@ -105,8 +105,12 @@ final class Cardapio extends Base
         }
 
         // Repassa o body no formato que Pedido::insert espera
-        // { mesa: <id>, itens: [...], pagamento: '...', observacao: '...' }
-        $novoBody = array_merge($body, ['mesa' => $body['mesa_id']]);
+        // { mesa: <id>, itens: [...], pagamento: '...', parcelas: N, intervalo: N, observacao: '...' }
+        $novoBody = array_merge($body, [
+            'mesa'      => $body['mesa_id'],
+            'parcelas'  => isset($body['parcelas'])  ? (int) $body['parcelas']  : 1,
+            'intervalo' => isset($body['intervalo']) ? (int) $body['intervalo'] : 0,
+        ]);
 
         $requestModificado = $request->withParsedBody($novoBody);
 

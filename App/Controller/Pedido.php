@@ -143,6 +143,10 @@ public function listarCozinha($request, $response)
         $idCliente = isset($form['id_cliente']) && $form['id_cliente'] !== ''
             ? (int) $form['id_cliente'] : null;
 
+        // Parcelas e intervalo — só relevantes em crédito/débito; default 1x / 0 dias
+        $totalParcelas = isset($form['parcelas'])  && (int) $form['parcelas']  >= 1 ? (int) $form['parcelas']  : 1;
+        $intervalo     = isset($form['intervalo']) && (int) $form['intervalo'] >= 0 ? (int) $form['intervalo'] : 0;
+
         if (!$idMesa || empty($itens)) {
             return $this->json($response, ['status' => false, 'msg' => 'Mesa e itens são obrigatórios.', 'id' => 0], 400);
         }
@@ -180,7 +184,7 @@ public function listarCozinha($request, $response)
 
             $ids = $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use (
                 $idMesa, $idCliente, $total, $itensNormalizados,
-                $pagamento, $observacao
+                $pagamento, $observacao, $totalParcelas, $intervalo
             ): array {
 
                 // ── 1. order ────────────────────────────────────────────────
@@ -225,23 +229,34 @@ public function listarCozinha($request, $response)
                     $ptId = (int) $pt['id'];
                 }
 
-                // ── 4. installment — 1 parcela à vista ──────────────────────
-                // Verifica se já existe parcela única para este payment_terms
-                $inst = \App\Database\DB::select('id')
-                    ->from('installment')
-                    ->where('id_pagamento = :pid AND parcela = 1')
-                    ->setParameter('pid', $ptId)
-                    ->fetchAssociative();
+                // ── 4. installments — N parcelas com intervalo em dias ───────
+                // Cria uma linha de installment para cada parcela se não existir
+                $installmentIds = [];
+                $valorCentavos  = (int) round($total * 100);
+                // Distribui o valor em parcelas (a última absorve o arredondamento)
+                $valorParcelaCentavos = (int) floor($valorCentavos / $totalParcelas);
+                $resto                = $valorCentavos - ($valorParcelaCentavos * $totalParcelas);
 
-                if (!$inst) {
-                    $conn->insert('installment', [
-                        'id_pagamento' => $ptId,
-                        'parcela'      => 1,
-                        'intervalo'    => 0,
-                    ]);
-                    $installmentId = (int) $conn->lastInsertId();
-                } else {
-                    $installmentId = (int) $inst['id'];
+                for ($p = 1; $p <= $totalParcelas; $p++) {
+                    $intervaloParc = $intervalo * ($p - 1);
+
+                    $qbInst = \App\Database\DB::select('id')->from('installment');
+                    $inst = $qbInst
+                        ->where('id_pagamento = ' . $qbInst->createPositionalParameter($ptId, \Doctrine\DBAL\ParameterType::INTEGER))
+                        ->andWhere('parcela = '   . $qbInst->createPositionalParameter($p, \Doctrine\DBAL\ParameterType::INTEGER))
+                        ->andWhere('intervalo = ' . $qbInst->createPositionalParameter($intervaloParc, \Doctrine\DBAL\ParameterType::INTEGER))
+                        ->fetchAssociative();
+
+                    if (!$inst) {
+                        $conn->insert('installment', [
+                            'id_pagamento' => $ptId,
+                            'parcela'      => $p,
+                            'intervalo'    => $intervaloParc,
+                        ]);
+                        $installmentIds[$p] = (int) $conn->lastInsertId();
+                    } else {
+                        $installmentIds[$p] = (int) $inst['id'];
+                    }
                 }
 
                 // ── Atualiza order.payment_terms_id ─────────────────────────
@@ -280,47 +295,52 @@ public function listarCozinha($request, $response)
 
                 // ── 7. purchase (custo interno dos itens retirados) ──────────
                 $conn->insert('purchase', [
-                    'id_fornecedor'    => null,
-                    'total_bruto'      => $total,
-                    'total_liquido'    => $total,
-                    'desconto'         => 0,
-                    'acrescimo'        => 0,
-                    'observacao'       => "Saída automática — Pedido #{$pedidoId}",
-                    'data_cadastro'    => date('Y-m-d H:i:s'),
-                    'data_atualizacao' => date('Y-m-d H:i:s'),
+                    'id_fornecedor' => null,
+                    'total_bruto'   => $total,
+                    'total_liquido' => $total,
+                    'desconto'      => 0,
+                    'acrescimo'     => 0,
+                    'observacao'    => "Saída automática — Pedido #{$pedidoId}",
                 ]);
                 $purchaseId = (int) $conn->lastInsertId();
 
                 // ── 8. item_purchase ─────────────────────────────────────────
                 foreach ($itensNormalizados as $item) {
                     $conn->insert('item_purchase', [
-                        'nome'             => $item['nome'],
-                        'id_compra'        => $purchaseId,
-                        'id_produto'       => $item['id'],
-                        'quantidade'       => $item['quantidade'],
-                        'total_bruto'      => $item['subtotal'],
-                        'total_liquido'    => $item['subtotal'],
-                        'preco_unitario'   => $item['preco'],
-                        'desconto'         => 0,
-                        'acrescimo'        => 0,
-                        'data_cadastro'    => date('Y-m-d H:i:s'),
-                        'data_atualizacao' => date('Y-m-d H:i:s'),
+                        'nome'           => $item['nome'],
+                        'id_compra'      => $purchaseId,
+                        'id_produto'     => $item['id'],
+                        'quantidade'     => $item['quantidade'],
+                        'total_bruto'    => $item['subtotal'],
+                        'total_liquido'  => $item['subtotal'],
+                        'preco_unitario' => $item['preco'],
+                        'desconto'       => 0,
+                        'acrescimo'      => 0,
                     ]);
                 }
 
-                // ── 9. installment_sale_purchase ─────────────────────────────
-                $conn->insert('installment_sale_purchase', [
-                    'id_payment'      => $ptId,
-                    'id_sale'         => $saleId,
-                    'id_purchase'     => $purchaseId,
-                    'id_installment'  => $installmentId,
-                    'total_parcelas'  => 1,
-                    'numero_parcela'  => 1,
-                    'valor_parcela'   => (int) round($total * 100), // centavos
-                    'valor_total'     => (int) round($total * 100),
-                    'status'          => 'aberto',
-                    'data_vencimento' => 0,
-                ]);
+                // ── 9. installment_sale_purchase — uma linha por parcela ──────
+                for ($p = 1; $p <= $totalParcelas; $p++) {
+                    // Última parcela absorve centavos de arredondamento
+                    $valorEsta = $valorParcelaCentavos + ($p === $totalParcelas ? $resto : 0);
+
+                    // Vencimento: timestamp Unix — parcela 1 = hoje, demais = hoje + intervalo*(p-1)
+                    $diasOffset     = $intervalo * ($p - 1);
+                    $dataVencimento = (int) strtotime("+{$diasOffset} days", strtotime(date('Y-m-d')));
+
+                    $conn->insert('installment_sale_purchase', [
+                        'id_payment'      => $ptId,
+                        'id_sale'         => $saleId,
+                        'id_purchase'     => $purchaseId,
+                        'id_installment'  => $installmentIds[$p],
+                        'total_parcelas'  => $totalParcelas,
+                        'numero_parcela'  => $p,
+                        'valor_parcela'   => $valorEsta,
+                        'valor_total'     => $valorCentavos,
+                        'status'          => 'aberto',
+                        'data_vencimento' => $dataVencimento,
+                    ]);
+                }
 
                 // ── 10. mesa → ocupada ────────────────────────────────────────
                 $conn->update('mesa', [
