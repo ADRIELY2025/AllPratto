@@ -199,30 +199,11 @@ Variáveis essenciais no `.env`:
 ```env
 # Aplicação
 APP_DOMAIN=localhost
-APP_ENV=development
+APP_ENV=
 APP_DEBUG=true
 TZ=America/Sao_Paulo
 PROTOCOL=https
 
-# Banco de dados (PostgreSQL)
-DB_CONNECTION=pgsql
-DB_HOST=postgres
-DB_PORT=5432
-DB_NAME=allpratto
-DB_USER=allpratto
-DB_PASSWORD=sua_senha_aqui
-
-# Redis (sessões e cache)
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=sua_senha_redis
-REDIS_DATABASE=1
-REDIS_PREFIX=SESS:
-
-# Google OAuth (opcional)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=https://localhost/authentication/google
 ```
 
 ---
