@@ -1,20 +1,20 @@
 import Requests from '../components/requests.js';
-import Validate  from '../components/validate.js';
+import Validate from '../components/validate.js';
 
 // ─── Elementos
-const Action        = document.getElementById('action');
-const Id            = document.getElementById('id');
-const Codigo        = document.getElementById('codigo');
-const Titulo        = document.getElementById('titulo');
-const BtnAdd        = document.getElementById('btnAddParcela');
-const TbBody        = document.getElementById('tbInstallments');
-const AvisoEl       = document.getElementById('avisoSemParcela');
-const NomeFormaEl   = document.getElementById('nomeFormaPagamento');
-const WrapParcela   = document.getElementById('wrapParcela');
+const Action = document.getElementById('action');
+const Id = document.getElementById('id');
+const Codigo = document.getElementById('codigo');
+const Titulo = document.getElementById('titulo');
+const BtnAdd = document.getElementById('btnAddParcela');
+const TbBody = document.getElementById('tbInstallments');
+const AvisoEl = document.getElementById('avisoSemParcela');
+const NomeFormaEl = document.getElementById('nomeFormaPagamento');
+const WrapParcela = document.getElementById('wrapParcela');
 const WrapIntervalo = document.getElementById('wrapIntervalo');
-const InputParcela  = document.getElementById('parcela');
-const InputInterv   = document.getElementById('intervalo');
-const InputValor    = document.getElementById('valor_total');   // readonly — valor por parcela calculado
+const InputParcela = document.getElementById('parcela');
+const InputInterv = document.getElementById('intervalo');
+const InputValor = document.getElementById('valor_total');   // readonly — valor por parcela calculado
 const TotalVendaRaw = document.getElementById('total_venda_raw');
 
 // Valor total da venda vindo do servidor (float)
@@ -63,15 +63,15 @@ function atualizarCamposForma() {
     if (bloqueado) NomeFormaEl.textContent = nomeForma;
 
     InputParcela.disabled = bloqueado;
-    InputInterv.disabled  = bloqueado;
+    InputInterv.disabled = bloqueado;
 
     if (bloqueado) {
         InputParcela.value = '';
-        InputInterv.value  = '';
-        WrapParcela.style.opacity   = '0.4';
+        InputInterv.value = '';
+        WrapParcela.style.opacity = '0.4';
         WrapIntervalo.style.opacity = '0.4';
     } else {
-        WrapParcela.style.opacity   = '1';
+        WrapParcela.style.opacity = '1';
         WrapIntervalo.style.opacity = '1';
     }
 
@@ -107,7 +107,7 @@ function renderInstallments() {
 }
 
 // ─── Remover parcela
-window.removeParcela = async function(index) {
+window.removeParcela = async function (index) {
     const item = installments[index];
 
     if (item.id) {
@@ -137,8 +137,8 @@ async function loadInstallments() {
         const res = await requests.post('/payment/installment/list', { id_pagamento: Id.value });
         if (res.status && res.data) {
             installments = res.data.map(r => ({
-                id:       r.id,
-                parcela:  r.parcela,
+                id: r.id,
+                parcela: r.parcela,
                 intervalo: r.intervalo,
             }));
             renderInstallments();
@@ -166,7 +166,7 @@ async function savePaymentTerms() {
         }
 
         Action.value = 'e';
-        Id.value     = response.id;
+        Id.value = response.id;
         window.history.replaceState({}, '', `/payment/detalhes/${response.id}`);
         return true;
 
@@ -202,9 +202,9 @@ InputInterv.addEventListener('input', () => {
 
 // ─── Adicionar parcela
 BtnAdd.addEventListener('click', async () => {
-    const semParc   = isSemParcelamento();
-    const parcela   = semParc ? 1 : (parseInt(InputParcela.value) || 0);
-    const intervalo = semParc ? 0 : (parseInt(InputInterv.value)  || 0);
+    const semParc = isSemParcelamento();
+    const parcela = semParc ? 1 : (parseInt(InputParcela.value) || 0);
+    const intervalo = semParc ? 0 : (parseInt(InputInterv.value) || 0);
 
     if (!semParc && parcela <= 0) {
         Swal.fire({ icon: 'error', title: 'Atenção', text: 'Informe a quantidade de parcelas.', timer: 3000, timerProgressBar: true });
@@ -218,10 +218,10 @@ BtnAdd.addEventListener('click', async () => {
         return;
     }
 
-    if (!TOTAL_VENDA) {
+    /*if (!TOTAL_VENDA) {
         Swal.fire({ icon: 'error', title: 'Atenção', text: 'Não foi possível identificar o valor total da venda.', timer: 3000, timerProgressBar: true });
         return;
-    }
+    }*/
 
     // Salva payment_terms primeiro se ainda não foi salvo
     if (!Id.value) {
@@ -231,7 +231,7 @@ BtnAdd.addEventListener('click', async () => {
 
     const requests = new Requests();
     try {
-        const res = await requests.post('/payment/installment/insert', {
+        const res = await requests.setForm('form').post('/payment/installment/insert', {
             id_pagamento: Id.value,
             parcela,
             intervalo,
@@ -247,8 +247,8 @@ BtnAdd.addEventListener('click', async () => {
         renderInstallments();
 
         InputParcela.value = '';
-        InputInterv.value  = '';
-        InputValor.value   = '';
+        InputInterv.value = '';
+        InputValor.value = '';
 
         if (!semParc) InputParcela.focus();
 
