@@ -49,6 +49,7 @@ final class Product extends Base
             'codigo_barra'           => $form['codigo_barra']         ?? '',
             'grupo'                  => $form['grupo']               ?? '',
             'unidade'                => $form['unidade']             ?? '',
+            'imagem_url'             => $form['imagemUrl']           ?? " ",
             'preco_compra'           => $this->toDecimal($form['preco_compra']          ?? 0),
             'total_imposto'          => $this->toDecimal($form['total_imposto']         ?? 0),
             'margem_lucro'           => $this->toDecimal($form['margem_lucro']          ?? 0),
@@ -71,7 +72,7 @@ final class Product extends Base
             if (!is_dir($path)) {
                 mkdir($path, 0777, true);
             }
-
+            
             move_uploaded_file($imagem->getFilePath(), $path . '/' . $imagem->getClientFilename());
 
             if (!$id) {
@@ -262,18 +263,18 @@ final class Product extends Base
     }
 
 
-    public function getImagem($request, $response)
-    {
-        $id = $request->getAttribute('id');
+    public function getImagem($request, $response, $args)
+{
+    $id      = $args['id']      ?? null;
+    $arquivo = $args['arquivo'] ?? null;
+    $caminho = ROOT . '/storage/produtos/' . $id . '/' . $arquivo;
 
-        // Implement the logic to retrieve and return the image
-        // This is a simplified example - replace with actual image retrieval logic
-        $imagePath = __DIR__ . "/../../public/uploads/produtos/produto-{$id}.jpg";
-        if (!file_exists($imagePath)) {
-            return $this->json($response, ['status' => false, 'msg' => 'Imagem não encontrada.'], 404);
-        }
-
-        $imageData = file_get_contents($imagePath);
-        return $this->image($response, $imageData, 'image/jpeg');
+    if (!$id || !$arquivo || !file_exists($caminho)) {
+        return $response->withStatus(404);
     }
+
+    $mime = mime_content_type($caminho) ?: 'image/jpeg';
+    $response->getBody()->write(file_get_contents($caminho));
+    return $response->withHeader('Content-Type', $mime)->withStatus(200);
+}
 }
