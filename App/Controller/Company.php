@@ -23,7 +23,7 @@ final class Company extends Base
         $company = [];
 
         if (!is_null($id)) {
-            $qb = \app\database\DB::select('*')->from('company');
+            $qb = \App\Database\DB::select('*')->from('company');
 
             $company = $qb
                 ->where('id = ' . $qb->createPositionalParameter($id, \Doctrine\DBAL\ParameterType::INTEGER))
@@ -46,23 +46,16 @@ final class Company extends Base
         $form = $request->getParsedBody();
 
         $FieldsAndValues = [
-            'nome_fantasia' => $form['nomeExibicao'] ?? '',
+            'nome'        => $form['nomeExibicao'] ?? '',
             'razao_social' => $form['nomeLegal'] ?? '',
-            'cnpj' => $form['cnpj'] ?? '',
-            'inscricao_estadual' => $form['inscricaoEstadual'] ?? '',
-            'telefone' => $form['telefone'] ?? '',
-            'email' => $form['email'] ?? '',
-            'endereco' => $form['endereco'] ?? '',
-            'numero' => $form['numero'] ?? '',
-            'bairro' => $form['bairro'] ?? '',
-            'cidade' => $form['cidade'] ?? '',
-            'estado' => $form['estado'] ?? '',
-            'cep' => $form['cep'] ?? '',
-            'ativo' => ($form['ativo'] === 'true') ? true : false
+            'cnpj'        => $form['cnpj'] ?? '',
+            'telefone'    => $form['telefone'] ?? '',
+            'email'       => $form['email'] ?? '',
+            'ativo'       => ($form['ativo'] === 'true') ? true : false,
         ];
 
         try {
-            $IsInserted = \app\database\DB::connection()->insert('company', $FieldsAndValues);
+            $IsInserted = \App\Database\DB::connection()->insert('company', $FieldsAndValues);
 
             if (!$IsInserted) {
                 return $this->json($response, [
@@ -72,7 +65,7 @@ final class Company extends Base
                 ], 500);
             }
 
-            $id = \app\database\DB::select('id')
+            $id = \App\Database\DB::select('id')
                 ->from('company')
                 ->orderBy('id', 'DESC')
                 ->setMaxResults(1)
@@ -107,23 +100,16 @@ final class Company extends Base
         }
 
         $FieldsAndValues = [
-            'nome_fantasia' => $form['nomeExibicao'] ?? null,
+            'nome'        => $form['nomeExibicao'] ?? null,
             'razao_social' => $form['nomeLegal'] ?? null,
-            'cnpj' => $form['cnpj'] ?? null,
-            'inscricao_estadual' => $form['inscricaoEstadual'] ?? null,
-            'telefone' => $form['telefone'] ?? null,
-            'email' => $form['email'] ?? null,
-            'endereco' => $form['endereco'] ?? null,
-            'numero' => $form['numero'] ?? null,
-            'bairro' => $form['bairro'] ?? null,
-            'cidade' => $form['cidade'] ?? null,
-            'estado' => $form['estado'] ?? null,
-            'cep' => $form['cep'] ?? null,
-            'ativo' => ($form['ativo'] === 'true') ? true : false
+            'cnpj'        => $form['cnpj'] ?? null,
+            'telefone'    => $form['telefone'] ?? null,
+            'email'       => $form['email'] ?? null,
+            'ativo'       => ($form['ativo'] === 'true') ? true : false,
         ];
 
         try {
-            $IsUpdated = \app\database\DB::connection()->update(
+            $IsUpdated = \App\Database\DB::connection()->update(
                 'company',
                 $FieldsAndValues,
                 ['id' => $id]
@@ -166,7 +152,7 @@ final class Company extends Base
         }
 
         try {
-            $IsDeleted = \app\database\DB::connection()->delete('company', ['id' => $id]);
+            $IsDeleted = \App\Database\DB::connection()->delete('company', ['id' => $id]);
 
             if (!$IsDeleted) {
                 return $this->json($response, [
@@ -199,16 +185,14 @@ final class Company extends Base
         $length = (int) ($form['length'] ?? 10);
 
         $columns = [
-            0  => 'id',
-            1  => 'nome_fantasia',
-            2  => 'razao_social',
-            3  => 'cnpj',
-            4  => 'telefone',
-            5  => 'email',
-            6  => 'cidade',
-            7  => 'estado',
-            8  => 'criado_em',
-            9  => 'atualizado_em',
+            0 => 'id',
+            1 => 'nome',
+            2 => 'razao_social',
+            3 => 'cnpj',
+            4 => 'telefone',
+            5 => 'email',
+            6 => 'criado_em',
+            7 => 'atualizado_em',
         ];
 
         $posField = (
@@ -226,23 +210,21 @@ final class Company extends Base
         $orderField = $columns[$posField];
 
         try {
-            $totalRecords = (int) \app\database\DB::select('COUNT(*)')
+            $totalRecords = (int) \App\Database\DB::select('COUNT(*)')
                 ->from('company')
                 ->fetchOne();
 
-            $query = \app\database\DB::select('*')->from('company');
+            $query = \App\Database\DB::select('*')->from('company');
 
             if (!is_null($term) && $term !== '') {
                 $query->setParameter('term', '%' . $term . '%');
 
                 $query->where('CAST(id AS TEXT) ILIKE :term')
-                    ->orWhere('nome_fantasia ILIKE :term')
+                    ->orWhere('nome ILIKE :term')
                     ->orWhere('razao_social ILIKE :term')
                     ->orWhere('cnpj ILIKE :term')
                     ->orWhere('telefone ILIKE :term')
                     ->orWhere('email ILIKE :term')
-                    ->orWhere('cidade ILIKE :term')
-                    ->orWhere('estado ILIKE :term')
                     ->orWhere("TO_CHAR(criado_em, 'DD/MM/YYYY HH24:MI:SS') ILIKE :term")
                     ->orWhere("TO_CHAR(atualizado_em, 'DD/MM/YYYY HH24:MI:SS') ILIKE :term");
             }
@@ -262,16 +244,14 @@ final class Company extends Base
             foreach ($companies as $key => $value) {
                 $rows[$key] = [
                     $value['id'],
-                    $value['nome_fantasia'],
+                    $value['nome'],
                     $value['razao_social'],
                     $value['cnpj'],
                     $value['telefone'],
                     $value['email'],
-                    $value['cidade'],
-                    $value['estado'],
-                    ($value['ativo'] === true) ? 'Ativo' : 'Inativo',
-                    (new \DateTime($value['criado_em']))->format('d/m/Y H:i:s'),
-                    (new \DateTime($value['atualizado_em']))->format('d/m/Y H:i:s'),
+                    (in_array($value['ativo'], [true, 't', '1', 1], true)) ? 'Ativo' : 'Inativo',
+                    $value['criado_em'] ? (new \DateTime($value['criado_em']))->format('d/m/Y H:i:s') : '-',
+                    $value['atualizado_em'] ? (new \DateTime($value['atualizado_em']))->format('d/m/Y H:i:s') : '-',
                     "<td>
                         <a class='btn btn-sm btn-warning' href='/company/detalhes/" . $value['id'] . "'>
                             <i class='fa-solid fa-pen-to-square'></i> Editar

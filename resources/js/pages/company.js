@@ -62,6 +62,8 @@ async function applyChanges() {
             text: response.msg || 'Empresa salva com sucesso!',
             timer: 3000,
             timerProgressBar: true,
+        }).then(() => {
+            window.location.href = '/company/lista';
         });
     } catch (error) {
         Swal.fire({
