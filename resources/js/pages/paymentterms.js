@@ -21,7 +21,7 @@ const TotalVendaRaw = document.getElementById('total_venda_raw');
 const TOTAL_VENDA = parseFloat(TotalVendaRaw?.value || '0') || 0;
 
 // Formas que NÃO permitem parcelamento
-const SEM_PARCELAMENTO = ['01', '17']; // Dinheiro, PIX
+const SEM_PARCELAMENTO = ['01', '04', '17']; // Dinheiro, Cartão de Débito, PIX
 
 const MAX_INTERVALO = 40;
 
