@@ -212,11 +212,12 @@ async function loadPaymentTerms() {
             const btn = document.createElement('button');
             btn.type      = 'button';
             btn.className = 'btn btn-outline-success';
-            btn.dataset.id    = term.id;
-            btn.dataset.title = term.titulo;
+            btn.dataset.id     = term.id;
+            btn.dataset.title  = term.titulo;
+            btn.dataset.codigo = term.codigo || '';
             btn.innerHTML = `<i class="fa-solid fa-credit-card me-1"></i> ${term.titulo}`;
             if (term.atalho) btn.innerHTML += ` <small class="text-muted">(${term.atalho})</small>`;
-            btn.addEventListener('click', () => selectPaymentTerm(term.id, term.titulo));
+            btn.addEventListener('click', () => selectPaymentTerm(term.id, term.titulo, term.codigo || ''));
             container.appendChild(btn);
         });
 
@@ -228,7 +229,10 @@ async function loadPaymentTerms() {
 // Parcelas carregadas da condição selecionada (usadas para recalcular ao mudar qtd)
 let _loadedInstallments = [];
 
-async function selectPaymentTerm(termId, termTitle) {
+// Códigos que NÃO permitem parcelamento (à vista)
+const SEM_PARCELAMENTO = ['01', '04', '17']; // Dinheiro, Cartão de Débito, PIX
+
+async function selectPaymentTerm(termId, termTitle, termCodigo = '') {
     // Destaca botão selecionado
     document.querySelectorAll('#payment-terms-list .btn').forEach(b => {
         b.classList.toggle('btn-success',         b.dataset.id == termId);
@@ -258,38 +262,53 @@ async function selectPaymentTerm(termId, termTitle) {
         const installments = json.data || [];
         _loadedInstallments = installments;
 
-        if (!installments.length) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">Sem parcelas cadastradas — pagamento à vista.</td></tr>';
+        if (!installments.length || SEM_PARCELAMENTO.includes(termCodigo)) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-muted text-center">Pagamento à vista.</td></tr>';
             if (totalEl) totalEl.textContent = formatBRL(currentTotalLiquido);
             confirmBtn.disabled = false;
             return;
         }
 
-        // Se há mais de 1 parcela disponível, exibe seletor de quantidade
-        if (installments.length > 1) {
-            const selectorRow = document.createElement('div');
-            selectorRow.id        = 'parcelas-selector-row';
-            selectorRow.className = 'mb-3';
-            selectorRow.innerHTML = `
-                <label class="form-label fw-bold small">
-                    <i class="fa-solid fa-hashtag me-1"></i> Número de parcelas
-                </label>
-                <select id="parcelas-qty-select" class="form-select form-select-sm" style="max-width:220px;">
-                    ${installments.map((inst, idx) =>
-                        `<option value="${idx + 1}">${idx + 1}x de ${formatBRL(currentTotalLiquido / (idx + 1))}</option>`
-                    ).join('')}
-                </select>
-            `;
-            // Insere o seletor antes da tabela de parcelas
-            const table = document.getElementById('installments-table');
-            table?.parentElement?.insertBefore(selectorRow, table);
+        // Debug: mostra no console o que veio do banco
+        console.log('[Parcelas recebidas]', installments);
 
-            document.getElementById('parcelas-qty-select')?.addEventListener('change', function () {
-                renderInstallmentRows(parseInt(this.value));
-            });
-        }
+        // Pega o maior valor de "parcela" cadastrado — ex: se cadastrou 11, maxParcelas = 11
+        const maxParcelas = Math.max(...installments.map(i => parseInt(i.parcela) || 1));
+        // Intervalo padrão (usa o do primeiro registro ou 30 dias)
+        const intervalo   = parseInt(installments[0]?.intervalo) || 30;
 
-        renderInstallmentRows(installments.length);
+        console.log('[maxParcelas]', maxParcelas, '[intervalo]', intervalo);
+
+        // Sempre mostra o seletor quando há registro de parcela
+        // (mesmo que maxParcelas=1, o usuário pode querer confirmar à vista)
+        const selectorRow = document.createElement('div');
+        selectorRow.id        = 'parcelas-selector-row';
+        selectorRow.className = 'mb-3';
+
+        const options = Array.from({ length: maxParcelas }, (_, i) => {
+            const n = i + 1;
+            return `<option value="${n}">${n}x de ${formatBRL(currentTotalLiquido / n)}</option>`;
+        }).join('');
+
+        selectorRow.innerHTML = `
+            <label class="form-label fw-bold small">
+                <i class="fa-solid fa-hashtag me-1"></i> Número de parcelas
+            </label>
+            <select id="parcelas-qty-select" class="form-select form-select-sm" style="max-width:240px;">
+                ${options}
+            </select>
+            ${maxParcelas === 1 ? `<div class="text-warning small mt-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>Cadastre mais parcelas em <a href="/payment/lista" target="_blank">Condições de Pagamento</a> para liberar parcelamento.</div>` : ''}
+        `;
+
+        const table = document.getElementById('installments-table');
+        table?.parentElement?.insertBefore(selectorRow, table);
+
+        document.getElementById('parcelas-qty-select')?.addEventListener('change', function () {
+            renderInstallmentRows(parseInt(this.value), intervalo);
+        });
+
+        // Renderiza com a quantidade máxima selecionada por padrão
+        renderInstallmentRows(maxParcelas > 1 ? maxParcelas : 1, intervalo);
         confirmBtn.disabled = false;
 
     } catch (e) {
@@ -297,9 +316,8 @@ async function selectPaymentTerm(termId, termTitle) {
     }
 }
 
-function renderInstallmentRows(qty) {
-    const installments = _loadedInstallments.slice(0, qty);
-    const tbody  = document.getElementById('installments-tbody');
+function renderInstallmentRows(qty, intervalo) {
+    const tbody   = document.getElementById('installments-tbody');
     const totalEl = document.getElementById('installments-total');
     if (!tbody) return;
 
@@ -307,20 +325,20 @@ function renderInstallmentRows(qty) {
     let soma = 0;
 
     tbody.innerHTML = '';
-    installments.forEach((inst, idx) => {
+    for (let i = 0; i < qty; i++) {
         soma += parcelValue;
         const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + (inst.intervalo || 30) * (idx + 1));
+        dueDate.setDate(dueDate.getDate() + (intervalo || 30) * (i + 1));
         const dateStr = dueDate.toLocaleDateString('pt-BR');
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${idx + 1}</td>
+            <td>${i + 1}</td>
             <td>${dateStr}</td>
             <td class="text-end">${formatBRL(parcelValue)}</td>
         `;
         tbody.appendChild(tr);
-    });
+    }
 
     if (totalEl) totalEl.textContent = formatBRL(soma);
 }
