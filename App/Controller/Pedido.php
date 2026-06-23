@@ -7,71 +7,53 @@ namespace App\Controller;
 final class Pedido extends Base
 {
     public function cozinha($request, $response)
-{
-    require __DIR__ . '/../View/pages/cozinha.html';
-    return $response;
-}
+    {
+        require __DIR__ . '/../View/pages/cozinha.html';
+        return $response;
+    }
 
-public function listarCozinha($request, $response)
-{
-    try {
-
-        $pedidos = \App\Database\DB::select("
-            o.id,
-            o.id_mesa,
-            o.total,
-            o.status,
-            o.observacao,
-            o.criado_em,
-            m.numero AS mesa_numero
-        ")
-        ->from('"order"', 'o')
-        ->leftJoin('o', 'mesa', 'm', 'm.id = o.id_mesa')
-        ->where("o.status IN ('pendente','em_preparo')")
-        ->orderBy('o.criado_em', 'ASC')
-        ->fetchAllAssociative();
-
-        foreach ($pedidos as &$pedido) {
-
-            $itens = \App\Database\DB::select("
-                nome,
-                quantidade,
-                preco,
-                subtotal
+    public function listarCozinha($request, $response)
+    {
+        try {
+            $pedidos = \App\Database\DB::select("
+                o.id,
+                o.id_mesa,
+                o.total,
+                o.status,
+                o.observacao,
+                o.criado_em,
+                m.numero AS mesa_numero
             ")
-            ->from('order_item')
-            ->where('order_id = :id')
-            ->setParameter('id', $pedido['id'])
+            ->from('"order"', 'o')
+            ->leftJoin('o', 'mesa', 'm', 'm.id = o.id_mesa')
+            ->where("o.status IN ('pendente','em_preparo')")
+            ->orderBy('o.criado_em', 'ASC')
             ->fetchAllAssociative();
 
-            $pedido['itens'] = $itens;
+            foreach ($pedidos as &$pedido) {
+                $itens = \App\Database\DB::select("
+                    nome,
+                    quantidade,
+                    preco,
+                    subtotal
+                ")
+                ->from('order_item')
+                ->where('order_id = :id')
+                ->setParameter('id', $pedido['id'])
+                ->fetchAllAssociative();
+
+                $pedido['itens'] = $itens;
+            }
+
+            return $this->json($response, [
+                'status'  => true,
+                'pedidos' => $pedidos,
+            ]);
+        } catch (\Exception $e) {
+            return $this->json($response, ['status' => false, 'msg' => $e->getMessage()], 500);
         }
-
-        return $this->json(
-            $response,
-            [
-                'status' => true,
-                'pedidos' => $pedidos
-            ]
-        );
     }
-    catch(\Exception $e){
 
-        return $this->json(
-            $response,
-            [
-                'status' => false,
-                'msg' => $e->getMessage()
-            ],
-            500
-        );
-    }
-}
-
-
-    // ──────────────────────────────────────────
-    //  Página HTML da lista de pedidos (cozinha / admin)
-    // ──────────────────────────────────────────
     public function list($request, $response)
     {
         return $this->getTwig()
@@ -82,9 +64,6 @@ public function listarCozinha($request, $response)
             ->withStatus(200);
     }
 
-    // ──────────────────────────────────────────
-    //  Página HTML de detalhes de um pedido
-    // ──────────────────────────────────────────
     public function details($request, $response, $args)
     {
         $id     = $args['id'] ?? null;
@@ -121,29 +100,29 @@ public function listarCozinha($request, $response)
     //  }
     //
     //  O que esta transação grava:
-    //    1. "order"                  — o pedido em si
-    //    2.  order_item              — itens do pedido
+    //    1. "order"                   — o pedido em si
+    //    2.  order_item               — itens do pedido
     //       → trigger do banco popula kitchen automaticamente ao inserir order_item
-    //    3.  sale                    — venda vinculada (estado PRE_VENDA → VENDA ao pagar)
-    //    4.  item_sale               — um item_sale por item do carrinho
-    //    5.  payment_terms           — busca ou cria o registro da forma de pagamento
-    //    6.  installment             — parcela única (à vista) ligada ao payment_terms
-    //    7.  purchase                — registro de compra (custo interno da retirada do estoque)
-    //    8.  item_purchase           — um item_purchase por item (custo de cada produto)
-    //    9.  installment_sale_purchase — vincula sale + purchase + payment_terms + installment
-    //   10.  mesa.status             — marca a mesa como 'ocupada'
+    //    3.  payment_terms            — busca ou cria o registro da forma de pagamento
+    //    4.  installment              — parcela(s) ligada(s) ao payment_terms
+    //    5.  sale                     — venda vinculada ao pedido
+    //    6.  item_sale                — um item_sale por item do carrinho
+    //    7.  purchase                 — registro de custo interno da saída de estoque
+    //    8.  item_purchase            — um item_purchase por item (custo de cada produto)
+    //    9.  installment_sale_purchase — vincula APENAS sale + payment_terms + installment
+    //                                   (id_purchase = NULL — parcela é financeira, não de custo)
+    //   10.  mesa.status              — marca a mesa como 'ocupada'
     // ──────────────────────────────────────────────────────────────────────────
     public function insert($request, $response)
     {
-        $form      = $request->getParsedBody();
-        $idMesa    = isset($form['mesa'])      ? (int) $form['mesa']    : null;
-        $itens     = $form['itens']            ?? [];
-        $pagamento = trim((string) ($form['pagamento']  ?? 'dinheiro'));
-        $observacao = $form['observacao']      ?? null;
-        $idCliente = isset($form['id_cliente']) && $form['id_cliente'] !== ''
+        $form       = $request->getParsedBody();
+        $idMesa     = isset($form['mesa'])       ? (int) $form['mesa']    : null;
+        $itens      = $form['itens']             ?? [];
+        $pagamento  = trim((string) ($form['pagamento']  ?? 'dinheiro'));
+        $observacao = $form['observacao']        ?? null;
+        $idCliente  = isset($form['id_cliente']) && $form['id_cliente'] !== ''
             ? (int) $form['id_cliente'] : null;
 
-        // Parcelas e intervalo — só relevantes em crédito/débito; default 1x / 0 dias
         $totalParcelas = isset($form['parcelas'])  && (int) $form['parcelas']  >= 1 ? (int) $form['parcelas']  : 1;
         $intervalo     = isset($form['intervalo']) && (int) $form['intervalo'] >= 0 ? (int) $form['intervalo'] : 0;
 
@@ -162,7 +141,7 @@ public function listarCozinha($request, $response)
         }
 
         // ── Calcula totais ───────────────────────────────────────────────────
-        $total = 0.0;
+        $total             = 0.0;
         $itensNormalizados = [];
         foreach ($itens as $item) {
             $qty   = max(1, (int)   ($item['quantidade'] ?? 1));
@@ -230,10 +209,8 @@ public function listarCozinha($request, $response)
                 }
 
                 // ── 4. installments — N parcelas com intervalo em dias ───────
-                // Cria uma linha de installment para cada parcela se não existir
-                $installmentIds = [];
-                $valorCentavos  = (int) round($total * 100);
-                // Distribui o valor em parcelas (a última absorve o arredondamento)
+                $installmentIds       = [];
+                $valorCentavos        = (int) round($total * 100);
                 $valorParcelaCentavos = (int) floor($valorCentavos / $totalParcelas);
                 $resto                = $valorCentavos - ($valorParcelaCentavos * $totalParcelas);
 
@@ -320,18 +297,23 @@ public function listarCozinha($request, $response)
                 }
 
                 // ── 9. installment_sale_purchase — uma linha por parcela ──────
+                //
+                //  IMPORTANTE: id_purchase fica NULL aqui intencionalmente.
+                //  A constraint chk_isp_sale_or_purchase exige que a parcela
+                //  pertença a UMA venda OU UMA compra, nunca aos dois.
+                //  O purchase acima é um controle de custo/estoque interno —
+                //  não é uma obrigação financeira parcelável.
+                //
                 for ($p = 1; $p <= $totalParcelas; $p++) {
-                    // Última parcela absorve centavos de arredondamento
                     $valorEsta = $valorParcelaCentavos + ($p === $totalParcelas ? $resto : 0);
 
-                    // Vencimento: data 'YYYY-MM-DD' — parcela 1 = hoje, demais = hoje + intervalo*(p-1)
                     $diasOffset     = $intervalo * ($p - 1);
                     $dataVencimento = date('Y-m-d', strtotime("+{$diasOffset} days"));
 
                     $conn->insert('installment_sale_purchase', [
                         'id_payment'      => $ptId,
                         'id_sale'         => $saleId,
-                        'id_purchase'     => $purchaseId,
+                        'id_purchase'     => null,          // ← NULL: parcela é da venda
                         'id_installment'  => $installmentIds[$p],
                         'total_parcelas'  => $totalParcelas,
                         'numero_parcela'  => $p,
@@ -371,10 +353,6 @@ public function listarCozinha($request, $response)
         }
     }
 
-    // ──────────────────────────────────────────
-    //  Normaliza o valor de pagamento enviado
-    //  pelo cardápio para o título em payment_terms
-    // ──────────────────────────────────────────
     private function normalizarPagamento(string $pagamento): string
     {
         $mapa = [
@@ -390,11 +368,6 @@ public function listarCozinha($request, $response)
         return $mapa[$chave] ?? ucfirst($pagamento);
     }
 
-    // ──────────────────────────────────────────
-    //  Atualizar status do pedido
-    //  (cozinha marca: em_preparo → pronto → entregue → pago)
-    //  Quando pago/cancelado, a mesa volta a "livre"
-    // ──────────────────────────────────────────
     public function updateStatus($request, $response)
     {
         $form   = $request->getParsedBody();
@@ -414,7 +387,6 @@ public function listarCozinha($request, $response)
         try {
             $conn = \App\Database\DB::connection();
 
-            // Busca o pedido para saber a mesa
             $qb     = \App\Database\DB::select('id_mesa')->from('"order"');
             $pedido = $qb
                 ->where('id = ' . $qb->createPositionalParameter((int) $id, \Doctrine\DBAL\ParameterType::INTEGER))
@@ -424,7 +396,6 @@ public function listarCozinha($request, $response)
                 return $this->json($response, ['status' => false, 'msg' => 'Pedido não encontrado.', 'id' => 0], 404);
             }
 
-            // Atualiza o status do pedido
             $updated = $conn->update('"order"', [
                 'status'        => $status,
                 'atualizado_em' => date('Y-m-d H:i:s'),
@@ -434,7 +405,6 @@ public function listarCozinha($request, $response)
                 return $this->json($response, ['status' => false, 'msg' => 'Nenhum registro alterado.', 'id' => 0], 403);
             }
 
-            // Se pago ou cancelado → mesa fica livre
             if (in_array($status, ['pago', 'cancelado'], true)) {
                 $conn->update('mesa', [
                     'status'        => 'livre',
@@ -448,9 +418,6 @@ public function listarCozinha($request, $response)
         }
     }
 
-    // ──────────────────────────────────────────
-    //  Retorna itens de um pedido (JSON)
-    // ──────────────────────────────────────────
     public function getItens($request, $response, $args)
     {
         $id = $args['id'] ?? null;
@@ -472,9 +439,6 @@ public function listarCozinha($request, $response)
         }
     }
 
-    // ──────────────────────────────────────────
-    //  Cancelar pedido
-    // ──────────────────────────────────────────
     public function delete($request, $response)
     {
         $form = $request->getParsedBody();
@@ -487,13 +451,11 @@ public function listarCozinha($request, $response)
         try {
             $conn = \App\Database\DB::connection();
 
-            // Busca a mesa antes de cancelar
             $qb     = \App\Database\DB::select('id_mesa, status')->from('"order"');
             $pedido = $qb
                 ->where('id = ' . $qb->createPositionalParameter((int) $id, \Doctrine\DBAL\ParameterType::INTEGER))
                 ->fetchAssociative();
 
-            // Marca como cancelado (não remove do banco — boa prática)
             $updated = $conn->update('"order"', [
                 'status'        => 'cancelado',
                 'atualizado_em' => date('Y-m-d H:i:s'),
@@ -503,7 +465,6 @@ public function listarCozinha($request, $response)
                 return $this->json($response, ['status' => false, 'msg' => 'Nenhum registro alterado.', 'id' => $id], 403);
             }
 
-            // Libera a mesa se o pedido era o único pendente
             if ($pedido) {
                 $conn->update('mesa', [
                     'status'        => 'livre',
@@ -517,9 +478,6 @@ public function listarCozinha($request, $response)
         }
     }
 
-    // ──────────────────────────────────────────
-    //  DataTables — lista paginada de pedidos
-    // ──────────────────────────────────────────
     public function listingdata($request, $response)
     {
         $form   = $request->getParsedBody();
@@ -595,8 +553,8 @@ public function listarCozinha($request, $response)
                     $value['criado_em'],
                     $value['atualizado_em'],
                     "<td>
-                    <a class='btn btn-sm btn-warning' href='/pedido/detalhes/" . $value['id'] . "'><i class='fa-solid fa-pen-to-square'></i> Ver</a>
-                    <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal(" . $value['id'] . ");'><i class='fa-solid fa-trash'></i> Cancelar</button>
+                    <a class='btn btn-sm btn-warning' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-pen-to-square'></i> Ver</a>
+                    <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal({$value['id']});'><i class='fa-solid fa-trash'></i> Cancelar</button>
                 </td>",
                 ];
             }
