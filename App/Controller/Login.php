@@ -383,7 +383,7 @@ final class Login extends Base
                 ], 400);
             }
 
-            $qb = DB::select('id')->from('users');
+            $qb = DB::select('id')->from('vw_user');
             $qb->where('cpf = ' . $qb->createNamedParameter($cpf));
             $exists = $qb->fetchAssociative();
 

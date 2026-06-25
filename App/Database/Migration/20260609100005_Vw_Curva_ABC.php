@@ -31,10 +31,6 @@ final class Version20260609100005 extends AbstractMigration
                     ON o.id = oi.order_id
                 WHERE o.status <> 'cancelado'
                 GROUP BY oi.nome
-                INNER JOIN public."order" o
-                    ON o.id = oi.order_id
-                WHERE o.status <> 'cancelado'
-                GROUP BY oi.nome
 
                 UNION ALL
 
@@ -52,7 +48,7 @@ final class Version20260609100005 extends AbstractMigration
                 INNER JOIN public.sale s
                     ON s.id = it.id_venda
                 WHERE s.estado_venda IS NULL
-                OR s.estado_venda::TEXT = 'VENDA'
+                   OR s.estado_venda::TEXT = 'VENDA'
                 GROUP BY
                     COALESCE(
                         NULLIF(p.descricao, ''),
@@ -70,8 +66,7 @@ final class Version20260609100005 extends AbstractMigration
             ),
 
             total AS (
-                SELECT
-                    SUM(valor_total) AS grand_total
+                SELECT SUM(valor_total) AS grand_total
                 FROM consolidado
             ),
 
@@ -102,13 +97,15 @@ final class Version20260609100005 extends AbstractMigration
             SELECT
                 produto,
                 valor_total,
+                pct_individual,
+                pct_acumulado,
 
                 CASE
                     WHEN pct_acumulado <= 70 THEN 'A'
                     WHEN pct_acumulado <= 90 THEN 'B'
                     ELSE 'C'
-                    ELSE 'C'
                 END AS grupo_abc
+
             FROM acumulado
             ORDER BY valor_total DESC;
         SQL);

@@ -66,6 +66,10 @@ final class Version20260622211242 extends AbstractMigration
                   AND column_name = 'data_vencimento';
 
                 IF col_type = 'integer' THEN
+                    -- Dropa o DEFAULT antes do cast (Postgres não converte default automaticamente)
+                    ALTER TABLE installment_sale_purchase
+                        ALTER COLUMN data_vencimento DROP DEFAULT;
+
                     ALTER TABLE installment_sale_purchase
                         ALTER COLUMN data_vencimento TYPE DATE
                         USING (
@@ -75,6 +79,10 @@ final class Version20260622211242 extends AbstractMigration
                                 ELSE to_timestamp(data_vencimento)::DATE
                             END
                         );
+
+                    -- Restaura o DEFAULT como NULL (DATE não tem valor inteiro padrão)
+                    ALTER TABLE installment_sale_purchase
+                        ALTER COLUMN data_vencimento SET DEFAULT NULL;
                 END IF;
 
             END
@@ -105,6 +113,9 @@ final class Version20260622211242 extends AbstractMigration
                       AND data_type   = 'date'
                 ) THEN
                     ALTER TABLE installment_sale_purchase
+                        ALTER COLUMN data_vencimento DROP DEFAULT;
+
+                    ALTER TABLE installment_sale_purchase
                         ALTER COLUMN data_vencimento TYPE INTEGER
                         USING (
                             CASE
@@ -112,6 +123,9 @@ final class Version20260622211242 extends AbstractMigration
                                 ELSE EXTRACT(EPOCH FROM data_vencimento)::INTEGER
                             END
                         );
+
+                    ALTER TABLE installment_sale_purchase
+                        ALTER COLUMN data_vencimento SET DEFAULT 0;
                 END IF;
 
                 -- Volta id_purchase e id_sale para NOT NULL
