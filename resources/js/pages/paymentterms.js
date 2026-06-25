@@ -203,10 +203,10 @@ InputInterv.addEventListener('input', () => {
 // ─── Adicionar parcela
 BtnAdd.addEventListener('click', async () => {
     const semParc = isSemParcelamento();
-    const parcela = semParc ? 1 : (parseInt(InputParcela.value) || 0);
+    const maxParcela = semParc ? 1 : (parseInt(InputParcela.value) || 0);
     const intervalo = semParc ? 0 : (parseInt(InputInterv.value) || 0);
 
-    if (!semParc && parcela <= 0) {
+    if (!semParc && maxParcela <= 0) {
         Swal.fire({ icon: 'error', title: 'Atenção', text: 'Informe a quantidade de parcelas.', timer: 3000, timerProgressBar: true });
         InputParcela.focus();
         return;
@@ -218,44 +218,55 @@ BtnAdd.addEventListener('click', async () => {
         return;
     }
 
-    /*if (!TOTAL_VENDA) {
-        Swal.fire({ icon: 'error', title: 'Atenção', text: 'Não foi possível identificar o valor total da venda.', timer: 3000, timerProgressBar: true });
-        return;
-    }*/
-
     // Salva payment_terms primeiro se ainda não foi salvo
     if (!Id.value) {
         const ok = await savePaymentTerms();
         if (!ok) return;
     }
 
-    const requests = new Requests();
-    try {
-        const res = await requests.setForm('form').post('/payment/installment/insert', {
-            id_pagamento: Id.value,
-            parcela,
-            intervalo,
-            valor_total: TOTAL_VENDA,
-        });
+    // Descobre quais parcelas já existem para não duplicar
+    const parcelasJaCadastradas = new Set(installments.map(i => i.parcela));
+    let adicionados = 0;
+    let erros = 0;
 
-        if (!res.status) {
-            Swal.fire({ icon: 'error', title: 'Erro', text: res.msg, timer: 3000, timerProgressBar: true });
-            return;
+    // Cria registros de 1 até maxParcela (pula os já existentes)
+    for (let n = 1; n <= maxParcela; n++) {
+        if (parcelasJaCadastradas.has(n)) continue;
+
+        try {
+            const fd = new FormData();
+            fd.append('id', Id.value);
+            fd.append('parcela', n);
+            fd.append('intervalo', intervalo);
+            fd.append('valor_total', TOTAL_VENDA);
+
+            const res = await new Requests().setBody(fd).post('/payment/installment/insert');
+
+            if (res && res.status) {
+                installments.push({ id: res.id, parcela: n, intervalo });
+                adicionados++;
+            } else {
+                erros++;
+            }
+        } catch (e) {
+            erros++;
         }
+    }
 
-        installments.push({ id: res.id, parcela, intervalo });
-        renderInstallments();
+    renderInstallments();
 
-        InputParcela.value = '';
-        InputInterv.value = '';
-        InputValor.value = '';
+    InputParcela.value = '';
+    InputInterv.value = '';
+    InputValor.value = '';
 
-        if (!semParc) InputParcela.focus();
+    if (!semParc) InputParcela.focus();
 
-        Swal.fire({ icon: 'success', title: 'Adicionado!', text: 'Parcela salva com sucesso.', timer: 2000, timerProgressBar: true });
-
-    } catch (e) {
-        Swal.fire({ icon: 'error', title: 'Erro', text: e.message, timer: 3000, timerProgressBar: true });
+    if (erros > 0) {
+        Swal.fire({ icon: 'warning', title: 'Atenção', text: `${adicionados} parcela(s) salva(s), ${erros} erro(s).`, timer: 3000, timerProgressBar: true });
+    } else if (adicionados === 0) {
+        Swal.fire({ icon: 'info', title: 'Sem alterações', text: 'Todas as parcelas até esse número já estavam cadastradas.', timer: 2500, timerProgressBar: true });
+    } else {
+        Swal.fire({ icon: 'success', title: 'Adicionado!', text: `${adicionados} opção(ões) de parcelamento salva(s) (1x até ${maxParcela}x).`, timer: 2500, timerProgressBar: true });
     }
 });
 

@@ -66,16 +66,17 @@ final class Product extends Base
             $conn->insert('product', $data);
             $id = (int) $conn->lastInsertId();
 
-            $path = ROOT . '/storage/produtos/' . $id;
-
-            if (!is_dir($path)) {
-                mkdir($path, 0777, true);
-            }
-            
-            move_uploaded_file($imagem->getFilePath(), $path . '/' . $imagem->getClientFilename());
-
             if (!$id) {
                 return $this->json($response, ['status' => false, 'msg' => 'Não foi possível obter o ID do registro.', 'id' => 0], 500);
+            }
+
+            // Só move a imagem se foi enviada uma
+            if ($imagem && $imagem->getError() === UPLOAD_ERR_OK) {
+                $path = ROOT . '/storage/produtos/' . $id;
+                if (!is_dir($path)) {
+                    mkdir($path, 0777, true);
+                }
+                move_uploaded_file($imagem->getFilePath(), $path . '/' . $imagem->getClientFilename());
             }
 
             return $this->json($response, ['status' => true, 'msg' => 'Salvo com sucesso!', 'id' => $id], 201);

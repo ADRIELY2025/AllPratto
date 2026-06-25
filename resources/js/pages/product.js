@@ -109,55 +109,35 @@ async function applyChanges() {
         return;
     }
 
-    // Monta FormData manualmente para controlar cada campo
+    // Monta FormData manualmente para enviar valores sem máscara
     const form = document.getElementById('form');
     const formData = new FormData(form);
 
-    // Campos texto — envia como estão (sem máscara nos campos de valor — limpamos abaixo)
-    /*formData.append('action', Action.value);
-    formData.append('id', Id.value);
-    formData.append('nome', document.getElementById('nome').value);
-    formData.append('codigo_barra', document.getElementById('codigo_barra').value);
-    formData.append('grupo', document.getElementById('grupo').value);
-    formData.append('unidade', document.getElementById('unidade').value);
-    formData.append('tempo_preparo', document.getElementById('tempo_preparo').value);
-    formData.append('descricao', document.getElementById('descricao').value);
+    // Sobrescreve os campos monetários sem a máscara (R$ e %)
+    formData.set('preco_compra',      parseMoney(inputPrecoCompra.value));
+    formData.set('total_imposto',     parseMoney(inputTotalImposto.value));
+    formData.set('custo_operacional', parseMoney(inputCustoOperacional.value));
+    formData.set('margem_lucro',      parseMoney(inputMargemLucro.value));
+    formData.set('preco_venda',       parseMoney(inputPrecoVenda.value));
 
-    // Checkbox: envia 'true' se marcado, 'false' se não (evita campo vazio)
-    formData.append('ativo', document.getElementById('ativo').checked ? 'true' : 'false');
-    formData.append('destaque', document.getElementById('destaque').checked ? 'true' : 'false');
-
-    // Valores numéricos — remove máscara antes de enviar
-    formData.append('preco_compra', parseMoney(inputPrecoCompra.value));
-    formData.append('total_imposto', parseMoney(inputTotalImposto.value));
-    formData.append('custo_operacional', parseMoney(inputCustoOperacional.value));
-    formData.append('margem_lucro', parseMoney(inputMargemLucro.value));
-    formData.append('preco_venda', parseMoney(inputPrecoVenda.value));
-
-    // Valor sugerido calculado
+    // Valor sugerido calculado (exibido na tela)
     const valVendaText = document.getElementById('val-venda')?.textContent ?? '0';
-    formData.append('valor_venda_sugerido', parseMoney(valVendaText.replace('R$', '')));*/
+    formData.set('valor_venda_sugerido', parseMoney(valVendaText));
 
     const requests = new Requests();
     try {
         const url = (Action.value !== 'e') ? '/product/insert' : '/product/update';
-        const response = await requests.setForm('form').post(url);
+        const response = await requests.setBody(formData).post(url);
 
         if (!response?.status) {
             Swal.fire({ icon: 'error', title: 'Erro', text: response?.msg || 'Erro ao salvar.', timer: 3000, timerProgressBar: true });
             return;
         }
 
-        if (Action.value === 'e') {
-            Swal.fire({ icon: 'success', title: 'Sucesso', text: response.msg, timer: 2000, timerProgressBar: true })
-                .then(() => window.location.href = '/product/lista');
-            return;
-        }
+        // Tanto insert quanto update: mostra sucesso e vai para a lista
+        await Swal.fire({ icon: 'success', title: 'Sucesso', text: response.msg || 'Produto salvo!', timer: 2000, timerProgressBar: true });
+        window.location.href = '/product/lista';
 
-        Action.value = 'e';
-        Id.value = response.id;
-        window.history.pushState({}, '', `/product/detalhes/${response.id}`);
-        Swal.fire({ icon: 'success', title: 'Sucesso', text: response.msg || 'Produto salvo!', timer: 2000, timerProgressBar: true });
     } catch (error) {
         Swal.fire({ icon: 'error', title: 'Erro', text: `Erro: ${error.message}`, timer: 3000, timerProgressBar: true });
     } finally {
