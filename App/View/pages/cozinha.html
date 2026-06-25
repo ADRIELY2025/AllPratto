@@ -12,13 +12,17 @@
 <body>
 
 <header class="cz-header">
+    <a href="javascript:history.back()" class="cz-btn-voltar">← Voltar</a>
     <div class="cz-logo">🍽️ Painel da Cozinha</div>
     <div class="cz-stats">
-        <div id="cz-badge-pedidos" class="cz-badge destaque">0 Pedidos</div>
-       <!-- <div id="cz-badge-preparo" class="cz-badge">0 Em preparo</div>
-        <div id="cz-badge-prontos" class="cz-badge">0 Prontos</div>-->
+        <div id="cz-badge-pendentes"  class="cz-badge cz-badge--pendente">0 Pendentes</div>
+        <div id="cz-badge-preparo"    class="cz-badge cz-badge--preparo">0 Em Preparo</div>
+        <div id="cz-badge-prontos"    class="cz-badge cz-badge--pronto">0 Prontos</div>
     </div>
 </header>
+
+<!-- Overlay de impressão: fica invisível, só aparece no @media print -->
+<div id="cz-print-area" class="cz-print-area"></div>
 
 <section id="cz-grid" class="cz-grid">
     <!-- Cards inseridos dinamicamente pelo cozinha.js -->

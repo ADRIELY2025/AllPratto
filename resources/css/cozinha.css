@@ -1,133 +1,189 @@
-/* =====================================================
-   COZINHA — Painel em tempo real
-   Fonte: Nunito (igual ao design system interno)
-===================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
-
-/* ─── DESIGN TOKENS ─────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bebas+Neue&display=swap');
 
 :root {
-    --verde:        #2d6a4f;
-    --verde-light:  #52b788;
-    --laranja:      #f77f00;
-    --vermelho:     #d62828;
-    --azul:         #2563eb;
+    --vermelho:      #c8102e;
+    --vermelho-dark: #9b0c22;
+    --amarelo:       #f5c518;
+    --amarelo-dark:  #d4a800;
+    --verde:         #2d6a4f;
+    --verde-light:   #52b788;
+    --laranja:       #e85d04;
 
-    --bg:           #f4f6f8;
-    --card:         #ffffff;
+    --bg:            #f0f0f0;
+    --card:          #ffffff;
 
-    --texto:        #1f2937;
-    --muted:        #6b7280;
+    --texto:         #1a1a1a;
+    --muted:         #6b7280;
 
-    --radius:       18px;
-    --shadow:       0 10px 30px rgba(0, 0, 0, .08);
+    --radius:        16px;
+    --shadow:        0 8px 32px rgba(0,0,0,.13);
+    --shadow-hover:  0 16px 48px rgba(0,0,0,.2);
 }
 
-/* ─── RESET BÁSICO ───────────────────────────────── */
-
-*, *::before, *::after {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
 body {
     font-family: 'Nunito', sans-serif;
     background: var(--bg);
+    min-height: 100vh;
     color: var(--texto);
 }
 
-/* ─── HEADER ─────────────────────────────────────── */
+/* ─── HEADER ──────────────────────────────────────── */
 
 .cz-header {
     position: sticky;
     top: 0;
     z-index: 100;
-
-    background: #ffffff;
-
+    background: var(--vermelho);
     display: flex;
     justify-content: space-between;
     align-items: center;
-
-    padding: 18px 24px;
-
-    box-shadow: 0 2px 15px rgba(0, 0, 0, .06);
+    padding: 0 24px;
+    height: 60px;
+    box-shadow: 0 4px 20px rgba(200,16,46,.35);
+    gap: 16px;
 }
 
 .cz-logo {
-    font-size: 1.4rem;
-    font-weight: 800;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    color: #fff;
+    white-space: nowrap;
 }
 
 .cz-stats {
     display: flex;
-    gap: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
-/* Apenas o badge de "Pedidos" tem borda destacada conforme o design */
+/* Badges dos 3 status */
 .cz-badge {
-    background: #eef2ff;
-    color: #3730a3;
-
-    padding: 8px 14px;
-
+    padding: 6px 14px;
     border-radius: 999px;
-
-    font-weight: 700;
-    font-size: .9rem;
+    font-weight: 800;
+    font-size: .82rem;
+    white-space: nowrap;
+    border: 2px solid transparent;
 }
 
-.cz-badge.destaque {
-    border: 2px solid #3730a3;
+.cz-badge--pendente {
+    background: var(--amarelo);
+    color: #1a1a1a;
+    border-color: var(--amarelo-dark);
 }
 
-/* ─── GRID DE PEDIDOS ────────────────────────────── */
+.cz-badge--preparo {
+    background: var(--laranja);
+    color: #fff;
+    border-color: #c24800;
+}
+
+.cz-badge--pronto {
+    background: var(--verde-light);
+    color: #fff;
+    border-color: var(--verde);
+}
+
+/* Botão voltar */
+.cz-btn-voltar {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,.5);
+    padding: 7px 14px;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: .85rem;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background .2s;
+}
+.cz-btn-voltar:hover { background: rgba(255,255,255,.35); }
+
+/* ─── GRID ────────────────────────────────────────── */
 
 .cz-grid {
     max-width: 1800px;
     margin: auto;
     padding: 24px;
-
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 20px;
 }
 
-/* ─── CARD DE PEDIDO ─────────────────────────────── */
+/* ─── CARD ────────────────────────────────────────── */
 
 .cz-card {
     background: var(--card);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     overflow: hidden;
-
     display: flex;
     flex-direction: column;
-
-    transition: transform .2s;
+    position: relative;
+    border: 2px solid transparent;
+    animation: cardEntrada .3s ease both;
+    transition: transform .25s, box-shadow .25s, border-color .25s;
 }
 
 .cz-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--vermelho);
 }
 
-/* Cabeçalho verde do card */
+/* Faixa lateral por status */
+.cz-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    border-radius: 16px 0 0 16px;
+}
+.cz-card[data-status="pendente"]::before   { background: var(--amarelo); }
+.cz-card[data-status="em_preparo"]::before { background: var(--laranja); }
+.cz-card[data-status="pronto"]::before     { background: var(--verde-light); }
+
+/* ─── TOPO DO CARD ────────────────────────────────── */
+
 .cz-card__topo {
-    background: var(--verde);
-    color: #ffffff;
-    padding: 18px;
+    background: linear-gradient(135deg, var(--vermelho) 0%, var(--vermelho-dark) 100%);
+    color: #fff;
+    padding: 18px 18px 14px 22px;
+    position: relative;
+    overflow: hidden;
+}
+
+.cz-topo-icone {
+    position: absolute;
+    right: 12px;
+    top: 8px;
+    font-size: 4rem;
+    opacity: .14;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
 }
 
 .cz-card__numero {
-    font-size: 1.4rem;
-    font-weight: 800;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    line-height: 1;
 }
 
 .cz-card__mesa {
-    margin-top: 4px;
-    opacity: .9;
+    font-size: .8rem;
+    font-weight: 700;
+    opacity: .85;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .cz-card__info {
@@ -137,156 +193,220 @@ body {
     margin-top: 12px;
 }
 
-/* ─── BADGES DE STATUS ───────────────────────────── */
+/* ─── STATUS ──────────────────────────────────────── */
 
 .cz-status {
-    padding: 8px 14px;
+    padding: 4px 12px;
     border-radius: 999px;
-    font-size: .8rem;
-    font-weight: 800;
+    font-size: .7rem;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
 }
 
-.cz-status--novo    { background: #fff4d6; color: #946200; }
-.cz-status--preparo { background: #dbeafe; color: #1d4ed8; }
-.cz-status--pronto  { background: #dcfce7; color: #166534; }
+.cz-status--novo    { background: var(--amarelo);    color: #1a1a1a; }
+.cz-status--preparo { background: var(--laranja);    color: #fff; }
+.cz-status--pronto  { background: var(--verde-light); color: #fff; }
 
-/* ─── TEMPO DECORRIDO ────────────────────────────── */
+/* ─── TEMPO ───────────────────────────────────────── */
 
 .cz-tempo {
-    font-size: 1rem;
-    font-weight: 800;
+    font-weight: 900;
+    font-size: .9rem;
+    background: rgba(255,255,255,.18);
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.25);
 }
 
-/* ─── ITENS DO PEDIDO ────────────────────────────── */
+.cz-tempo--urgente { background: rgba(0,0,0,.32); }
+
+/* ─── ITENS ───────────────────────────────────────── */
 
 .cz-itens {
-    padding: 20px;
+    padding: 16px 18px 16px 22px;
+    flex: 1;
 }
 
-.cz-itens h4 {
-    margin-bottom: 15px;
+.cz-itens__titulo {
+    font-size: .65rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cz-itens__titulo::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e5e7eb;
 }
 
 .cz-item {
     display: flex;
     align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #eeeeee;
+    padding: 9px 0;
+    border-bottom: 1px dashed #ececec;
+    gap: 10px;
 }
-
-.cz-item:last-child {
-    border: none;
-}
+.cz-item:last-child { border: none; }
 
 .cz-qtd {
-    background: var(--verde-light);
-    color: #ffffff;
-
-    width: 34px;
+    background: var(--vermelho);
+    color: #fff;
+    min-width: 34px;
     height: 34px;
     flex-shrink: 0;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border-radius: 50%;
-    font-weight: 800;
+    border-radius: 9px;
+    font-weight: 900;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 1px;
 }
 
 .cz-nome-prato {
     flex: 1;
-    margin-left: 12px;
     font-weight: 700;
+    font-size: .9rem;
+    color: var(--texto);
+    line-height: 1.3;
 }
-
-/* ─── OBSERVAÇÃO ─────────────────────────────────── */
 
 .cz-obs {
-    margin-top: 15px;
-    background: #fff8e7;
-    border-left: 5px solid #f59e0b;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: .9rem;
+    margin: 10px 0 2px;
+    background: #fff8e1;
+    border-left: 4px solid var(--amarelo-dark);
+    padding: 9px 12px;
+    border-radius: 0 8px 8px 0;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #6b4c00;
 }
 
-/* ─── AÇÕES (rodapé do card) ─────────────────────── */
+/* ─── DIVISOR ─────────────────────────────────────── */
+
+.cz-divisor {
+    height: 1px;
+    background: linear-gradient(to right, var(--vermelho), transparent);
+    margin: 0 18px;
+    opacity: .2;
+}
+
+/* ─── AÇÕES ───────────────────────────────────────── */
 
 .cz-acoes {
     display: flex;
-    gap: 10px;
-    padding: 20px;
-    border-top: 1px solid #eeeeee;
-    margin-top: auto;
+    gap: 8px;
+    padding: 14px 18px;
 }
 
 .cz-btn {
     flex: 1;
     border: none;
-    padding: 14px;
-    border-radius: 12px;
+    padding: 12px;
+    border-radius: 11px;
+    font-family: 'Nunito', sans-serif;
     font-weight: 800;
+    font-size: .85rem;
     cursor: pointer;
-    transition: background .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all .2s;
 }
 
-.cz-btn--imprimir          { background: #f3f4f6; }
-.cz-btn--imprimir:hover    { background: #e5e7eb; }
+.cz-btn--imprimir {
+    background: #f3f4f6;
+    color: var(--texto);
+    border: 1.5px solid #e5e7eb;
+    flex: 0 0 auto;
+    padding: 12px 16px;
+}
+.cz-btn--imprimir:hover { background: #e5e7eb; }
 
-.cz-btn--pronto            { background: var(--verde); color: #ffffff; }
-.cz-btn--pronto:hover      { background: #1f513d; }
+.cz-btn--acao {
+    background: linear-gradient(135deg, var(--laranja) 0%, #c24800 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(232,93,4,.35);
+}
+.cz-btn--acao:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
-/* ─── ESTADO VAZIO ───────────────────────────────── */
+.cz-btn--pronto {
+    background: linear-gradient(135deg, var(--verde) 0%, #1d5c3d 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(45,106,79,.35);
+}
+.cz-btn--pronto:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+.cz-btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; filter: none !important; }
+
+/* ─── VAZIO ───────────────────────────────────────── */
 
 .cz-vazio {
     grid-column: 1 / -1;
     text-align: center;
-    padding: 60px 20px;
+    padding: 80px 20px;
     color: var(--muted);
-    font-size: 1.1rem;
 }
-
-.cz-vazio span {
+.cz-vazio__icone {
+    font-size: 4rem;
     display: block;
-    font-size: 3rem;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+}
+.cz-vazio__titulo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: #c0c4cc;
+    margin-bottom: 8px;
+}
+.cz-vazio__sub { font-size: .95rem; font-weight: 600; }
+
+/* ─── ANIMAÇÃO DE ENTRADA ─────────────────────────── */
+
+@keyframes cardEntrada {
+    from { opacity: 0; transform: translateY(20px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ─── RESPONSIVO ─────────────────────────────────── */
+/* ─── RESPONSIVO ──────────────────────────────────── */
 
 @media (max-width: 768px) {
-    .cz-header {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .cz-grid {
-        grid-template-columns: 1fr;
-        padding: 16px;
-    }
-
-    .cz-acoes {
-        flex-direction: column;
-    }
+    .cz-header { flex-wrap: wrap; height: auto; padding: 12px 16px; }
+    .cz-logo { font-size: 1.4rem; }
+    .cz-grid { grid-template-columns: 1fr; padding: 14px; }
+    .cz-acoes { flex-direction: column; }
 }
 
-/* ─── IMPRESSÃO ──────────────────────────────────── */
+/* ─── IMPRESSÃO ───────────────────────────────────── */
+
+/* A área de impressão fica oculta na tela normal */
+.cz-print-area {
+    display: none;
+}
 
 @media print {
-    body * {
-        visibility: hidden;
+    /* Esconde TUDO */
+    body > * {
+        display: none !important;
     }
 
-    .cz-card--imprimindo,
-    .cz-card--imprimindo * {
-        visibility: visible;
-    }
-
-    .cz-card--imprimindo {
-        position: absolute;
-        left: 0;
-        top: 0;
+    /* Mostra apenas a área dedicada de impressão quando ativada */
+    .cz-print-area.cz-print-ativo {
+        display: block !important;
+        position: fixed;
+        top: 0; left: 0;
         width: 100%;
+        background: #fff;
+        padding: 0;
+        z-index: 9999;
     }
 }
