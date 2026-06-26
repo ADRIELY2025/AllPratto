@@ -149,7 +149,7 @@
                                 style="max-width: 140px; margin-left: auto;">
                                 <span class="input-group-text">%</span>
                                 <input type="number" id="desconto" class="form-control text-end"
-                                    value="0.00" min="0" max="100" step="0.01" placeholder="0.00">
+                                    value="{{ sale.desconto is defined and sale.desconto is not null ? sale.desconto : '0.00' }}" min="0" max="100" step="0.01" placeholder="0.00">
                             </div>
                         </dd>
 
@@ -159,7 +159,7 @@
                                 style="max-width: 140px; margin-left: auto;">
                                 <span class="input-group-text">%</span>
                                 <input type="number" id="acrescimo" class="form-control text-end"
-                                    value="0.00" min="0" max="100" step="0.01" placeholder="0.00">
+                                    value="{{ sale.acrescimo is defined and sale.acrescimo is not null ? sale.acrescimo : '0.00' }}" min="0" max="100" step="0.01" placeholder="0.00">
                             </div>
                         </dd>
 

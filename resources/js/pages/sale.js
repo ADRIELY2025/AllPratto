@@ -461,10 +461,39 @@ async function confirmPaymentAndFinalize() {
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Se estiver em modo edição, carrega id do hidden
+    // Se estiver em modo edição, carrega id do hidden e busca os itens existentes
     if (saleIdInput?.value) {
         currentSaleId = parseInt(saleIdInput.value);
         updateSaleStatus();
+
+        // Carrega itens já cadastrados na venda
+        (async () => {
+            try {
+                const res  = await fetch(`/sale/${currentSaleId}/itens`, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                });
+                const json = await res.json();
+                if (json.status && Array.isArray(json.data)) {
+                    // Limpa array e popula com os itens do servidor
+                    saleItems.length = 0;
+                    json.data.forEach(item => {
+                        saleItems.push({
+                            id_item_sale:   item.id,
+                            id_produto:     item.id_produto,
+                            nome_produto:   item.nome,
+                            quantidade:     parseFloat(item.quantidade)     || 1,
+                            preco_unitario: parseFloat(item.unitario_liquido || item.unitario_bruto) || 0,
+                            total:          parseFloat(item.total_liquido   || item.total_bruto)    || 0,
+                        });
+                    });
+                    renderItems();
+                    updateTotals();
+                }
+            } catch (err) {
+                console.error('Erro ao carregar itens da venda:', err);
+            }
+        })();
     }
 
     initCustomerSelect();
