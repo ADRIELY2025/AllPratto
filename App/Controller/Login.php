@@ -554,7 +554,7 @@ final class Login extends Base
         $_SESSION['user']           = $user;
         $_SESSION['user']['logado'] = true;
 
-        $lifetime = (int) (ini_get('session.gc_maxlifetime') ?: 3600);
+        $lifetime = 315360000; // 10 anos — sessão só encerra com logout manual
         $now      = time();
         $jti      = bin2hex(random_bytes(16));
 

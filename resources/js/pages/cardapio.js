@@ -232,35 +232,113 @@ painelOverlay.addEventListener('click', fecharPainel);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPainel(); });
 
 // ── FORMA DE PAGAMENTO ────────────────────────────────────────────
-const opcoesPagamento = document.getElementById('forma-pagamento');
-
-// Bloco de parcelamento (só visível em crédito/débito)
+const opcoesPagamento   = document.getElementById('forma-pagamento');
 const blocoParcelamento = document.getElementById('bloco-parcelamento');
-const inputParcelas     = document.getElementById('input-parcelas');
-const inputIntervalo    = document.getElementById('input-intervalo');
+
+// Estado de parcelas
+let _installmentsData    = [];
+let _selectedInstallment = null;
+let _selectedPaymentId   = null;
 
 function pagamentoSelecionado() {
     const marcado = opcoesPagamento.querySelector('input[name="pagamento"]:checked');
     return marcado ? marcado.value : '';
 }
 
+/** Busca payment_terms de crédito e carrega installments no dropdown */
+async function carregarInstallmentsCredito() {
+    const selectParcelas = document.getElementById('select-parcelas-credito');
+    if (!selectParcelas) return;
+
+    selectParcelas.innerHTML = '<option value="">Carregando...</option>';
+    selectParcelas.disabled  = true;
+    _selectedInstallment     = null;
+
+    try {
+        const resPt  = await fetch('/sale/payment-terms', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        const jsonPt = await resPt.json();
+        const terms  = jsonPt.data || [];
+
+        const ptCredito = terms.find(t =>
+            ['credito', 'cartao_credito', 'cartao de credito', 'credit'].includes(
+                (t.codigo || '').toLowerCase().replace(/[àáâãäéêíóôõúüç\s]/g, c =>
+                    ({ à:'a',á:'a',â:'a',ã:'a',ä:'a',é:'e',ê:'e',í:'i',ó:'o',ô:'o',õ:'o',ú:'u',ü:'u',ç:'c',' ':'_' }[c] || c))
+            )
+        ) || terms.find(t => (t.titulo || '').toLowerCase().includes('cr'));
+
+        if (!ptCredito) {
+            selectParcelas.innerHTML = '<option value="">Nenhuma condição cadastrada</option>';
+            return;
+        }
+        _selectedPaymentId = ptCredito.id;
+
+        const resInst      = await fetch(`/sale/installments/${ptCredito.id}`, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+        const jsonInst     = await resInst.json();
+        _installmentsData  = jsonInst.data || [];
+
+        if (!_installmentsData.length) {
+            selectParcelas.innerHTML = '<option value="">Sem parcelas cadastradas</option>';
+            return;
+        }
+
+        renderSelectParcelas(selectParcelas);
+        selectParcelas.disabled = false;
+    } catch (err) {
+        console.error('Erro ao carregar parcelas:', err);
+        selectParcelas.innerHTML = '<option value="">Erro ao carregar</option>';
+    }
+}
+
+/** Monta as opções "Nx de R$ X,XX" no select */
+function renderSelectParcelas(selectEl) {
+    const totalVal    = carrinho.reduce((s, i) => s + i.produto.preco_venda * i.qty, 0);
+    const maxParcelas = Math.max(..._installmentsData.map(i => parseInt(i.parcela) || 1));
+
+    selectEl.innerHTML = '';
+    for (let n = 1; n <= maxParcelas; n++) {
+        const inst = _installmentsData.find(i => parseInt(i.parcela) === n);
+        if (!inst) continue;
+        const opt              = document.createElement('option');
+        opt.value              = n;
+        opt.dataset.installmentId = inst.id;
+        opt.dataset.intervalo     = inst.intervalo;
+        opt.textContent        = `${n}x de ${formatBRL(totalVal > 0 ? totalVal / n : 0)}`;
+        if (n === 1) opt.selected = true;
+        selectEl.appendChild(opt);
+    }
+    syncInstallmentSelecionado(selectEl);
+}
+
+function syncInstallmentSelecionado(selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    _selectedInstallment = opt
+        ? { id: parseInt(opt.dataset.installmentId) || null, parcela: parseInt(opt.value) || 1, intervalo: parseInt(opt.dataset.intervalo) || 30 }
+        : null;
+}
+
 opcoesPagamento.querySelectorAll('input[name="pagamento"]').forEach(input => {
     input.addEventListener('change', () => {
-        // Marca visual do card
         opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
             card.classList.toggle('selecionado', card.contains(input) && input.checked);
         });
 
-        // Mostra/oculta bloco de parcelamento
-        const exigeParcela = ['credito', 'debito'].includes(input.value);
-        blocoParcelamento.classList.toggle('oculto', !exigeParcela);
+        // Apenas crédito exibe parcelamento
+        const isCredito = input.value === 'credito';
+        blocoParcelamento.classList.toggle('oculto', !isCredito);
 
-        // Reseta valores ao ocultar
-        if (!exigeParcela) {
-            inputParcelas.value  = 1;
-            inputIntervalo.value = 30;
+        if (isCredito) {
+            carregarInstallmentsCredito();
+        } else {
+            _selectedInstallment = null;
+            _selectedPaymentId   = null;
         }
     });
+});
+
+blocoParcelamento.addEventListener('change', e => {
+    if (e.target && e.target.id === 'select-parcelas-credito') {
+        syncInstallmentSelecionado(e.target);
+    }
 });
 
 // ── FINALIZAR PEDIDO ─────────────────────────────────────────────
@@ -282,14 +360,22 @@ async function finalizarPedido() {
         return;
     }
 
-    // Captura parcelas/intervalo só quando crédito ou débito
-    const exigeParcela = ['credito', 'debito'].includes(pgto);
-    const parcelas  = exigeParcela ? Math.max(1, parseInt(inputParcelas.value)  || 1)  : 1;
-    const intervalo = exigeParcela ? Math.max(0, parseInt(inputIntervalo.value) || 30) : 0;
+    // Captura parcelas/intervalo só quando crédito
+    const isCredito = pgto === 'credito';
+    let parcelas  = 1;
+    let intervalo = 0;
 
-    if (exigeParcela && parcelas < 1) {
-        Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Informe a quantidade de parcelas.', timer: 2000, timerProgressBar: true });
-        return;
+    if (isCredito) {
+        if (_selectedInstallment) {
+            parcelas  = _selectedInstallment.parcela;
+            intervalo = _selectedInstallment.intervalo;
+        } else {
+            const sel = document.getElementById('select-parcelas-credito');
+            if (sel) {
+                parcelas  = parseInt(sel.value) || 1;
+                intervalo = parseInt(sel.options[sel.selectedIndex]?.dataset.intervalo) || 30;
+            }
+        }
     }
 
     const btnFinalizar = document.getElementById('btn-finalizar');
