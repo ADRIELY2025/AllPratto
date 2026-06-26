@@ -40,6 +40,35 @@
 <form id="form">
     <input type="hidden" name="id" id="id">
 </form>
+
+<!-- Modal PDF Cliente -->
+<div class="modal fade" id="modalPdfCliente" tabindex="-1" aria-labelledby="modalPdfClienteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPdfClienteLabel">
+                    <i class="fa-solid fa-file-pdf me-2 text-info"></i>
+                    Ficha do Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="pdf-content-cliente">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <p class="mt-2">Carregando...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-xmark me-1"></i> Fechar
+                </button>
+                <button type="button" class="btn btn-info text-white" id="btn-imprimir-pdf-cliente">
+                    <i class="fa-solid fa-print me-1"></i> Imprimir / Salvar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block script %}

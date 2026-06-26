@@ -204,6 +204,7 @@ final class Customer extends Base
                     $value['atualizado_em'],
                     "<td>
                     <a class='btn btn-sm btn-warning' href='/cliente/detalhes/" . $value['id'] . "'><i class='fa-solid fa-pen-to-square'></i> Editar</a>
+                    <button type='button' class='btn btn-sm btn-info' onclick='gerarPdfCliente(" . $value['id'] . ");'><i class='fa-solid fa-file-pdf'></i> PDF</button>
                     <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal(" . $value['id'] . ");'><i class='fa-solid fa-trash'></i> Excluir</button>
                 </td>",
                 ];
@@ -220,6 +221,60 @@ final class Customer extends Base
                 'msg'    => 'Erro: ' . $e->getMessage(),
                 'id'     => 0,
             ], 500);
+        }
+    }
+
+    // ─── PDF de Cliente ───────────────────────────────────────────────────────
+
+    public function pdf($request, $response, $args)
+    {
+        $id = $args['id'] ?? null;
+
+        if (is_null($id)) {
+            return $this->json($response, ['status' => false, 'msg' => 'Informe o ID do cliente.'], 403);
+        }
+
+        try {
+            $cliente = \App\Database\DB::select("
+                id,
+                nome_fantasia,
+                sobrenome_razao,
+                cpf_cnpj,
+                rg_ie,
+                ativo,
+                to_char(nascimento_fundacao, 'DD/MM/YYYY')            AS nascimento_fundacao,
+                to_char(criado_em,           'DD/MM/YYYY HH24:MI:SS') AS criado_em
+            ")
+            ->from('customer')
+            ->where('id = :id')
+            ->setParameter('id', (int) $id, \Doctrine\DBAL\ParameterType::INTEGER)
+            ->fetchAssociative();
+
+            if (!$cliente) {
+                return $this->json($response, ['status' => false, 'msg' => 'Cliente não encontrado.'], 404);
+            }
+
+            // Últimas 5 vendas do cliente
+            $vendas = \App\Database\DB::select("
+                s.id,
+                s.total_liquido,
+                s.estado_venda,
+                to_char(s.criado_em, 'DD/MM/YYYY') AS data_venda
+            ")
+            ->from('sale', 's')
+            ->where('s.id_cliente = :id')
+            ->setParameter('id', (int) $id, \Doctrine\DBAL\ParameterType::INTEGER)
+            ->orderBy('s.criado_em', 'DESC')
+            ->setMaxResults(5)
+            ->fetchAllAssociative();
+
+            return $this->json($response, [
+                'status'  => true,
+                'cliente' => $cliente,
+                'vendas'  => $vendas,
+            ], 200);
+        } catch (\Exception $e) {
+            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage()], 500);
         }
     }
 }

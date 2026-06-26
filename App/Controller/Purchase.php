@@ -28,8 +28,10 @@ final class Purchase extends Base
             1 => 's.nome_fantasia',
             2 => 'p.total_bruto',
             3 => 'p.total_liquido',
-            4 => 'p.estado_compra',
-            5 => 'p.data_cadastro',
+            4 => 'p.desconto',
+            5 => 'p.acrescimo',
+            6 => 'p.observacao',
+            7 => 'p.data_cadastro',
         ];
 
         $posField   = (isset($form['order'][0]['column']) && isset($columns[(int) $form['order'][0]['column']]))
@@ -52,7 +54,6 @@ final class Purchase extends Base
                 p.desconto,
                 p.acrescimo,
                 p.observacao,
-                p.estado_compra,
                 to_char(p.data_cadastro,    'DD/MM/YYYY HH24:MI:SS')       AS criado_em,
                 to_char(p.data_atualizacao, 'DD/MM/YYYY HH24:MI:SS')       AS atualizado_em
             ")
@@ -63,7 +64,6 @@ final class Purchase extends Base
                 $query->setParameter('term', '%' . $term . '%');
                 $query->where('CAST(p.id AS TEXT) ILIKE :term')
                     ->orWhere('s.nome_fantasia ILIKE :term')
-                    ->orWhere('CAST(p.estado_compra AS TEXT) ILIKE :term')
                     ->orWhere("TO_CHAR(p.data_cadastro, 'DD/MM/YYYY HH24:MI:SS') ILIKE :term");
             }
 
@@ -75,14 +75,8 @@ final class Purchase extends Base
                 ->setMaxResults($length)
                 ->fetchAllAssociative();
 
-            $estadoLabel = [
-                'EM_ANDAMENTO' => '<span class="badge bg-warning text-dark">Em andamento</span>',
-                'RECEBIDO'     => '<span class="badge bg-success">Recebido</span>',
-            ];
-
             $rows = [];
             foreach ($purchases as $key => $value) {
-                $estado = $value['estado_compra'] ?? 'EM_ANDAMENTO';
                 $rows[$key] = [
                     $value['id'],
                     $value['nome_fornecedor'] ?? '<span class="text-muted">Sem fornecedor</span>',
@@ -91,7 +85,6 @@ final class Purchase extends Base
                     number_format((float) ($value['desconto']  ?? 0), 2, ',', '.') . '%',
                     number_format((float) ($value['acrescimo'] ?? 0), 2, ',', '.') . '%',
                     $value['observacao'] ?? '-',
-                    $estadoLabel[$estado] ?? $estado,
                     $value['criado_em'],
                     "<td>
                         <button type='button' class='btn btn-sm btn-info' onclick='gerarPdfCompra({$value['id']})'>

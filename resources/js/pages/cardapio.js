@@ -232,113 +232,35 @@ painelOverlay.addEventListener('click', fecharPainel);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPainel(); });
 
 // ── FORMA DE PAGAMENTO ────────────────────────────────────────────
-const opcoesPagamento   = document.getElementById('forma-pagamento');
-const blocoParcelamento = document.getElementById('bloco-parcelamento');
+const opcoesPagamento = document.getElementById('forma-pagamento');
 
-// Estado de parcelas
-let _installmentsData    = [];
-let _selectedInstallment = null;
-let _selectedPaymentId   = null;
+// Bloco de parcelamento (só visível em crédito/débito)
+const blocoParcelamento = document.getElementById('bloco-parcelamento');
+const inputParcelas     = document.getElementById('input-parcelas');
+const inputIntervalo    = document.getElementById('input-intervalo');
 
 function pagamentoSelecionado() {
     const marcado = opcoesPagamento.querySelector('input[name="pagamento"]:checked');
     return marcado ? marcado.value : '';
 }
 
-/** Busca payment_terms de crédito e carrega installments no dropdown */
-async function carregarInstallmentsCredito() {
-    const selectParcelas = document.getElementById('select-parcelas-credito');
-    if (!selectParcelas) return;
-
-    selectParcelas.innerHTML = '<option value="">Carregando...</option>';
-    selectParcelas.disabled  = true;
-    _selectedInstallment     = null;
-
-    try {
-        const resPt  = await fetch('/sale/payment-terms', { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
-        const jsonPt = await resPt.json();
-        const terms  = jsonPt.data || [];
-
-        const ptCredito = terms.find(t =>
-            ['credito', 'cartao_credito', 'cartao de credito', 'credit'].includes(
-                (t.codigo || '').toLowerCase().replace(/[àáâãäéêíóôõúüç\s]/g, c =>
-                    ({ à:'a',á:'a',â:'a',ã:'a',ä:'a',é:'e',ê:'e',í:'i',ó:'o',ô:'o',õ:'o',ú:'u',ü:'u',ç:'c',' ':'_' }[c] || c))
-            )
-        ) || terms.find(t => (t.titulo || '').toLowerCase().includes('cr'));
-
-        if (!ptCredito) {
-            selectParcelas.innerHTML = '<option value="">Nenhuma condição cadastrada</option>';
-            return;
-        }
-        _selectedPaymentId = ptCredito.id;
-
-        const resInst      = await fetch(`/sale/installments/${ptCredito.id}`, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
-        const jsonInst     = await resInst.json();
-        _installmentsData  = jsonInst.data || [];
-
-        if (!_installmentsData.length) {
-            selectParcelas.innerHTML = '<option value="">Sem parcelas cadastradas</option>';
-            return;
-        }
-
-        renderSelectParcelas(selectParcelas);
-        selectParcelas.disabled = false;
-    } catch (err) {
-        console.error('Erro ao carregar parcelas:', err);
-        selectParcelas.innerHTML = '<option value="">Erro ao carregar</option>';
-    }
-}
-
-/** Monta as opções "Nx de R$ X,XX" no select */
-function renderSelectParcelas(selectEl) {
-    const totalVal    = carrinho.reduce((s, i) => s + i.produto.preco_venda * i.qty, 0);
-    const maxParcelas = Math.max(..._installmentsData.map(i => parseInt(i.parcela) || 1));
-
-    selectEl.innerHTML = '';
-    for (let n = 1; n <= maxParcelas; n++) {
-        const inst = _installmentsData.find(i => parseInt(i.parcela) === n);
-        if (!inst) continue;
-        const opt              = document.createElement('option');
-        opt.value              = n;
-        opt.dataset.installmentId = inst.id;
-        opt.dataset.intervalo     = inst.intervalo;
-        opt.textContent        = `${n}x de ${formatBRL(totalVal > 0 ? totalVal / n : 0)}`;
-        if (n === 1) opt.selected = true;
-        selectEl.appendChild(opt);
-    }
-    syncInstallmentSelecionado(selectEl);
-}
-
-function syncInstallmentSelecionado(selectEl) {
-    const opt = selectEl.options[selectEl.selectedIndex];
-    _selectedInstallment = opt
-        ? { id: parseInt(opt.dataset.installmentId) || null, parcela: parseInt(opt.value) || 1, intervalo: parseInt(opt.dataset.intervalo) || 30 }
-        : null;
-}
-
 opcoesPagamento.querySelectorAll('input[name="pagamento"]').forEach(input => {
     input.addEventListener('change', () => {
+        // Marca visual do card
         opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
             card.classList.toggle('selecionado', card.contains(input) && input.checked);
         });
 
-        // Apenas crédito exibe parcelamento
-        const isCredito = input.value === 'credito';
-        blocoParcelamento.classList.toggle('oculto', !isCredito);
+        // Mostra/oculta bloco de parcelamento
+        const exigeParcela = ['credito', 'debito'].includes(input.value);
+        blocoParcelamento.classList.toggle('oculto', !exigeParcela);
 
-        if (isCredito) {
-            carregarInstallmentsCredito();
-        } else {
-            _selectedInstallment = null;
-            _selectedPaymentId   = null;
+        // Reseta valores ao ocultar
+        if (!exigeParcela) {
+            inputParcelas.value  = 1;
+            inputIntervalo.value = 30;
         }
     });
-});
-
-blocoParcelamento.addEventListener('change', e => {
-    if (e.target && e.target.id === 'select-parcelas-credito') {
-        syncInstallmentSelecionado(e.target);
-    }
 });
 
 // ── FINALIZAR PEDIDO ─────────────────────────────────────────────
@@ -360,22 +282,14 @@ async function finalizarPedido() {
         return;
     }
 
-    // Captura parcelas/intervalo só quando crédito
-    const isCredito = pgto === 'credito';
-    let parcelas  = 1;
-    let intervalo = 0;
+    // Captura parcelas/intervalo só quando crédito ou débito
+    const exigeParcela = ['credito', 'debito'].includes(pgto);
+    const parcelas  = exigeParcela ? Math.max(1, parseInt(inputParcelas.value)  || 1)  : 1;
+    const intervalo = exigeParcela ? Math.max(0, parseInt(inputIntervalo.value) || 30) : 0;
 
-    if (isCredito) {
-        if (_selectedInstallment) {
-            parcelas  = _selectedInstallment.parcela;
-            intervalo = _selectedInstallment.intervalo;
-        } else {
-            const sel = document.getElementById('select-parcelas-credito');
-            if (sel) {
-                parcelas  = parseInt(sel.value) || 1;
-                intervalo = parseInt(sel.options[sel.selectedIndex]?.dataset.intervalo) || 30;
-            }
-        }
+    if (exigeParcela && parcelas < 1) {
+        Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Informe a quantidade de parcelas.', timer: 2000, timerProgressBar: true });
+        return;
     }
 
     const btnFinalizar = document.getElementById('btn-finalizar');
@@ -427,3 +341,66 @@ document.getElementById('btn-finalizar').addEventListener('click', finalizarPedi
 
 // ── INIT ─────────────────────────────────────────────────────────
 carregarItens();
+// ── MODAL DE IDENTIFICAÇÃO ────────────────────────────────────────
+
+(function initIdentificacao() {
+    const modal    = document.getElementById('modal-identificacao');
+    const inputNome  = document.getElementById('id-nome');
+    const inputEmail = document.getElementById('id-email');
+    const inputCpf   = document.getElementById('id-cpf');
+    const erroEl     = document.getElementById('id-cpf-erro');
+    const btnOk      = document.getElementById('btn-identificar');
+
+    if (!modal) return;
+
+    // Verifica se já identificou nesta sessão
+    const clienteSalvo = sessionStorage.getItem('ap_cliente');
+    if (clienteSalvo) {
+        modal.style.display = 'none';
+        return;
+    }
+
+    // Máscara CPF
+    inputCpf.addEventListener('input', () => {
+        let v = inputCpf.value.replace(/\D/g, '').slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        inputCpf.value = v;
+        erroEl.style.display = 'none';
+        inputCpf.style.borderColor = '#e0d9c8';
+    });
+
+    btnOk.addEventListener('click', async () => {
+        const nome  = inputNome.value.trim();
+        const email = inputEmail.value.trim();
+        const cpf   = inputCpf.value.replace(/\D/g, '');
+
+        // Validações básicas
+        if (!nome) { inputNome.focus(); return; }
+        if (!email || !email.includes('@')) { inputEmail.focus(); return; }
+        if (cpf.length !== 11) {
+            erroEl.style.display = 'block';
+            inputCpf.style.borderColor = '#dc3545';
+            inputCpf.focus();
+            return;
+        }
+
+        btnOk.disabled = true;
+        btnOk.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...';
+
+        try {
+            const requests = new Requests();
+            requests.headers['Content-Type'] = 'application/json';
+            const resp = await requests.setBody(JSON.stringify({ nome, email, cpf })).post('/cardapio/identificar');
+
+            // Salva na sessão (com ou sem erro — o cliente identificou)
+            sessionStorage.setItem('ap_cliente', JSON.stringify({ nome, email, cpf, id: resp?.cliente_id ?? null }));
+            modal.style.display = 'none';
+        } catch (err) {
+            // Mesmo com erro no servidor, fecha o modal para não bloquear o cardápio
+            sessionStorage.setItem('ap_cliente', JSON.stringify({ nome, email, cpf, id: null }));
+            modal.style.display = 'none';
+        }
+    });
+})();

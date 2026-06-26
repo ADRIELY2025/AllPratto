@@ -36,6 +36,62 @@ final class Cardapio extends Base
         ->withHeader('Content-Type', 'text/html')
         ->withStatus(200);
 }
+    public function identificar($request, $response)
+    {
+        $body  = $request->getParsedBody();
+        $nome  = trim($body['nome']  ?? '');
+        $email = trim($body['email'] ?? '');
+        $cpf   = preg_replace('/\D/', '', $body['cpf'] ?? '');
+
+        if (!$nome || !$email || strlen($cpf) !== 11) {
+            return $this->json($response, ['status' => false, 'msg' => 'Dados incompletos.'], 400);
+        }
+
+        try {
+            // Formata CPF com máscara para salvar
+            $cpfMask = preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $cpf);
+
+            // Verifica se já existe cliente com esse CPF
+            $existente = \App\Database\DB::select('id')
+                ->from('customer')
+                ->where('cpf_cnpj = :cpf')
+                ->setParameter('cpf', $cpfMask)
+                ->fetchAssociative();
+
+            if ($existente) {
+                return $this->json($response, [
+                    'status'     => true,
+                    'cliente_id' => (int) $existente['id'],
+                    'novo'       => false,
+                ], 200);
+            }
+
+            // Cria novo cliente
+            $conn = \App\Database\DB::connection();
+            $conn->insert('customer', [
+                'nome_fantasia'   => $nome,
+                'sobrenome_razao' => '',
+                'cpf_cnpj'       => $cpfMask,
+                'ativo'          => true,
+                'criado_em'      => (new \DateTime())->format('Y-m-d H:i:s'),
+                'atualizado_em'  => (new \DateTime())->format('Y-m-d H:i:s'),
+            ], [
+                'ativo' => \Doctrine\DBAL\ParameterType::BOOLEAN,
+            ]);
+
+            $novoId = (int) $conn->lastInsertId();
+
+            return $this->json($response, [
+                'status'     => true,
+                'cliente_id' => $novoId,
+                'novo'       => true,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return $this->json($response, ['status' => false, 'msg' => $e->getMessage()], 500);
+        }
+    }
+
     // GET /cardapio/itens → JSON
     public function getItens($request, $response)
     {
