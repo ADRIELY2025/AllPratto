@@ -12,7 +12,7 @@ $faker = Factory::create('pt_BR');
 
 $conn->executeStatement('DELETE FROM product');
 
-$grupos   = ['Bebidas', 'Lanches', 'Pratos', 'Sobremesas', 'Petiscos', 'Massas', 'Grelhados', 'Saladas'];
+$grupos   = ['Bebidas', 'Entradas e Petiscos', 'Pratos', 'Sobremesas', , 'Massas', 'Carnes e Peixes', 'Saladas'];
 $unidades = ['UN', 'KG', 'L', 'CX', 'PC'];
 
 $produtos = [
@@ -21,10 +21,8 @@ $produtos = [
     ['nome' => 'Coca-Cola 350ml',   'grupo' => 'Bebidas',    'preco_compra' => 2.50,  'preco_venda' => 6.00],
     ['nome' => 'Suco de Laranja',   'grupo' => 'Bebidas',    'preco_compra' => 3.00,  'preco_venda' => 7.50],
     ['nome' => 'Água Mineral',      'grupo' => 'Bebidas',    'preco_compra' => 0.80,  'preco_venda' => 3.00],
-    ['nome' => 'Porcão de Fritas',  'grupo' => 'Petiscos',   'preco_compra' => 4.00,  'preco_venda' => 12.00],
-    ['nome' => 'Pastel de Carne',   'grupo' => 'Petiscos',   'preco_compra' => 2.50,  'preco_venda' => 6.50],
-    ['nome' => 'Frango Grelhado',   'grupo' => 'Grelhados',  'preco_compra' => 12.00, 'preco_venda' => 29.90],
-    ['nome' => 'Picanha 300g',      'grupo' => 'Grelhados',  'preco_compra' => 35.00, 'preco_venda' => 69.90],
+    ['nome' => 'Frango Grelhado',   'grupo' => 'Carnes e Peixes',  'preco_compra' => 12.00, 'preco_venda' => 29.90],
+    ['nome' => 'Picanha 300g',      'grupo' => 'Carnes e Peixes',  'preco_compra' => 35.00, 'preco_venda' => 69.90],
     ['nome' => 'Espaguete Bolonhesa','grupo' => 'Massas',    'preco_compra' => 8.00,  'preco_venda' => 24.90],
     ['nome' => 'Lasanha',           'grupo' => 'Massas',     'preco_compra' => 10.00, 'preco_venda' => 28.90],
     ['nome' => 'Salada Caesar',     'grupo' => 'Saladas',    'preco_compra' => 5.00,  'preco_venda' => 16.00],
@@ -34,7 +32,7 @@ $produtos = [
     ['nome' => 'Feijão Tropeiro',   'grupo' => 'Pratos',     'preco_compra' => 7.00,  'preco_venda' => 19.90],
     ['nome' => 'Cerveja Long Neck', 'grupo' => 'Bebidas',    'preco_compra' => 4.00,  'preco_venda' => 9.90],
     ['nome' => 'Caipirinha',        'grupo' => 'Bebidas',    'preco_compra' => 5.00,  'preco_venda' => 16.00],
-    ['nome' => 'Batata Recheada',   'grupo' => 'Petiscos',   'preco_compra' => 6.00,  'preco_venda' => 17.90],
+    
     ['nome' => 'Misto Quente',      'grupo' => 'Lanches',    'preco_compra' => 3.00,  'preco_venda' => 8.50],
 ];
 
