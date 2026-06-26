@@ -51,17 +51,17 @@ import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 
 // Registro único no boot — reutiliza o FilePond já importado no passo 6.
 // Ordem importa: validação → orientação → preview → crop → resize → transform.
-/*FilePond.registerPlugin(
+FilePond.registerPlugin(
     //FilePondPluginFileValidateType,
     //FilePondPluginImageExifOrientation,
     FilePondPluginImagePreview,
     //FilePondPluginImageCrop,
     //FilePondPluginImageResize,
     //FilePondPluginImageTransform,
-);*/
+);
 
 // Defaults globais seguros e performáticos — cada página pode sobrescrever.
-/*FilePond.setOptions({
+FilePond.setOptions({
     // Segurança: primeira linha no cliente (a barreira real continua no servidor).
     acceptedFileTypes: ['image/png', 'image/jpeg', 'image/webp'],
     maxParallelUploads: 2,
@@ -96,4 +96,4 @@ import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 
     // Estético.
     credits: false,
-});*/
+});

@@ -146,7 +146,52 @@ async function applyChanges() {
     }
 }
 
+// ─── Upload de imagem ─────────────────────────────────────────────
+const btnUpload = document.getElementById('btn-upload-imagem');
+const inputImagem = document.getElementById('inputImagem');
+const previewImg = document.getElementById('preview-imagem');
 
+// Pré-visualização local antes de enviar
+if (inputImagem) {
+    inputImagem.addEventListener('change', () => {
+        const file = inputImagem.files[0];
+        if (!file) return;
+        previewImg.src = URL.createObjectURL(file);
+    });
+}
 
+// Envio da imagem separado do formulário principal
+if (btnUpload) {
+    btnUpload.addEventListener('click', async () => {
+        const file = inputImagem?.files[0];
+        if (!file) {
+            Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Selecione uma imagem antes de enviar.', timer: 2500, timerProgressBar: true });
+            return;
+        }
 
+        const formData = new FormData();
+        formData.append('id', Id.value);
+        formData.append('imagem', file);
+
+        btnUpload.disabled = true;
+
+        try {
+            const requests = new Requests();
+            const response = await requests.setBody(formData).post('/product/upload-imagem');
+
+            if (!response?.status) {
+                Swal.fire({ icon: 'error', title: 'Erro', text: response?.msg || 'Erro ao enviar imagem.', timer: 3000, timerProgressBar: true });
+                return;
+            }
+
+            // Atualiza o preview com a imagem do servidor (evita cache)
+            previewImg.src = response.imagem_url + '?v=' + Date.now();
+            Swal.fire({ icon: 'success', title: 'Sucesso', text: 'Imagem enviada!', timer: 2000, timerProgressBar: true });
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Erro', text: error.message, timer: 3000, timerProgressBar: true });
+        } finally {
+            btnUpload.disabled = false;
+        }
+    });
+}
 Insert.addEventListener('click', applyChanges);

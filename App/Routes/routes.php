@@ -104,15 +104,15 @@ $app->group('/company', function (\Slim\Routing\RouteCollectorProxy $group) {
 //  Produtos
 // ══════════════════════════════════════════════
 $app->group('/product', function (\Slim\Routing\RouteCollectorProxy $group) {
-    $group->get('/lista',           Product::class . ':list')->add(Middleware::web());
-    $group->get('/detalhes/{id}',   Product::class . ':details')->add(Middleware::web());
-    $group->get('/detalhes',        Product::class . ':details')->add(Middleware::web());
-    $group->get('/get-imagem/{id}', Product::class . ':getImagem')->add(Middleware::web());
-    $group->post('/insert',         Product::class . ':insert')->add(Middleware::api());
-    $group->post('/update',         Product::class . ':update')->add(Middleware::api());
-    $group->post('/delete',         Product::class . ':delete')->add(Middleware::api());
-    $group->post('/listingdata',    Product::class . ':listingdata')->add(Middleware::api());
-    $group->post('/upload-imagem',  Product::class . ':uploadImagem')->add(Middleware::api());
+    $group->get('/lista',          Product::class . ':list')->add(Middleware::web());
+    $group->get('/detalhes/{id}',  Product::class . ':details')->add(Middleware::web());
+    $group->get('/detalhes',       Product::class . ':details')->add(Middleware::web());
+    $group->post('/insert',        Product::class . ':insert')->add(Middleware::api());
+    $group->post('/update',        Product::class . ':update')->add(Middleware::api());
+    $group->post('/delete',        Product::class . ':delete')->add(Middleware::api());
+    $group->post('/listingdata',   Product::class . ':listingdata')->add(Middleware::api());
+    $group->post('/upload-imagem', Product::class . ':uploadImagem')->add(Middleware::api());
+    $group->post('/get-imagem', Product::class . ':getImagem')->add(Middleware::api());
 });
 
 // ══════════════════════════════════════════════

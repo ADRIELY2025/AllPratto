@@ -28,7 +28,6 @@ final class Version20260528183236 extends AbstractMigration
                 grupo         text      NULL,
                 unidade       text          NOT NULL DEFAULT 0,
                 imagem_url    TEXT             NULL,
-                nome_imagem    TEXT             NULL,
                 preco_compra   NUMERIC(18,4)    NOT NULL DEFAULT 0,
                 total_imposto   NUMERIC(18,4)    NOT NULL DEFAULT 0,
                 margem_lucro   NUMERIC(18,4)    NOT NULL DEFAULT 0,

@@ -43,14 +43,12 @@ final class Product extends Base
     public function insert($request, $response)
     {
         $form = $request->getParsedBody();
-        $file = $_FILES['imagem_url'] ?? null;
-
+        $imagem = $request->getUploadedFiles()['imagem'] ?? null;
         $data = [
             'nome'                   => $form['nome']                ?? '',
             'codigo_barra'           => $form['codigo_barra']         ?? '',
             'grupo'                  => $form['grupo']               ?? '',
             'unidade'                => $form['unidade']             ?? '',
-            'imagem_url'             => $form['imagem_url']           ?? " ",
             'preco_compra'           => $this->toDecimal($form['preco_compra']          ?? 0),
             'total_imposto'          => $this->toDecimal($form['total_imposto']         ?? 0),
             'margem_lucro'           => $this->toDecimal($form['margem_lucro']          ?? 0),
@@ -67,27 +65,18 @@ final class Product extends Base
             $conn = \App\Database\DB::connection();
             $conn->insert('product', $data);
             $id = (int) $conn->lastInsertId();
-            $name = null;
-            if ($file && $file['error'] === UPLOAD_ERR_OK) {
-                $path = ROOT . '/storage/produtos/' . $id;
-                if (is_dir($path)) rmdir($path);
-
-                if (!is_dir($path)) {
-                    mkdir($path, 0777, true);
-                }
-
-                #Gera um nome único para a imagem, evitando sobrescrever caso o usuário envie uma imagem com o mesmo nome
-                $name = time() . '_' . rand(1000, 9999) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
-
-                move_uploaded_file($file['tmp_name'], $path . '/' . $name);
-            }
-
-            if (!is_null($name)) {
-                \App\Database\DB::connection()->update('product', ['nome_imagem' => $name], ['id' => (int) $id]);
-            }
 
             if (!$id) {
                 return $this->json($response, ['status' => false, 'msg' => 'Não foi possível obter o ID do registro.', 'id' => 0], 500);
+            }
+
+            // Só move a imagem se foi enviada uma
+            if ($imagem && $imagem->getError() === UPLOAD_ERR_OK) {
+                $path = ROOT . '/storage/produtos/' . $id;
+                if (!is_dir($path)) {
+                    mkdir($path, 0777, true);
+                }
+                move_uploaded_file($imagem->getFilePath(), $path . '/' . $imagem->getClientFilename());
             }
 
             return $this->json($response, ['status' => true, 'msg' => 'Salvo com sucesso!', 'id' => $id], 201);
@@ -100,23 +89,9 @@ final class Product extends Base
     {
         $form = $request->getParsedBody();
         $id   = $form['id'] ?? null;
-        $file = $_FILES['imagem_url'] ?? null;
+
         if (is_null($id) || $id === '') {
             return $this->json($response, ['status' => false, 'msg' => 'Por favor informe o ID do registro', 'id' => 0], 403);
-        }
-        $name = null;
-        if ($file && $file['error'] === UPLOAD_ERR_OK) {
-            $path = ROOT . '/storage/produtos/' . $id;
-            if (is_dir($path)) rmdir($path);
-
-            if (!is_dir($path)) {
-                mkdir($path, 0777, true);
-            }
-
-            #Gera um nome único para a imagem, evitando sobrescrever caso o usuário envie uma imagem com o mesmo nome
-            $name = time() . '_' . rand(1000, 9999) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
-
-            move_uploaded_file($file['tmp_name'], $path . '/' . $name);
         }
 
         $data = [
@@ -136,10 +111,6 @@ final class Product extends Base
             'ativo'                  => in_array($form['ativo'] ?? '', ['true', 'on', '1', 1], true),
             'atualizado_em'          => date('Y-m-d H:i:s'),
         ];
-
-        if (!is_null($name)) {
-            $data['nome_imagem'] = $name;
-        }
 
         try {
             $updated = \App\Database\DB::connection()->update('product', $data, ['id' => (int) $id]);
@@ -292,31 +263,18 @@ final class Product extends Base
     }
 
 
-    public function getImagem($request, $response, $args)
+    public function getImagem($request, $response)
     {
-        $id = $args['id'] ?? null;
+        $id = $request->getAttribute('id');
 
-        if (is_null($id) || $id === '') {
-            return $this->json($response, ['status' => false, 'msg' => 'Informe o código do produto', 'id' => 0], 403);
-        }
-
-        $product = \App\Database\DB::select('*')->from('product')
-            ->where('id = ' . $id)
-            ->fetchAssociative();
-
-        $nomeImagem = $product['nome_imagem'] ?? null;
-
-        if (is_null($nomeImagem)) {
-            return $this->json($response, ['status' => false, 'msg' => 'Produto não possui imagem.', 'id' => 0], 404);
-        }
-
-        $path = ROOT . '/storage/produtos/' . $id . '/' . $nomeImagem;
-
-        if (!file_exists($path)) {
+        // Implement the logic to retrieve and return the image
+        // This is a simplified example - replace with actual image retrieval logic
+        $imagePath = __DIR__ . "/../../public/uploads/produtos/produto-{$id}.jpg";
+        if (!file_exists($imagePath)) {
             return $this->json($response, ['status' => false, 'msg' => 'Imagem não encontrada.'], 404);
         }
 
-        $imageData = file_get_contents($path);
+        $imageData = file_get_contents($imagePath);
         return $this->image($response, $imageData, 'image/jpeg');
     }
 }

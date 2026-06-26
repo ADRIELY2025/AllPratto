@@ -12,11 +12,11 @@ if ($currentHandler === 'redis' && !extension_loaded('redis')) {
 
 session_start();
 
-define('PROTOCOL', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'http');
 # Domínio atual da requisição — usado no payload JWT (iss/aud) e no cookie auth_token
 # Definido aqui centralmente para evitar repetição e proteger contra Host Header Injection
-define('HOST', PROTOCOL . '://' . $_SERVER['HTTP_HOST']);
+define('HOST', $_SERVER['HTTP_HOST']);
 
+define('PROTOCOL', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'http');
 
 define('ROOT', dirname(__FILE__, 3));
 #DIRETÓRIO DAS VIEWS
