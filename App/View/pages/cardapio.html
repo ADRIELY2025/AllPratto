@@ -117,21 +117,17 @@
                 </label>
             </div>
 
-            <!-- PARCELAMENTO — visível apenas em crédito / débito -->
+            <!-- PARCELAMENTO — visível apenas em crédito -->
             <div class="bloco-parcelamento oculto" id="bloco-parcelamento">
                 <div class="parcelamento-titulo">Condições de pagamento</div>
                 <div class="parcelamento-campos">
-                    <div class="parcelamento-campo">
-                        <label for="input-parcelas">
-                            <i class="fa-solid fa-layer-group"></i> Qtd. de Parcelas
+                    <div class="parcelamento-campo" style="flex:1;">
+                        <label for="select-parcelas-credito">
+                            <i class="fa-solid fa-hashtag"></i> Número de parcelas
                         </label>
-                        <input type="number" id="input-parcelas" min="1" max="48" value="1" placeholder="Ex: 3">
-                    </div>
-                    <div class="parcelamento-campo">
-                        <label for="input-intervalo">
-                            <i class="fa-solid fa-calendar-days"></i> Intervalo (dias)
-                        </label>
-                        <input type="number" id="input-intervalo" min="0" max="365" value="30" placeholder="Ex: 30">
+                        <select id="select-parcelas-credito" class="form-select" disabled>
+                            <option value="">Selecione o crédito primeiro</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -143,60 +139,6 @@
     </aside>
 
     {{ vite('resources/js/pages/cardapio.js') }}
-
-    <!-- Modal de Identificação do Cliente -->
-    <div id="modal-identificacao" style="
-        display:flex; position:fixed; inset:0; z-index:9999;
-        background:rgba(0,0,0,.55); align-items:center; justify-content:center;">
-        <div style="background:#fff; border-radius:16px; width:90%; max-width:420px; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.25);">
-            <!-- Cabeçalho -->
-            <div style="background:#1e2d5a; padding:28px 24px 20px; text-align:center;">
-                <div style="font-size:42px; margin-bottom:8px;">👤</div>
-                <h2 style="color:#fff; margin:0; font-size:22px; font-weight:700;">Bem-vindo!</h2>
-                <p style="color:#c5cde8; margin:6px 0 0; font-size:14px;">Para continuar, preencha seus dados de identificação.</p>
-            </div>
-            <!-- Corpo -->
-            <div style="padding:24px;">
-                <!-- Nome -->
-                <div style="margin-bottom:16px;">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#b8860b;margin-bottom:6px;">
-                        👤 Nome completo <span style="color:red">*</span>
-                    </label>
-                    <input id="id-nome" type="text" placeholder="Seu nome completo" style="
-                        width:100%; box-sizing:border-box; padding:12px 14px; border:1.5px solid #e0d9c8;
-                        border-radius:8px; font-size:15px; background:#faf8f3; outline:none;">
-                </div>
-                <!-- Email -->
-                <div style="margin-bottom:16px;">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#b8860b;margin-bottom:6px;">
-                        ✉️ E-mail <span style="color:red">*</span>
-                    </label>
-                    <input id="id-email" type="email" placeholder="seu@email.com" style="
-                        width:100%; box-sizing:border-box; padding:12px 14px; border:1.5px solid #e0d9c8;
-                        border-radius:8px; font-size:15px; background:#faf8f3; outline:none;">
-                </div>
-                <!-- CPF -->
-                <div style="margin-bottom:8px;">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#b8860b;margin-bottom:6px;">
-                        💳 CPF <span style="color:red">*</span>
-                    </label>
-                    <input id="id-cpf" type="text" placeholder="000.000.000-00" maxlength="14" style="
-                        width:100%; box-sizing:border-box; padding:12px 14px; border:1.5px solid #e0d9c8;
-                        border-radius:8px; font-size:15px; background:#faf8f3; outline:none;">
-                    <p id="id-cpf-erro" style="color:#dc3545;font-size:12px;margin:4px 0 0;display:none;">
-                        CPF inválido. Verifique e tente novamente.
-                    </p>
-                </div>
-                <!-- Botão -->
-                <button id="btn-identificar" type="button" style="
-                    width:100%; margin-top:16px; padding:14px; background:#b8860b;
-                    color:#fff; border:none; border-radius:10px; font-size:16px;
-                    font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    → Acessar cardápio
-                </button>
-            </div>
-        </div>
-    </div>
 </body>
 
 </html>

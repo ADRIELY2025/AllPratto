@@ -6,6 +6,10 @@ namespace App\Controller;
 
 final class Sale extends Base
 {
+    // ──────────────────────────────────────────────
+    //  Páginas HTML
+    // ──────────────────────────────────────────────
+
     public function list($request, $response)
     {
         return $this->getTwig()
@@ -41,6 +45,10 @@ final class Sale extends Base
             ->withHeader('Content-Type', 'text/html')
             ->withStatus(200);
     }
+
+    // ──────────────────────────────────────────────
+    //  CRUD – Venda
+    // ──────────────────────────────────────────────
 
     public function insert($request, $response)
     {
@@ -158,6 +166,14 @@ final class Sale extends Base
         }
     }
 
+    // ──────────────────────────────────────────────
+    //  Buscas auxiliares (selects/ajax)
+    // ──────────────────────────────────────────────
+
+    /**
+     * Retorna formas de pagamento com suas parcelas para o modal de finalização.
+     * GET /sale/payment-terms
+     */
     public function findPaymentTerms($request, $response)
     {
         try {
@@ -172,6 +188,10 @@ final class Sale extends Base
         }
     }
 
+    /**
+     * Retorna as parcelas de uma forma de pagamento.
+     * GET /sale/installments/{id}
+     */
     public function findInstallments($request, $response, $args)
     {
         $idPayment = $args['id'] ?? null;
@@ -194,6 +214,10 @@ final class Sale extends Base
         }
     }
 
+    /**
+     * Busca produtos para o Select2 (ajax).
+     * POST /sale/find-product
+     */
     public function findProduct($request, $response)
     {
         $form   = $request->getParsedBody();
@@ -222,6 +246,10 @@ final class Sale extends Base
         }
     }
 
+    /**
+     * Retorna um produto pelo ID (para preencher preço unitário).
+     * GET /sale/find-product/{id}
+     */
     public function findProductById($request, $response, $args)
     {
         $id = $args['id'] ?? null;
@@ -246,6 +274,10 @@ final class Sale extends Base
         }
     }
 
+    /**
+     * Busca clientes para o Select2 (ajax).
+     * POST /sale/find-customer
+     */
     public function findCustomer($request, $response)
     {
         $form   = $request->getParsedBody();
@@ -280,6 +312,10 @@ final class Sale extends Base
             return $this->json($response, ['status' => false, 'msg' => $e->getMessage()], 500);
         }
     }
+
+    // ──────────────────────────────────────────────
+    //  DataTable – listagem de vendas
+    // ──────────────────────────────────────────────
 
     public function listingdata($request, $response)
     {
@@ -369,10 +405,7 @@ final class Sale extends Base
                         <a class='btn btn-sm btn-warning' href='/sale/detalhes/{$value['id']}'>
                             <i class='fa-solid fa-pen-to-square'></i> Editar
                         </a>
-                        <button type='button' class='btn btn-sm btn-info' onclick='gerarPdfVenda({$value[\'id\']});'>
-                            <i class='fa-solid fa-file-pdf'></i> PDF
-                        </button>
-                        <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal({$value[\'id\']});'>
+                        <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal({$value['id']});'>
                             <i class='fa-solid fa-trash'></i> Excluir
                         </button>
                     </td>",
@@ -389,60 +422,9 @@ final class Sale extends Base
         }
     }
 
-
-    public function pdf($request, $response, $args)
-    {
-        $id = $args['id'] ?? null;
-
-        if (is_null($id)) {
-            return $this->json($response, ['status' => false, 'msg' => 'Informe o ID da venda.'], 403);
-        }
-
-        try {
-            $venda = \App\Database\DB::select("
-                s.id,
-                s.observacao,
-                s.total_bruto,
-                s.total_liquido,
-                s.desconto,
-                s.acrescimo,
-                s.estado_venda,
-                c.nome_fantasia                                          AS nome_cliente,
-                c.cpf_cnpj                                              AS cpf_cliente,
-                to_char(s.criado_em, 'DD/MM/YYYY HH24:MI:SS')          AS criado_em
-            ")
-            ->from('sale', 's')
-            ->leftJoin('s', 'customer', 'c', 's.id_cliente = c.id')
-            ->where('s.id = :id')
-            ->setParameter('id', (int) $id, \Doctrine\DBAL\ParameterType::INTEGER)
-            ->fetchAssociative();
-
-            if (!$venda) {
-                return $this->json($response, ['status' => false, 'msg' => 'Venda não encontrada.'], 404);
-            }
-
-            $itens = \App\Database\DB::select("
-                i.id,
-                i.nome,
-                i.quantidade,
-                i.preco_unitario,
-                i.total_bruto,
-                i.total_liquido
-            ")
-            ->from('item_sale', 'i')
-            ->where('i.id_venda = :id')
-            ->setParameter('id', (int) $id, \Doctrine\DBAL\ParameterType::INTEGER)
-            ->fetchAllAssociative();
-
-            return $this->json($response, [
-                'status' => true,
-                'venda'  => $venda,
-                'itens'  => $itens,
-            ], 200);
-        } catch (\Exception $e) {
-            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage()], 500);
-        }
-    }
+    // ──────────────────────────────────────────────
+    //  Helpers privados
+    // ──────────────────────────────────────────────
 
     private function toDecimal(mixed $value): float
     {

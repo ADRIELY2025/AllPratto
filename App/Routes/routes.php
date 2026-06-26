@@ -44,7 +44,6 @@ $app->group('/cardapio', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/mesa/{id}', Cardapio::class . ':index');
     $group->get('/itens',     Cardapio::class . ':getItens');
     $group->post('/pedido',   Cardapio::class . ':salvarPedido');
-    $group->post('/identificar', Cardapio::class . ':identificar');
 });
 
 $app->get('/cardapio', Cardapio::class . ':index')->add(Middleware::web());
@@ -60,7 +59,6 @@ $app->group('/cliente', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/update',       Customer::class . ':update')->add(Middleware::api());
     $group->post('/delete',       Customer::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',  Customer::class . ':listingdata')->add(Middleware::api());
-    $group->get('/pdf/{id}',      Customer::class . ':pdf')->add(Middleware::api());
 });
 
 // ══════════════════════════════════════════════
@@ -212,7 +210,6 @@ $app->group('/sale', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/update',       Sale::class . ':update')->add(Middleware::api());
     $group->post('/delete',       Sale::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',  Sale::class . ':listingdata')->add(Middleware::api());
-    $group->get('/pdf/{id}',      Sale::class . ':pdf')->add(Middleware::api());
     // ── Buscas auxiliares (Select2 / ajax) ───
     $group->post('/find-customer',        Sale::class . ':findCustomer')->add(Middleware::api());
     $group->post('/find-product',         Sale::class . ':findProduct')->add(Middleware::api());
