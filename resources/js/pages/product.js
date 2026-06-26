@@ -24,6 +24,7 @@ const Imagem = document.querySelector('#imagem');
 
 
 create(Imagem, {
+
     storeAsFile: true,
 });
 
