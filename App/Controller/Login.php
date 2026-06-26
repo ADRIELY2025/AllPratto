@@ -345,7 +345,7 @@ final class Login extends Base
             $rg        = $form['cad-rg']        ?? null;
             $senha     = $form['cad-senha']          ?? '';
             $confirmar_senha = $form['cad-confirmar-senha'] ?? '';
-            
+
             error_log('[preRegister] Dados recebidos: ' . json_encode([
                 'nome' => $nome,
                 'sobrenome' => $sobrenome,
@@ -354,11 +354,11 @@ final class Login extends Base
                 'senha_len' => strlen($senha),
                 'confirmar_senha_len' => strlen($confirmar_senha),
             ]));
-            
+
             # Parseia contatos (pode vir como JSON string do JavaScript)
             $contacts = [];
             $contactsRaw = $form['contacts'] ?? null;
-            
+
             if ($contactsRaw) {
                 error_log('[preRegister] Contatos raw: ' . $contactsRaw);
                 if (is_string($contactsRaw)) {
@@ -372,9 +372,9 @@ final class Login extends Base
                     $contacts = $contactsRaw;
                 }
             }
-            
+
             error_log('[preRegister] Contatos parseados: ' . json_encode($contacts));
-            
+
             # Campos obrigatórios
             if (!$nome || !$sobrenome || !$cpf || !$senha) {
                 return $this->json($response, [
@@ -395,7 +395,7 @@ final class Login extends Base
             }
 
             $connection = DB::connection();
-            
+
             error_log('[preRegister] Preparando insert em users');
 
             $connection->insert('users', [
@@ -451,7 +451,6 @@ final class Login extends Base
                 'status' => true,
                 'msg'    => 'Usuário cadastrado com sucesso!',
             ], 200);
-            
         } catch (\PDOException $e) {
             error_log('[preRegister][DB] ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
             return $this->json($response, ['status' => false, 'msg' => 'Não foi possível realizar o cadastro. Tente novamente.'], 500);
@@ -584,7 +583,7 @@ final class Login extends Base
         // Em 'localhost' (ou IPs), não definir 'domain': o navegador rejeita
         // cookies com domain inválido/nulo, o que impedia o auth_token de ser
         // persistido (causando 401 "Sessão expirada" mesmo após login).
-        $hostName = parse_url('http://' . HOST, PHP_URL_HOST);
+        $hostName = parse_url(HOST, PHP_URL_HOST);
         if ($hostName && $hostName !== 'localhost' && filter_var($hostName, FILTER_VALIDATE_IP) === false) {
             $cookieOptions['domain'] = $hostName;
         }

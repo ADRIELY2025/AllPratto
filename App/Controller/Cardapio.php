@@ -7,35 +7,35 @@ namespace App\Controller;
 final class Cardapio extends Base
 {
     public function index($request, $response, $args)
-{
-    // Pega o id direto da rota /cardapio/mesa/{id}
-    $mesaNum    = isset($args['id']) ? (int) $args['id'] : null;
-    $mesaValida = false;
-    $mesaId     = null;
+    {
+        // Pega o id direto da rota /cardapio/mesa/{id}
+        $mesaNum    = isset($args['id']) ? (int) $args['id'] : null;
+        $mesaValida = false;
+        $mesaId     = null;
 
-    if ($mesaNum !== null && $mesaNum >= 1) {
-        $qb   = \App\Database\DB::select('id, numero, status')->from('mesa');
-        $mesa = $qb
-            ->where('numero = ' . $qb->createPositionalParameter($mesaNum, \Doctrine\DBAL\ParameterType::INTEGER))
-            ->andWhere('ativo = true')
-            ->fetchAssociative();
+        if ($mesaNum !== null && $mesaNum >= 1) {
+            $qb   = \App\Database\DB::select('id, numero, status')->from('mesa');
+            $mesa = $qb
+                ->where('numero = ' . $qb->createPositionalParameter($mesaNum, \Doctrine\DBAL\ParameterType::INTEGER))
+                ->andWhere('ativo = true')
+                ->fetchAssociative();
 
-        if ($mesa && $mesa['status'] !== 'inativa') {
-            $mesaValida = true;
-            $mesaId     = (int) $mesa['id'];
+            if ($mesa && $mesa['status'] !== 'inativa') {
+                $mesaValida = true;
+                $mesaId     = (int) $mesa['id'];
+            }
         }
-    }
 
-    return $this->getTwig()
-        ->render($response, $this->setView('cardapio'), [
-            'mesa'       => $mesaValida ? $mesaNum : null,
-            'mesa_id'    => $mesaId,
-            'mesaValida' => $mesaValida,
-            'nomeLocal'  => 'AllPratto',
-        ])
-        ->withHeader('Content-Type', 'text/html')
-        ->withStatus(200);
-}
+        return $this->getTwig()
+            ->render($response, $this->setView('cardapio'), [
+                'mesa'       => $mesaValida ? $mesaNum : null,
+                'mesa_id'    => $mesaId,
+                'mesaValida' => $mesaValida,
+                'nomeLocal'  => 'AllPratto',
+            ])
+            ->withHeader('Content-Type', 'text/html')
+            ->withStatus(200);
+    }
     // GET /cardapio/itens → JSON
     public function getItens($request, $response)
     {
@@ -48,6 +48,7 @@ final class Cardapio extends Base
              grupo,
              descricao,
              imagem_url,
+             nome_imagem,
              tempo_preparo,
              unidade,
              ativo'
@@ -74,7 +75,7 @@ final class Cardapio extends Base
                     'grupo'         => $categoria,
                     'unidade'       => $p['unidade'],
                     'preco_venda'   => (float) $p['preco_venda'],
-                    'imagem_url'    => $p['imagem_url'],
+                    'imagem_url'    => HOST . '/product/get-imagem/' . $p['id'],
                     'tempo_preparo' => $p['tempo_preparo'],
                     'destaque'      => false,
                 ];
@@ -91,7 +92,6 @@ final class Cardapio extends Base
                 'erro'    => 'Erro ao buscar itens: ' . $e->getMessage(),
             ], 500);
         }
-        
     }
     public function salvarPedido($request, $response)
     {
