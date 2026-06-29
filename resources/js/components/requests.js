@@ -63,9 +63,11 @@ export default class Requests {
         }
         if (!response.ok) {
             const errorBody = await this.#safeParseJson(response);
-            const errorMessage = errorBody?.msg || errorBody?.message || response.statusText;
+            // ✅ CORRIGIDO: verifica 'erro' (padrão do cardápio) antes de 'msg' e 'message'
+            const errorMessage = errorBody?.erro || errorBody?.msg || errorBody?.message || response.statusText;
             const error = new Error(errorMessage);
             error.status = response.status;
+            error.body = errorBody;
             throw error;
         }
         return this.#safeParseJson(response);

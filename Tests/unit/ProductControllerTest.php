@@ -12,16 +12,16 @@ test('product insert com dados válidos retorna 201 com status true', function (
         ->createRequest('POST', '/product')
         ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
         ->withParsedBody([
-            'nome'                 => ' ',
-            'codigoBarra'          => '7891234560001',
+            'nome'                 => 'Caneta Azul',          // ✅ nome válido (não branco)
+            'codigo_barra'         => '7891234560001',         // ✅ chave correta
             'grupo'                => 'Papelaria',
             'unidade'              => 'UN',
-            'precoCompra'          => '1,50',
-            'totalImposto'         => '0,15',
-            'margemLucro'          => '50,00',
-            'custoOperacional'     => '0,20',
-            'valorVendaSugerido'   => '2,78',
-            'precoVenda'           => '3,00',
+            'preco_compra'         => '1,50',                  // ✅ chave correta
+            'total_imposto'        => '0,15',                  // ✅ chave correta
+            'margem_lucro'         => '50,00',                 // ✅ chave correta
+            'custo_operacional'    => '0,20',                  // ✅ chave correta
+            'valor_venda_sugerido' => '2,78',                  // ✅ chave correta
+            'preco_venda'          => '3,00',                  // ✅ chave correta
             'tempoPreparo'         => null,
             'descricao'            => 'Caneta esferográfica azul',
             'ativo'                => 'true',

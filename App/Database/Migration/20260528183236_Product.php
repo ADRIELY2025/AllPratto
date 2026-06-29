@@ -7,10 +7,6 @@ namespace App\Database\Migration;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-// CORRIGIDO: coluna `descricao` aparecia duas vezes no SELECT da view abaixo.
-// Também incorporados os campos do cardápio (categoria, emoji, etc.)
-// que antes ficavam em migration separada 20260603000001 — removendo o ALTER TABLE.
-
 final class Version20260528183236 extends AbstractMigration
 {
     public function getDescription(): string
@@ -38,7 +34,7 @@ final class Version20260528183236 extends AbstractMigration
                 tempo_preparo VARCHAR(30)      NULL,
                 descricao     VARCHAR(255)     NOT NULL,
                 ativo         BOOLEAN          NOT NULL DEFAULT TRUE,
-                excluido         BOOLEAN          NOT NULL DEFAULT TRUE,
+                excluido         BOOLEAN          NOT NULL DEFAULT FALSE,
                 criado_em     TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP
             )

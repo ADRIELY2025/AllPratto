@@ -107,7 +107,7 @@ $app->group('/product', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/lista',           Product::class . ':list')->add(Middleware::web());
     $group->get('/detalhes/{id}',   Product::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',        Product::class . ':details')->add(Middleware::web());
-    $group->get('/get-imagem/{id}', Product::class . ':getImagem')->add(Middleware::web());
+    $group->get('/get-imagem/{id}', Product::class . ':getImagem'); // público — cardápio
     $group->post('/insert',         Product::class . ':insert')->add(Middleware::api());
     $group->post('/update',         Product::class . ':update')->add(Middleware::api());
     $group->post('/delete',         Product::class . ':delete')->add(Middleware::api());
