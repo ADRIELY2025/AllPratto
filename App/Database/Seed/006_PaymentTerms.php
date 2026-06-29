@@ -59,11 +59,6 @@ function inserirCondicao(
     }
 }
 
-// À Vista
-inserirCondicao($conn, 'avista', 'À Vista', 'AV', [
-    ['parcela' => 1, 'intervalo' => 0],
-]);
-
 // Pix
 inserirCondicao($conn, 'pix', 'Pix', 'PIX', [
     ['parcela' => 1, 'intervalo' => 0],
@@ -74,33 +69,5 @@ inserirCondicao($conn, 'dinheiro', 'Dinheiro', 'DIN', [
     ['parcela' => 1, 'intervalo' => 0],
 ]);
 
-// Cartão de Débito
-inserirCondicao($conn, 'debito', 'Cartão Débito', 'DEB', [
-    ['parcela' => 1, 'intervalo' => 1],
-]);
-
-// Cartão de Crédito (até 12x)
-inserirCondicao($conn, 'credito', 'Cartão Crédito', 'CC', array_map(
-    fn($n) => ['parcela' => $n, 'intervalo' => $n * 30],
-    range(1, 12)
-));
-
-// Boleto (até 6x)
-inserirCondicao($conn, 'boleto', 'Boleto', 'BOL', array_map(
-    fn($n) => ['parcela' => $n, 'intervalo' => $n * 30],
-    range(1, 6)
-));
-
-// Cheque (até 6x)
-inserirCondicao($conn, 'cheque', 'Cheque', 'CHQ', array_map(
-    fn($n) => ['parcela' => $n, 'intervalo' => $n * 30],
-    range(1, 6)
-));
-
-// Crediário (até 3x)
-inserirCondicao($conn, 'crediario', 'Crediário', 'CRE', array_map(
-    fn($n) => ['parcela' => $n, 'intervalo' => $n * 30],
-    range(1, 3)
-));
 
 echo "✅ Seed payment_terms e installment inseridos com sucesso!\n";
