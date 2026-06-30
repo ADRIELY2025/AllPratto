@@ -218,10 +218,7 @@ function initPagamento() {
             this.classList.add('btn-primary');
             document.getElementById('pagamento').value = this.dataset.valor;
 
-            const blocoTroco   = document.getElementById('bloco-troco');
-            const blocoParcelas = document.getElementById('bloco-parcelas');
-
-            // Troco: só dinheiro
+            const blocoTroco = document.getElementById('bloco-troco');
             if (this.dataset.valor === 'dinheiro') {
                 blocoTroco.classList.remove('d-none');
             } else {
@@ -229,35 +226,8 @@ function initPagamento() {
                 document.getElementById('troco_para').value = '';
                 document.getElementById('troco-calculado').textContent = '';
             }
-
-            // Parcelas: só crédito
-            if (this.dataset.valor === 'credito') {
-                blocoParcelas.classList.remove('d-none');
-                atualizarParcelaInfo();
-            } else {
-                blocoParcelas.classList.add('d-none');
-                document.getElementById('num_parcelas').value = '1';
-                document.getElementById('parcela-calculada').textContent = '';
-            }
         });
     });
-
-    // Recalcula info de parcela ao trocar o select
-    document.getElementById('num_parcelas').addEventListener('change', atualizarParcelaInfo);
-}
-
-function atualizarParcelaInfo() {
-    const subtotal = carrinho.reduce((s, i) => s + i.subtotal, 0);
-    const taxa     = strParaFloat(document.getElementById('taxa_entrega').value || '0');
-    const total    = subtotal + taxa;
-    const n        = parseInt(document.getElementById('num_parcelas').value || '1', 10);
-    const el       = document.getElementById('parcela-calculada');
-
-    if (n > 1 && total > 0) {
-        el.textContent = `${n}x de R$ ${floatParaBR(total / n)}`;
-    } else {
-        el.textContent = '';
-    }
 }
 
 function calcularTroco() {
@@ -355,8 +325,6 @@ async function finalizarPedido() {
     const subtotal = carrinho.reduce((s, i) => s + i.subtotal, 0);
     const total    = subtotal + taxa;
 
-    const numParcelas = parseInt(document.getElementById('num_parcelas').value || '1', 10);
-
     const body = {
         id_cliente:    idCliente,
         itens:         JSON.stringify(carrinho),
@@ -365,7 +333,6 @@ async function finalizarPedido() {
         tipo_entrega:  tipoEntrega,
         taxa_entrega:  taxa,
         total_geral:   total,
-        num_parcelas:  pagamento === 'credito' ? numParcelas : 1,
     };
 
     document.getElementById('btn-finalizar').disabled = true;
@@ -400,6 +367,32 @@ async function finalizarPedido() {
     }
 }
 
+
+async function salvarNovoCliente() {
+    const cpf  = document.getElementById('modal_cpf').value.trim();
+    const nome = document.getElementById('modal_nome').value.trim();
+    if (!cpf || !nome) {
+        Swal.fire({ icon: 'warning', title: 'Preencha CPF e nome', timer: 1800 });
+        return;
+    }
+    const fd = new FormData();
+    fd.append('numeroDocumento', cpf);
+    fd.append('nomeExibicao',    nome);
+    fd.append('nomeLegal',       document.getElementById('modal_sobrenome').value);
+    fd.append('ativo',           'true');
+    const requests = new Requests();
+    const res = await requests.setBody(fd).post('/cliente/insert');
+    if (!res.status) {
+        Swal.fire({ icon: 'error', title: res.msg || 'Erro ao salvar', timer: 2500 });
+        return;
+    }
+    // Injeta no Select2 e seleciona automaticamente
+    const option = new Option(`#${res.id} — ${nome}`, res.id, true, true);
+    $('#id_cliente').append(option).trigger('change');
+    bootstrap.Modal.getInstance(document.getElementById('modalNovoCliente')).hide();
+    Swal.fire({ icon: 'success', title: 'Cliente salvo!', timer: 1500 });
+}
+document.getElementById('btn-salvar-cliente').addEventListener('click', salvarNovoCliente);
 // ─── Expõe globais ────────────────────────────────────────────────────────────
 
 window.removerItemCarrinho = removerItem;
