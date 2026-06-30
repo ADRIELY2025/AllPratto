@@ -51,7 +51,9 @@ final class Cardapio extends Base
              nome_imagem,
              tempo_preparo,
              unidade,
-             ativo'
+             ativo,
+             destaque_semana,
+             destaque_ate'
             )
                 ->from('product')
                 ->where('ativo = true')
@@ -77,7 +79,7 @@ final class Cardapio extends Base
                     'preco_venda'   => (float) $p['preco_venda'],
                     'imagem_url'    => !empty($p['nome_imagem']) ? HOST . '/product/get-imagem/' . $p['id'] : null,
                     'tempo_preparo' => $p['tempo_preparo'],
-                    'destaque'      => false,
+                    'destaque'      => $p['destaque_semana'] && (empty($p['destaque_ate']) || $p['destaque_ate'] >= date('Y-m-d')),
                 ];
             }
 

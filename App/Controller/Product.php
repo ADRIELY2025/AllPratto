@@ -60,6 +60,8 @@ final class Product extends Base
             'tempo_preparo'          => $form['tempoPreparo']        ?? null,
             'descricao'              => $form['descricao']           ?? '',
             'ativo'                  => in_array($form['ativo'] ?? '', ['true', 'on', '1', 1], true) ? 'true' : 'false',
+            'destaque_semana'        => in_array($form['destaque_semana'] ?? '', ['true', 'on', '1', 1], true) ? 'true' : 'false',
+            'destaque_ate'           => !empty($form['destaque_ate']) ? $form['destaque_ate'] : null,
             'excluido'               => 'false',
         ];
 
@@ -134,6 +136,8 @@ final class Product extends Base
             'tempo_preparo'          => $form['tempoPreparo']        ?? null,
             'descricao'              => $form['descricao']           ?? null,
             'ativo'                  => in_array($form['ativo'] ?? '', ['true', 'on', '1', 1], true),
+            'destaque_semana'        => in_array($form['destaque_semana'] ?? '', ['true', 'on', '1', 1], true),
+            'destaque_ate'           => !empty($form['destaque_ate']) ? $form['destaque_ate'] : null,
             'atualizado_em'          => date('Y-m-d H:i:s'),
         ];
 

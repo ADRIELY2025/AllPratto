@@ -236,11 +236,7 @@
   letter-spacing: .1em;
 }
 
-.ap-highlights {
-  background: #992d2d;
-  padding: 42px 32px 46px;
-  color: var(--ap-white);
-}
+
 
 .ap-highlights__wrap {
   max-width: 1200px;
@@ -337,50 +333,372 @@
   }
 }
 
-.ap-menu-banner {
-  position: relative;
-  border-radius: var(--ap-radius);
-  overflow: hidden;
-  height: 180px;
-  background: linear-gradient(135deg, var(--ap-navy) 0%, #2a3f6a 100%);
-  box-shadow: var(--ap-shadow);
+/* ═══════════════ DESTAQUES DA SEMANA ═══════════════ */
+
+.ap-highlights{
+    background:#992d2d;
+    padding:48px 32px;
+    color:#fff;
 }
 
-.ap-menu-banner__img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform .4s;
-}
-.ap-menu-banner:hover .ap-menu-banner__img { transform: scale(1.03); }
-
-.ap-menu-banner__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, rgba(27,42,74,.55) 0%, transparent 70%);
-  display: flex;
-  align-items: flex-end;
-  padding: 20px 24px;
+.ap-highlights__wrap{
+    display:grid;
+    grid-template-columns:320px 1fr;
+    gap:32px;
+    align-items:center;
 }
 
-.ap-menu-banner__link {
-  background: var(--ap-white);
-  color: var(--ap-navy);
-  font-weight: 600;
-  font-size: .82rem;
-  padding: 9px 20px;
-  border-radius: 50px;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  letter-spacing: .04em;
-  transition: background .2s, color .2s, transform .2s;
+.ap-highlights__hero{
+    position:relative;
+    overflow:hidden;
+    border-radius:22px;
+    min-height:420px;
+    background:#7b2323;
+    box-shadow:0 18px 40px rgba(0,0,0,.25);
 }
-.ap-menu-banner__link:hover {
-  background: var(--ap-gold);
-  color: var(--ap-dark);
-  transform: translateY(-2px);
+
+.ap-highlights__img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+
+.ap-highlights__hero-copy{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:flex-end;
+    padding:28px;
+    background:linear-gradient(to top,
+        rgba(0,0,0,.60),
+        rgba(0,0,0,.10));
+}
+
+.ap-highlights__headline{
+    font-size:2.2rem;
+    font-weight:800;
+    line-height:1.05;
+    color:#fff;
+}
+
+/* ===== CARROSSEL ===== */
+
+.ap-carousel{
+    position:relative;
+    display:flex;
+    align-items:center;
+}
+
+.ap-highlights__cards{
+
+    flex:1;
+
+    display:flex;
+
+    gap:22px;
+
+    overflow-x:auto;
+
+    scroll-behavior:smooth;
+
+    scroll-snap-type:x mandatory;
+
+    padding:10px 6px 18px;
+
+    scrollbar-width:none;
+
+    -ms-overflow-style:none;
+
+}
+
+.ap-highlights__cards::-webkit-scrollbar{
+    display:none;
+}
+
+/* ===== CARD ===== */
+
+.ap-highlights__item{
+
+    min-width:300px;
+
+    max-width:300px;
+
+    flex-shrink:0;
+
+    background:#ffffff;
+
+    color:#222;
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    scroll-snap-align:start;
+
+    box-shadow:0 12px 28px rgba(0,0,0,.18);
+
+    transition:.30s;
+
+}
+
+.ap-highlights__item:hover{
+
+    transform:translateY(-6px);
+
+    box-shadow:0 22px 40px rgba(0,0,0,.25);
+
+}
+
+.ap-highlights__item-media{
+
+    position:relative;
+
+    height:190px;
+
+    overflow:hidden;
+
+    background:#f3f3f3;
+
+}
+
+.ap-highlights__item-img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
+    transition:.35s;
+
+}
+
+.ap-highlights__item:hover .ap-highlights__item-img{
+
+    transform:scale(1.08);
+
+}
+
+.ap-highlights__item-emoji{
+
+    width:100%;
+
+    height:100%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:70px;
+
+}
+
+.ap-highlights__item-body{
+
+    padding:18px;
+
+}
+
+.ap-highlights__item-title{
+
+    display:block;
+
+    font-size:1.15rem;
+
+    font-weight:700;
+
+    margin-bottom:8px;
+
+}
+
+.ap-highlights__item-desc{
+
+    color:#666;
+
+    font-size:.92rem;
+
+    line-height:1.5;
+
+    min-height:48px;
+
+}
+
+.ap-highlights__item-footer{
+
+    margin-top:18px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.ap-highlights__item-price{
+
+    font-size:1.35rem;
+
+    font-weight:800;
+
+    color:#992d2d;
+
+}
+
+.ap-highlights__item-btn{
+
+    background:#992d2d;
+
+    color:#fff;
+
+    text-decoration:none;
+
+    padding:10px 18px;
+
+    border-radius:999px;
+
+    font-weight:700;
+
+    transition:.25s;
+
+}
+
+.ap-highlights__item-btn:hover{
+
+    background:#c64040;
+
+}
+
+/* ===== SELO ===== */
+
+.ap-highlight-badge{
+
+    position:absolute;
+
+    top:14px;
+
+    left:14px;
+
+    background:#ffb400;
+
+    color:#fff;
+
+    padding:6px 12px;
+
+    border-radius:20px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    z-index:5;
+
+}
+
+/* ===== BOTÕES ===== */
+
+.prev,
+.next{
+
+    position:absolute;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    width:48px;
+
+    height:48px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:#fff;
+
+    color:#992d2d;
+
+    cursor:pointer;
+
+    font-size:22px;
+
+    font-weight:bold;
+
+    box-shadow:0 10px 20px rgba(0,0,0,.25);
+
+    transition:.25s;
+
+    z-index:20;
+
+}
+
+.prev{
+
+    left:-22px;
+
+}
+
+.next{
+
+    right:-22px;
+
+}
+
+.prev:hover,
+.next:hover{
+
+    transform:translateY(-50%) scale(1.08);
+
+    background:#ffd86a;
+
+}
+
+/* ===== SEM PRODUTOS ===== */
+
+.ap-highlights__empty{
+
+    color:#fff;
+
+    font-size:1rem;
+
+    padding:40px;
+
+}
+
+/* ===== RESPONSIVO ===== */
+
+@media(max-width:992px){
+
+    .ap-highlights__wrap{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .ap-highlights__hero{
+
+        min-height:260px;
+
+    }
+
+    .prev,
+    .next{
+
+        display:none;
+
+    }
+
+    .ap-highlights__item{
+
+        min-width:270px;
+
+        max-width:270px;
+
+    }
+
 }
 
 /* ═══════════════════ CENTRAL DE CADASTROS ══════════════ */

@@ -100,7 +100,7 @@
       <a href="/pedido/lista" class="ap-card ap-card--pedido">
         <div class="ap-card__icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M14.763.075A.5.5 0 0 1 15 .5v15a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5V14h-1v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V10a.5.5 0 0 1 .342-.474L6 8.64V5.5a.5.5 0 0 1 .276-.447l8-4a.5.5 0 0 1 .487.022M6 5.793 1 7.543V15h5zM7 9h2v1H7zm2-2H7v1h2zm2 2h-1v1h1zm-1-2h1v1h-1zm2 4h-1v1h1zm-1-2h1v1h-1zM8 5h1v1H8zm1-2H8v1h1zm2 2h-1v1h1zm-1-2h1v1h-１z"/>
+            <path d="M14.763.075A.5.5 0 0 1 15 .5v15a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5V14h-1v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V10a.5.5 0 0 1 .342-.474L6 8.64V5.5a.5.5 0 0 1 .276-.447l8-4a.5.5 0 0 1 .487.022M6 5.793 1 7.543V15h5zM7 9h2v1H7zm2-2H7v1h2zm2 2h-1v1h1zm-1-2h1v1h-1zm2 4h-1v1h1zm-1-2h1v1h-1zM8 5h1v1H8zm1-2H8v1h1zm2 2h-1v1h1zm-1-2h1v1h-1z"/>
           </svg>
         </div>
         <div class="ap-card__label">PEDIDO</div>
@@ -137,10 +137,11 @@
         <div class="ap-card__icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8.5 1a.5.5 0 0 0-1 0v.79C5.21 2.047 4 3.24 4 4.5V5H1.5a.5.5 0 0 0 0 1H4v1.5H1.5a.5.5 0 0 0 0 1H4V11H3a1 1 0 0 0-1 1v1H1.5a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1H14v-1a1 1 0 0 0-1-1h-1V8.5h2.5a.5.5 0 0 0 0-1H12V5h2.5a.5.5 0 0 0 0-1H12v-.5c0-1.26-1.21-2.453-3.5-2.71V1zM11 6v2H5V6h6zm-6 3v2h6v-2H5z"/>
-            </svg> 
+          </svg>
         </div>
         <div class="ap-card__label">COZINHA</div>
       </a>
+
       <a href="/mesa/lista" class="ap-card ap-card--mesa">
         <div class="ap-card__icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
@@ -148,7 +149,6 @@
           </svg>
         </div>
         <div class="ap-card__label">MESA</div>
-
       </a>
 
     </div>
@@ -205,7 +205,6 @@
     </div>
   </section>
 
-
   <!-- ═══════════════ DESTAQUES DA SEMANA ═══════════════ -->
   <section class="ap-highlights">
     <div class="ap-highlights__wrap">
@@ -215,27 +214,40 @@
           <span class="ap-highlights__headline">Destaques da<br>semana</span>
         </div>
       </div>
-      <div class="ap-highlights__cards">
-        <div class="ap-highlights__item">
-          <span class="ap-highlights__item-title">Entrega grátis</span>
-          <p></p>
+      <div class="ap-highlights__cards" id="destaquesCards">
+        <div class="ap-highlights__item ap-highlights__item--skeleton">
+          <div class="ap-sk ap-sk--img"></div>
+          <div class="ap-sk ap-sk--title"></div>
+          <div class="ap-sk ap-sk--price"></div>
         </div>
-        <div class="ap-highlights__item">
-          <span class="ap-highlights__item-title">Satisfação garantida</span>
-          <p></p>
+        <div class="ap-highlights__item ap-highlights__item--skeleton">
+          <div class="ap-sk ap-sk--img"></div>
+          <div class="ap-sk ap-sk--title"></div>
+          <div class="ap-sk ap-sk--price"></div>
         </div>
-        <div class="ap-highlights__item">
-          <span class="ap-highlights__item-title">Assistência 24 horas</span>
-          <p></p>
+        <div class="ap-highlights__item ap-highlights__item--skeleton">
+          <div class="ap-sk ap-sk--img"></div>
+          <div class="ap-sk ap-sk--title"></div>
+          <div class="ap-sk ap-sk--price"></div>
         </div>
-        <div class="ap-highlights__item">
-          <span class="ap-highlights__item-title">Pagamento flexível</span>
-          <p></p>
+        <div class="ap-highlights__item ap-highlights__item--skeleton">
+          <div class="ap-sk ap-sk--img"></div>
+          <div class="ap-sk ap-sk--title"></div>
+          <div class="ap-sk ap-sk--price"></div>
         </div>
       </div>
     </div>
   </section>
+<div class="ap-carousel">
 
+    <button class="prev">❮</button>
+
+    <div class="ap-highlights__cards" id="destaquesCards">
+    </div>
+
+    <button class="next">❯</button>
+
+</div>
 </div>
 {% endblock %}
 
