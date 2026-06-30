@@ -12,6 +12,228 @@ final class Pedido extends Base
         return $response;
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    //  Página: formulário de Pedido Virtual (iFood / Telefone)
+    // ──────────────────────────────────────────────────────────────────────────
+    public function virtual($request, $response)
+    {
+        return $this->getTwig()
+            ->render($response, $this->setView('pedido-virtual'), [
+                'titulo' => 'Novo Pedido Virtual',
+            ])
+            ->withHeader('Content-Type', 'text/html')
+            ->withStatus(200);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    //  API: Inserir Pedido Virtual (sem mesa, com cliente + endereço)
+    // ──────────────────────────────────────────────────────────────────────────
+    public function insertVirtual($request, $response)
+    {
+        $form        = $request->getParsedBody();
+        $idCliente   = isset($form['id_cliente']) && $form['id_cliente'] !== ''
+            ? (int) $form['id_cliente'] : null;
+        $itensJson   = $form['itens']       ?? '[]';
+        $pagamento   = trim((string) ($form['pagamento']  ?? 'dinheiro'));
+        $observacao  = $form['observacao']  ?? null;
+        $tipoEntrega = $form['tipo_entrega'] ?? 'delivery';
+        $taxaEntrega = isset($form['taxa_entrega'])
+            ? round((float) str_replace(',', '.', (string) $form['taxa_entrega']), 4)
+            : 0.0;
+
+        if (!$idCliente) {
+            return $this->json($response, ['status' => false, 'msg' => 'Cliente é obrigatório para pedido virtual.', 'id' => 0], 400);
+        }
+
+        $itens = json_decode($itensJson, true);
+        if (!is_array($itens) || empty($itens)) {
+            return $this->json($response, ['status' => false, 'msg' => 'Adicione ao menos um item ao pedido.', 'id' => 0], 400);
+        }
+
+        $subtotal          = 0.0;
+        $itensNormalizados = [];
+        foreach ($itens as $item) {
+            $qty   = max(0.01, (float) ($item['quantidade'] ?? 1));
+            $preco = max(0,    (float) ($item['preco']      ?? 0));
+            $sub   = round($preco * $qty, 4);
+            $subtotal += $sub;
+            $itensNormalizados[] = [
+                'id'         => isset($item['id']) && $item['id'] !== '' ? (int) $item['id'] : null,
+                'nome'       => $item['nome'] ?? 'Item sem nome',
+                'preco'      => $preco,
+                'quantidade' => $qty,
+                'subtotal'   => $sub,
+            ];
+        }
+        $subtotal    = round($subtotal, 4);
+        $taxaEntrega = round($taxaEntrega, 4);
+        $total       = round($subtotal + $taxaEntrega, 4);
+
+        $prefixoObs = '[' . strtoupper($tipoEntrega) . ']';
+        if ($taxaEntrega > 0) {
+            $prefixoObs .= ' | Taxa: R$ ' . number_format($taxaEntrega, 2, ',', '.');
+        }
+        $observacaoFinal = $prefixoObs . ($observacao ? ' | ' . $observacao : '');
+
+        try {
+            $conn = \App\Database\DB::connection();
+
+            $ids = $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use (
+                $idCliente, $total, $itensNormalizados, $pagamento, $observacaoFinal
+            ): array {
+
+                // 1. order — id_mesa NULL (pedido virtual)
+                $conn->insert('"order"', [
+                    'id_mesa'          => null,
+                    'id_cliente'       => $idCliente,
+                    'payment_terms_id' => null,
+                    'total'            => $total,
+                    'status'           => 'pendente',
+                    'observacao'       => $observacaoFinal,
+                ]);
+                $pedidoId = (int) $conn->lastInsertId();
+
+                // 2. order_item (trigger → kitchen)
+                foreach ($itensNormalizados as $item) {
+                    $conn->insert('order_item', [
+                        'order_id'   => $pedidoId,
+                        'product_id' => $item['id'],
+                        'nome'       => $item['nome'],
+                        'preco'      => $item['preco'],
+                        'quantidade' => $item['quantidade'],
+                        'subtotal'   => $item['subtotal'],
+                    ]);
+                }
+
+                // 3. payment_terms
+                $ptLabel = $this->normalizarPagamento($pagamento);
+                $pt      = \App\Database\DB::select('id')
+                    ->from('payment_terms')
+                    ->where('titulo = :titulo')
+                    ->setParameter('titulo', $ptLabel)
+                    ->fetchAssociative();
+
+                if (!$pt) {
+                    $conn->insert('payment_terms', [
+                        'codigo' => strtolower(str_replace(' ', '_', $ptLabel)),
+                        'titulo' => $ptLabel,
+                        'atalho' => strtoupper(substr($ptLabel, 0, 3)),
+                    ]);
+                    $ptId = (int) $conn->lastInsertId();
+                } else {
+                    $ptId = (int) $pt['id'];
+                }
+
+                // 4. installment (1x à vista)
+                $qbInst = \App\Database\DB::select('id')->from('installment');
+                $inst   = $qbInst
+                    ->where('id_pagamento = ' . $qbInst->createPositionalParameter($ptId, \Doctrine\DBAL\ParameterType::INTEGER))
+                    ->andWhere('parcela = 1')
+                    ->andWhere('intervalo = 0')
+                    ->fetchAssociative();
+
+                if (!$inst) {
+                    $conn->insert('installment', ['id_pagamento' => $ptId, 'parcela' => 1, 'intervalo' => 0]);
+                    $installmentId = (int) $conn->lastInsertId();
+                } else {
+                    $installmentId = (int) $inst['id'];
+                }
+
+                $conn->update('"order"', ['payment_terms_id' => $ptId], ['id' => $pedidoId]);
+
+                // 5. sale
+                $conn->insert('sale', [
+                    'id_cliente'    => $idCliente,
+                    'total_bruto'   => $total,
+                    'total_liquido' => $total,
+                    'desconto'      => 0,
+                    'acrescimo'     => 0,
+                    'observacao'    => "Pedido Virtual #{$pedidoId} | {$observacaoFinal}",
+                    'estado_venda'  => 'PRE_VENDA',
+                ]);
+                $saleId = (int) $conn->lastInsertId();
+
+                // 6. item_sale
+                foreach ($itensNormalizados as $item) {
+                    $conn->insert('item_sale', [
+                        'id_venda'         => $saleId,
+                        'id_produto'       => $item['id'],
+                        'nome'             => $item['nome'],
+                        'descricao'        => null,
+                        'quantidade'       => $item['quantidade'],
+                        'total_bruto'      => $item['subtotal'],
+                        'unitario_bruto'   => $item['preco'],
+                        'total_liquido'    => $item['subtotal'],
+                        'unitario_liquido' => $item['preco'],
+                        'desconto'         => 0,
+                        'acrescimo'        => 0,
+                    ]);
+                }
+
+                // 7. purchase
+                $conn->insert('purchase', [
+                    'id_fornecedor' => null,
+                    'total_bruto'   => $total,
+                    'total_liquido' => $total,
+                    'desconto'      => 0,
+                    'acrescimo'     => 0,
+                    'observacao'    => "Saída automática — Pedido Virtual #{$pedidoId}",
+                ]);
+                $purchaseId = (int) $conn->lastInsertId();
+
+                // 8. item_purchase
+                foreach ($itensNormalizados as $item) {
+                    $conn->insert('item_purchase', [
+                        'nome'           => $item['nome'],
+                        'id_compra'      => $purchaseId,
+                        'id_produto'     => $item['id'],
+                        'quantidade'     => $item['quantidade'],
+                        'total_bruto'    => $item['subtotal'],
+                        'total_liquido'  => $item['subtotal'],
+                        'preco_unitario' => $item['preco'],
+                        'desconto'       => 0,
+                        'acrescimo'      => 0,
+                    ]);
+                }
+
+                // 9. installment_sale_purchase
+                $valorCentavos = (int) round($total * 100);
+                $conn->insert('installment_sale_purchase', [
+                    'id_payment'      => $ptId,
+                    'id_sale'         => $saleId,
+                    'id_purchase'     => null,
+                    'id_installment'  => $installmentId,
+                    'total_parcelas'  => 1,
+                    'numero_parcela'  => 1,
+                    'valor_parcela'   => $valorCentavos,
+                    'valor_total'     => $valorCentavos,
+                    'status'          => 'aberto',
+                    'data_vencimento' => date('Y-m-d'),
+                ]);
+
+                // Sem atualização de mesa — pedido virtual não tem mesa física.
+
+                return [
+                    'pedido_id'   => $pedidoId,
+                    'sale_id'     => $saleId,
+                    'purchase_id' => $purchaseId,
+                ];
+            });
+
+            return $this->json($response, [
+                'status'      => true,
+                'msg'         => 'Pedido virtual enviado para a cozinha!',
+                'id'          => $ids['pedido_id'],
+                'sale_id'     => $ids['sale_id'],
+                'purchase_id' => $ids['purchase_id'],
+                'total'       => $total,
+            ], 201);
+
+        } catch (\Throwable $e) {
+            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
+        }
+    }
+
     public function listarCozinha($request, $response)
     {
         try {
@@ -554,7 +776,7 @@ final class Pedido extends Base
 
                 $rows[$key] = [
                     $value['id'],
-                    'Mesa ' . $value['mesa_numero'],
+                    $value['mesa_numero'] ? 'Mesa ' . $value['mesa_numero'] : '<span class="badge bg-info text-dark"><i class="fa-solid fa-motorcycle me-1"></i> Pedido Virtual</span>',
                     'R$ ' . number_format((float) $value['total'], 2, ',', '.'),
                     $statusBadge,
                     $value['criado_em'],

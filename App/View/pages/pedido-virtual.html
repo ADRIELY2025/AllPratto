@@ -1,0 +1,273 @@
+{% extends 'layouts/main.html' %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb float-sm-end">
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item"><a href="/pedido/lista">Lista de pedidos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Pedido Virtual</li>
+</ol>
+{% endblock %}
+
+{% block main %}
+
+<div class="col-12 mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <a href="/pedido/lista" class="btn btn-warning me-2">
+                <i class="fa-solid fa-chevron-left"></i> Voltar
+            </a>
+        </div>
+        <span class="badge bg-primary fs-6">
+            <i class="fa-solid fa-motorcycle me-1"></i> Pedido Virtual (iFood / Telefone)
+        </span>
+    </div>
+</div>
+
+<div class="col-12">
+    <div class="row gy-4">
+
+        <!-- ─── COLUNA PRINCIPAL ─── -->
+        <div class="col-lg-8">
+
+            <!-- Card: Dados do Cliente -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h2 class="h6 mb-0"><i class="fa-solid fa-user me-1"></i> Dados do Cliente</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Cliente <span class="text-danger">*</span></label>
+                            <select class="form-select" id="id_cliente" name="id_cliente">
+                                <option value="">Selecione ou cadastre um cliente...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <a href="/cliente/detalhes" target="_blank" class="btn btn-outline-primary w-100">
+                                <i class="fa-solid fa-user-plus me-1"></i> Novo Cliente
+                            </a>
+                        </div>
+
+                        <!-- Endereço de entrega -->
+                        <div class="col-12 mt-3" id="bloco-endereco">
+                            <hr class="mb-3">
+                            <h6 class="fw-bold mb-3"><i class="fa-solid fa-location-dot me-1"></i> Endereço de Entrega</h6>
+                            <div class="row g-2">
+                                <div class="col-md-8">
+                                    <label class="form-label small fw-bold">Logradouro</label>
+                                    <input type="text" class="form-control" id="endereco_rua" name="endereco_rua"
+                                        placeholder="Rua, Av., Travessa...">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-bold">Número</label>
+                                    <input type="text" class="form-control" id="endereco_numero" name="endereco_numero"
+                                        placeholder="Nº">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-bold">Complemento</label>
+                                    <input type="text" class="form-control" id="endereco_complemento" name="endereco_complemento"
+                                        placeholder="Apto, Bloco...">
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold">Bairro</label>
+                                    <input type="text" class="form-control" id="endereco_bairro" name="endereco_bairro"
+                                        placeholder="Bairro">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Cidade</label>
+                                    <input type="text" class="form-control" id="endereco_cidade" name="endereco_cidade"
+                                        placeholder="Cidade">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold">CEP</label>
+                                    <input type="text" class="form-control" id="endereco_cep" name="endereco_cep"
+                                        placeholder="00000-000" maxlength="9">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold">Ponto de Referência</label>
+                                    <input type="text" class="form-control" id="endereco_referencia" name="endereco_referencia"
+                                        placeholder="Ex: Próximo ao mercado, casa azul...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observação do pedido -->
+                        <div class="col-12 mt-2">
+                            <label class="form-label fw-bold">Observações do Pedido</label>
+                            <textarea class="form-control" id="observacao" name="observacao" rows="2"
+                                placeholder="Ex: Sem cebola, pimenta à parte, entregar no portão..."></textarea>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card: Adicionar Item -->
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-light">
+                    <h2 class="h6 mb-0 text-primary">
+                        <i class="fa-solid fa-plus-circle me-1"></i> Adicionar Item
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label for="id_produto" class="form-label small fw-bold">Produto <span class="text-danger">*</span></label>
+                            <select id="id_produto" name="id_produto" class="form-select w-100" required>
+                                <option value="">Buscar produto...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="quantidade" class="form-label small fw-bold">Qtd</label>
+                            <input type="text" id="quantidade" name="quantidade"
+                                class="form-control" value="1,00" autocomplete="off">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="unitario_liquido" class="form-label small fw-bold">Preço Unit.</label>
+                            <input type="text" id="unitario_liquido" name="unitario_liquido"
+                                class="form-control" readonly style="background-color:#e9ecef;cursor:not-allowed;">
+                        </div>
+                        <div class="col-md-1">
+                            <label for="valor-total" class="form-label small fw-bold">Total</label>
+                            <input type="text" id="valor-total" class="form-control" readonly
+                                style="background-color:#e9ecef;cursor:not-allowed;">
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="button" class="btn btn-primary w-100 py-2" id="insert-item">
+                                <i class="fa-solid fa-plus me-1"></i> Inserir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de itens adicionados -->
+            <div class="card shadow-sm mb-4" id="card-itens" style="display:none">
+                <div class="card-header bg-light">
+                    <h2 class="h6 mb-0"><i class="fa-solid fa-list me-1"></i> Itens do Pedido</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle mb-0" id="table-itens">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Produto</th>
+                                    <th class="text-center" style="width:80px">Qtd</th>
+                                    <th class="text-end" style="width:110px">Unit.</th>
+                                    <th class="text-end" style="width:110px">Subtotal</th>
+                                    <th class="text-center" style="width:60px">Del.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-itens"></tbody>
+                            <tfoot>
+                                <tr class="table-light fw-bold">
+                                    <td colspan="3" class="text-end">Total:</td>
+                                    <td class="text-end" id="total-itens">R$ 0,00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /col-lg-8 -->
+
+        <!-- ─── COLUNA LATERAL ─── -->
+        <div class="col-lg-4">
+
+            <!-- Resumo do pedido -->
+            <div class="card shadow-sm mb-4 border-success sticky-top" style="top:80px">
+                <div class="card-header bg-success text-white">
+                    <h2 class="h6 mb-0"><i class="fa-solid fa-receipt me-1"></i> Resumo do Pedido</h2>
+                </div>
+                <div class="card-body">
+
+                    <!-- Tipo de entrega -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Tipo de Entrega</label>
+                        <div class="btn-group w-100" id="tipo-entrega-group" role="group">
+                            <input type="radio" class="btn-check" name="tipo_entrega" id="tipo-delivery" value="delivery" checked>
+                            <label class="btn btn-outline-primary" for="tipo-delivery">
+                                <i class="fa-solid fa-motorcycle me-1"></i> Delivery
+                            </label>
+                            <input type="radio" class="btn-check" name="tipo_entrega" id="tipo-retirada" value="retirada">
+                            <label class="btn btn-outline-secondary" for="tipo-retirada">
+                                <i class="fa-solid fa-store me-1"></i> Retirada
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Taxa de entrega -->
+                    <div class="mb-3" id="bloco-taxa">
+                        <label class="form-label fw-bold small">Taxa de Entrega (R$)</label>
+                        <input type="text" class="form-control" id="taxa_entrega" name="taxa_entrega"
+                            value="0,00" placeholder="0,00">
+                    </div>
+
+                    <!-- Forma de Pagamento -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Forma de Pagamento <span class="text-danger">*</span></label>
+                        <div class="d-flex flex-wrap gap-2" id="pagamento-buttons">
+                            <button type="button" class="btn btn-outline-secondary btn-sm pagamento-btn" data-valor="dinheiro">
+                                <i class="fa-solid fa-money-bill me-1"></i> Dinheiro
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pagamento-btn" data-valor="pix">
+                                <i class="fa-brands fa-pix me-1"></i> PIX
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pagamento-btn" data-valor="credito">
+                                <i class="fa-solid fa-credit-card me-1"></i> Crédito
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm pagamento-btn" data-valor="debito">
+                                <i class="fa-solid fa-credit-card me-1"></i> Débito
+                            </button>
+                        </div>
+                        <input type="hidden" id="pagamento" name="pagamento" value="">
+                    </div>
+
+                    <!-- Troco (só para dinheiro) -->
+                    <div class="mb-3 d-none" id="bloco-troco">
+                        <label class="form-label fw-bold small">Troco para quanto?</label>
+                        <input type="text" class="form-control" id="troco_para" name="troco_para"
+                            placeholder="Ex: 50,00">
+                        <div class="form-text text-muted" id="troco-calculado"></div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Totais -->
+                    <div class="d-flex justify-content-between mb-1 small">
+                        <span>Subtotal dos itens:</span>
+                        <strong id="resumo-subtotal">R$ 0,00</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 small">
+                        <span>Taxa de entrega:</span>
+                        <strong id="resumo-taxa">R$ 0,00</strong>
+                    </div>
+                    <div class="d-flex justify-content-between fw-bold fs-6 border-top pt-2 mt-2">
+                        <span>Total:</span>
+                        <span class="text-success" id="resumo-total">R$ 0,00</span>
+                    </div>
+
+                    <hr>
+
+                    <button type="button" class="btn btn-success w-100 py-3 fw-bold" id="btn-finalizar">
+                        <i class="fa-solid fa-paper-plane me-2"></i> Enviar para a Cozinha
+                    </button>
+                    <p class="text-muted text-center small mt-2 mb-0">
+                        O pedido irá direto para a cozinha aguardar preparo.
+                    </p>
+
+                </div>
+            </div>
+
+        </div><!-- /col-lg-4 -->
+
+    </div><!-- /row -->
+</div>
+
+{% endblock %}
+
+{% block script %}
+{{ vite('resources/js/pages/pedido-virtual.js') }}
+{% endblock %}

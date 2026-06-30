@@ -137,10 +137,12 @@ $app->group('/pedido', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/cozinha/listar', Pedido::class . ':listarCozinha')->add(Middleware::api());
     $group->get('/cozinha',        Pedido::class . ':cozinha')->add(Middleware::web());
     $group->get('/lista',          Pedido::class . ':list')->add(Middleware::web());
+    $group->get('/virtual',        Pedido::class . ':virtual')->add(Middleware::web());
     $group->get('/detalhes/{id}',  Pedido::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',       Pedido::class . ':details')->add(Middleware::web());
     $group->get('/itens/{id}',     Pedido::class . ':getItens')->add(Middleware::api());
     $group->post('/insert',        Pedido::class . ':insert')->add(Middleware::api());
+    $group->post('/virtual/insert', Pedido::class . ':insertVirtual')->add(Middleware::api());
     $group->post('/update-status', Pedido::class . ':updateStatus')->add(Middleware::api());
     $group->post('/delete',        Pedido::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   Pedido::class . ':listingdata')->add(Middleware::api());
