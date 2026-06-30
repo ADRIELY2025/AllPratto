@@ -72,11 +72,13 @@ final class Product extends Base
             $name = null;
             if ($file && $file['error'] === UPLOAD_ERR_OK) {
                 $path = ROOT . '/storage/produtos/' . $id;
-                if (is_dir($path)) rmdir($path);
-
-                if (!is_dir($path)) {
-                    mkdir($path, 0777, true);
+                if (is_dir($path)) {
+                    foreach (glob($path . '/*') as $arquivo) {
+                        unlink($arquivo);
+                    }
+                    rmdir($path);
                 }
+                mkdir($path, 0777, true);
 
                 #Gera um nome único para a imagem, evitando sobrescrever caso o usuário envie uma imagem com o mesmo nome
                 $name = time() . '_' . rand(1000, 9999) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
@@ -109,11 +111,15 @@ final class Product extends Base
         $name = null;
         if ($file && $file['error'] === UPLOAD_ERR_OK) {
             $path = ROOT . '/storage/produtos/' . $id;
-            if (is_dir($path)) rmdir($path);
-
-            if (!is_dir($path)) {
-                mkdir($path, 0777, true);
+            // Remove arquivos antigos antes de recriar a pasta
+            if (is_dir($path)) {
+                foreach (glob($path . '/*') as $arquivo) {
+                    unlink($arquivo);
+                }
+                rmdir($path);
             }
+
+            mkdir($path, 0777, true);
 
             #Gera um nome único para a imagem, evitando sobrescrever caso o usuário envie uma imagem com o mesmo nome
             $name = time() . '_' . rand(1000, 9999) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);

@@ -77,7 +77,7 @@ final class Cardapio extends Base
                     'grupo'         => $categoria,
                     'unidade'       => $p['unidade'],
                     'preco_venda'   => (float) $p['preco_venda'],
-                    'imagem_url'    => !empty($p['nome_imagem']) ? HOST . '/product/get-imagem/' . $p['id'] : null,
+                    'imagem_url' => !empty($p['id']) ? '/product/get-imagem/' . $p['id'] : null,
                     'tempo_preparo' => $p['tempo_preparo'],
                     'destaque'      => $p['destaque_semana'] && (empty($p['destaque_ate']) || $p['destaque_ate'] >= date('Y-m-d')),
                 ];
