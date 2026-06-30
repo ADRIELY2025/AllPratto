@@ -93,6 +93,59 @@ final class Cardapio extends Base
             ], 500);
         }
     }
+    /**
+     * POST /cardapio/identificar
+     * Recebe { nome, cpf, email } do cliente no cardápio,
+     * encontra ou cria o cliente e retorna { sucesso, id_cliente, nome }.
+     */
+    public function identificarCliente($request, $response)
+    {
+        $body  = $request->getParsedBody();
+        $nome  = trim((string) ($body['nome']  ?? ''));
+        $cpf   = preg_replace('/\D/', '', (string) ($body['cpf']   ?? ''));
+        $email = trim((string) ($body['email'] ?? ''));
+
+        if ($nome === '') {
+            return $this->json($response, ['sucesso' => false, 'erro' => 'Nome é obrigatório.'], 400);
+        }
+
+        try {
+            $conn = \App\Database\DB::connection();
+
+            // Tenta encontrar pelo CPF (campo principal de deduplicação)
+            $cliente = null;
+            if ($cpf !== '') {
+                $qb = \App\Database\DB::select('id, nome_fantasia')->from('customer');
+                $cliente = $qb->where('cpf_cnpj = :cpf')
+                              ->setParameter('cpf', $cpf)
+                              ->fetchAssociative();
+            }
+
+            if (!$cliente) {
+                // Cria novo cliente
+                $conn->insert('customer', [
+                    'nome_fantasia'   => $nome,
+                    'sobrenome_razao' => '',
+                    'cpf_cnpj'        => $cpf !== '' ? $cpf : '00000000000',
+                    'ativo'           => true,
+                ]);
+                $idCliente = (int) $conn->lastInsertId();
+                $nomeCliente = $nome;
+            } else {
+                $idCliente   = (int) $cliente['id'];
+                $nomeCliente = $cliente['nome_fantasia'];
+            }
+
+            return $this->json($response, [
+                'sucesso'    => true,
+                'id_cliente' => $idCliente,
+                'nome'       => $nomeCliente,
+            ], 200);
+        } catch (\Exception $e) {
+            return $this->json($response, ['sucesso' => false, 'erro' => $e->getMessage()], 500);
+        }
+    }
+
     public function salvarPedido($request, $response)
     {
         $body = $request->getParsedBody();
@@ -105,11 +158,12 @@ final class Cardapio extends Base
         }
 
         // Repassa o body no formato que Pedido::insert espera
-        // { mesa: <id>, itens: [...], pagamento: '...', parcelas: N, intervalo: N, observacao: '...' }
+        // { mesa: <id>, itens: [...], pagamento: '...', parcelas: N, intervalo: N, observacao: '...', id_cliente: N }
         $novoBody = array_merge($body, [
-            'mesa'      => $body['mesa_id'],
-            'parcelas'  => isset($body['parcelas'])  ? (int) $body['parcelas']  : 1,
-            'intervalo' => isset($body['intervalo']) ? (int) $body['intervalo'] : 0,
+            'mesa'       => $body['mesa_id'],
+            'parcelas'   => isset($body['parcelas'])   ? (int) $body['parcelas']   : 1,
+            'intervalo'  => isset($body['intervalo'])  ? (int) $body['intervalo']  : 0,
+            'id_cliente' => isset($body['id_cliente']) && $body['id_cliente'] !== '' ? (int) $body['id_cliente'] : null,
         ]);
 
         $requestModificado = $request->withParsedBody($novoBody);

@@ -60,7 +60,7 @@ body {
     justify-content: flex-end;
 }
 
-/* Badges dos 3 status */
+/* Badges / botões de filtro */
 .cz-badge {
     padding: 6px 14px;
     border-radius: 999px;
@@ -68,6 +68,28 @@ body {
     font-size: .82rem;
     white-space: nowrap;
     border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+    font-family: 'Nunito', sans-serif;
+    opacity: .65;
+}
+
+.cz-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,.25);
+    opacity: .85;
+}
+
+.cz-badge--active {
+    opacity: 1 !important;
+    box-shadow: 0 0 0 3px rgba(255,255,255,.6), 0 4px 10px rgba(0,0,0,.3);
+    transform: translateY(-1px);
+}
+
+.cz-badge--todos {
+    background: rgba(255,255,255,.25);
+    color: #fff;
+    border-color: rgba(255,255,255,.5);
 }
 
 .cz-badge--pendente {

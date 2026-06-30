@@ -18,15 +18,18 @@ final class Pedido extends Base
             $pedidos = \App\Database\DB::select("
                 o.id,
                 o.id_mesa,
+                o.id_cliente,
                 o.total,
                 o.status,
                 o.observacao,
                 o.criado_em,
-                m.numero AS mesa_numero
+                m.numero AS mesa_numero,
+                TRIM(COALESCE(c.nome_fantasia,'') || ' ' || COALESCE(c.sobrenome_razao,'')) AS nome_cliente
             ")
             ->from('"order"', 'o')
             ->leftJoin('o', 'mesa', 'm', 'm.id = o.id_mesa')
-            ->where("o.status IN ('pendente','em_preparo')")
+            ->leftJoin('o', 'customer', 'c', 'c.id = o.id_cliente')
+            ->where("o.status IN ('pendente','em_preparo','pronto')")
             ->orderBy('o.criado_em', 'ASC')
             ->fetchAllAssociative();
 
@@ -43,6 +46,10 @@ final class Pedido extends Base
                 ->fetchAllAssociative();
 
                 $pedido['itens'] = $itens;
+                // Garante que nome_cliente seja null se vazio
+                if (empty(trim($pedido['nome_cliente'] ?? ''))) {
+                    $pedido['nome_cliente'] = null;
+                }
             }
 
             return $this->json($response, [

@@ -44,6 +44,7 @@ $app->group('/cardapio', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/mesa/{id}', Cardapio::class . ':index');
     $group->get('/itens',     Cardapio::class . ':getItens');
     $group->post('/pedido',   Cardapio::class . ':salvarPedido');
+    $group->post('/identificar', Cardapio::class . ':identificarCliente');
 });
 
 $app->get('/cardapio', Cardapio::class . ':index')->add(Middleware::web());
