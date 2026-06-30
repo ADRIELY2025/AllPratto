@@ -218,7 +218,10 @@ function initPagamento() {
             this.classList.add('btn-primary');
             document.getElementById('pagamento').value = this.dataset.valor;
 
-            const blocoTroco = document.getElementById('bloco-troco');
+            const blocoTroco   = document.getElementById('bloco-troco');
+            const blocoParcelas = document.getElementById('bloco-parcelas');
+
+            // Troco: só dinheiro
             if (this.dataset.valor === 'dinheiro') {
                 blocoTroco.classList.remove('d-none');
             } else {
@@ -226,8 +229,35 @@ function initPagamento() {
                 document.getElementById('troco_para').value = '';
                 document.getElementById('troco-calculado').textContent = '';
             }
+
+            // Parcelas: só crédito
+            if (this.dataset.valor === 'credito') {
+                blocoParcelas.classList.remove('d-none');
+                atualizarParcelaInfo();
+            } else {
+                blocoParcelas.classList.add('d-none');
+                document.getElementById('num_parcelas').value = '1';
+                document.getElementById('parcela-calculada').textContent = '';
+            }
         });
     });
+
+    // Recalcula info de parcela ao trocar o select
+    document.getElementById('num_parcelas').addEventListener('change', atualizarParcelaInfo);
+}
+
+function atualizarParcelaInfo() {
+    const subtotal = carrinho.reduce((s, i) => s + i.subtotal, 0);
+    const taxa     = strParaFloat(document.getElementById('taxa_entrega').value || '0');
+    const total    = subtotal + taxa;
+    const n        = parseInt(document.getElementById('num_parcelas').value || '1', 10);
+    const el       = document.getElementById('parcela-calculada');
+
+    if (n > 1 && total > 0) {
+        el.textContent = `${n}x de R$ ${floatParaBR(total / n)}`;
+    } else {
+        el.textContent = '';
+    }
 }
 
 function calcularTroco() {
@@ -325,6 +355,8 @@ async function finalizarPedido() {
     const subtotal = carrinho.reduce((s, i) => s + i.subtotal, 0);
     const total    = subtotal + taxa;
 
+    const numParcelas = parseInt(document.getElementById('num_parcelas').value || '1', 10);
+
     const body = {
         id_cliente:    idCliente,
         itens:         JSON.stringify(carrinho),
@@ -333,6 +365,7 @@ async function finalizarPedido() {
         tipo_entrega:  tipoEntrega,
         taxa_entrega:  taxa,
         total_geral:   total,
+        num_parcelas:  pagamento === 'credito' ? numParcelas : 1,
     };
 
     document.getElementById('btn-finalizar').disabled = true;

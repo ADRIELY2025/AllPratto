@@ -37,9 +37,12 @@ final class Pedido extends Base
         $pagamento   = trim((string) ($form['pagamento']  ?? 'dinheiro'));
         $observacao  = $form['observacao']  ?? null;
         $tipoEntrega = $form['tipo_entrega'] ?? 'delivery';
-        $taxaEntrega = isset($form['taxa_entrega'])
+        $taxaEntrega   = isset($form['taxa_entrega'])
             ? round((float) str_replace(',', '.', (string) $form['taxa_entrega']), 4)
             : 0.0;
+        $totalParcelas = isset($form['num_parcelas']) && (int) $form['num_parcelas'] >= 1
+            ? (int) $form['num_parcelas'] : 1;
+        $intervalo     = ($pagamento === 'credito' && $totalParcelas > 1) ? 30 : 0;
 
         if (!$idCliente) {
             return $this->json($response, ['status' => false, 'msg' => 'Cliente é obrigatório para pedido virtual.', 'id' => 0], 400);
@@ -79,7 +82,8 @@ final class Pedido extends Base
             $conn = \App\Database\DB::connection();
 
             $ids = $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use (
-                $idCliente, $total, $itensNormalizados, $pagamento, $observacaoFinal
+                $idCliente, $total, $itensNormalizados, $pagamento, $observacaoFinal,
+                $totalParcelas, $intervalo
             ): array {
 
                 // 1. order — id_mesa NULL (pedido virtual)
@@ -124,19 +128,27 @@ final class Pedido extends Base
                     $ptId = (int) $pt['id'];
                 }
 
-                // 4. installment (1x à vista)
-                $qbInst = \App\Database\DB::select('id')->from('installment');
-                $inst   = $qbInst
-                    ->where('id_pagamento = ' . $qbInst->createPositionalParameter($ptId, \Doctrine\DBAL\ParameterType::INTEGER))
-                    ->andWhere('parcela = 1')
-                    ->andWhere('intervalo = 0')
-                    ->fetchAssociative();
+                // 4. installments — N parcelas (crédito) ou 1x à vista
+                $installmentIds       = [];
+                $valorCentavos        = (int) round($total * 100);
+                $valorParcelaCentavos = (int) floor($valorCentavos / $totalParcelas);
+                $resto                = $valorCentavos - ($valorParcelaCentavos * $totalParcelas);
 
-                if (!$inst) {
-                    $conn->insert('installment', ['id_pagamento' => $ptId, 'parcela' => 1, 'intervalo' => 0]);
-                    $installmentId = (int) $conn->lastInsertId();
-                } else {
-                    $installmentId = (int) $inst['id'];
+                for ($p = 1; $p <= $totalParcelas; $p++) {
+                    $intervaloParc = $intervalo * ($p - 1);
+                    $qbInst = \App\Database\DB::select('id')->from('installment');
+                    $inst   = $qbInst
+                        ->where('id_pagamento = ' . $qbInst->createPositionalParameter($ptId, \Doctrine\DBAL\ParameterType::INTEGER))
+                        ->andWhere('parcela = '   . $qbInst->createPositionalParameter($p, \Doctrine\DBAL\ParameterType::INTEGER))
+                        ->andWhere('intervalo = ' . $qbInst->createPositionalParameter($intervaloParc, \Doctrine\DBAL\ParameterType::INTEGER))
+                        ->fetchAssociative();
+
+                    if (!$inst) {
+                        $conn->insert('installment', ['id_pagamento' => $ptId, 'parcela' => $p, 'intervalo' => $intervaloParc]);
+                        $installmentIds[$p] = (int) $conn->lastInsertId();
+                    } else {
+                        $installmentIds[$p] = (int) $inst['id'];
+                    }
                 }
 
                 $conn->update('"order"', ['payment_terms_id' => $ptId], ['id' => $pedidoId]);
@@ -196,20 +208,25 @@ final class Pedido extends Base
                     ]);
                 }
 
-                // 9. installment_sale_purchase
-                $valorCentavos = (int) round($total * 100);
-                $conn->insert('installment_sale_purchase', [
-                    'id_payment'      => $ptId,
-                    'id_sale'         => $saleId,
-                    'id_purchase'     => null,
-                    'id_installment'  => $installmentId,
-                    'total_parcelas'  => 1,
-                    'numero_parcela'  => 1,
-                    'valor_parcela'   => $valorCentavos,
-                    'valor_total'     => $valorCentavos,
-                    'status'          => 'aberto',
-                    'data_vencimento' => date('Y-m-d'),
-                ]);
+                // 9. installment_sale_purchase — uma linha por parcela
+                for ($p = 1; $p <= $totalParcelas; $p++) {
+                    $valorEsta      = $valorParcelaCentavos + ($p === $totalParcelas ? $resto : 0);
+                    $diasOffset     = $intervalo * ($p - 1);
+                    $dataVencimento = date('Y-m-d', strtotime("+{$diasOffset} days"));
+
+                    $conn->insert('installment_sale_purchase', [
+                        'id_payment'      => $ptId,
+                        'id_sale'         => $saleId,
+                        'id_purchase'     => null,
+                        'id_installment'  => $installmentIds[$p],
+                        'total_parcelas'  => $totalParcelas,
+                        'numero_parcela'  => $p,
+                        'valor_parcela'   => $valorEsta,
+                        'valor_total'     => $valorCentavos,
+                        'status'          => 'aberto',
+                        'data_vencimento' => $dataVencimento,
+                    ]);
+                }
 
                 // Sem atualização de mesa — pedido virtual não tem mesa física.
 
@@ -685,6 +702,15 @@ final class Pedido extends Base
                 ->where('id = ' . $qb->createPositionalParameter((int) $id, \Doctrine\DBAL\ParameterType::INTEGER))
                 ->fetchAssociative();
 
+            // Bloqueia cancelamento de pedidos em status final
+            if ($pedido && in_array($pedido['status'], ['pronto', 'pago', 'entregue', 'cancelado'], true)) {
+                return $this->json($response, [
+                    'status' => false,
+                    'msg'    => 'Pedido com status "' . $pedido['status'] . '" não pode ser cancelado.',
+                    'id'     => $id,
+                ], 422);
+            }
+
             $updated = $conn->update('"order"', [
                 'status'        => 'cancelado',
                 'atualizado_em' => date('Y-m-d H:i:s'),
@@ -774,6 +800,17 @@ final class Pedido extends Base
                     default      => $value['status'],
                 };
 
+                // Botões bloqueados para status finais
+                $statusFinal = in_array($value['status'], ['pronto', 'pago', 'entregue', 'cancelado'], true);
+
+                $btnVer = $statusFinal
+                    ? "<a class='btn btn-sm btn-secondary disabled' aria-disabled='true' title='Pedido finalizado'><i class='fa-solid fa-lock'></i> Ver</a>"
+                    : "<a class='btn btn-sm btn-warning' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-pen-to-square'></i> Ver</a>";
+
+                $btnCancelar = $statusFinal
+                    ? "<button type='button' class='btn btn-sm btn-secondary' disabled title='Pedido finalizado'><i class='fa-solid fa-ban'></i> Cancelar</button>"
+                    : "<button type='button' class='btn btn-sm btn-danger' onclick='ShowModal({$value['id']});'><i class='fa-solid fa-trash'></i> Cancelar</button>";
+
                 $rows[$key] = [
                     $value['id'],
                     $value['mesa_numero'] ? 'Mesa ' . $value['mesa_numero'] : '<span class="badge bg-info text-dark"><i class="fa-solid fa-motorcycle me-1"></i> Pedido Virtual</span>',
@@ -781,10 +818,7 @@ final class Pedido extends Base
                     $statusBadge,
                     $value['criado_em'],
                     $value['atualizado_em'],
-                    "<td>
-                    <a class='btn btn-sm btn-warning' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-pen-to-square'></i> Ver</a>
-                    <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal({$value['id']});'><i class='fa-solid fa-trash'></i> Cancelar</button>
-                </td>",
+                    "<td class='d-flex gap-1'>{$btnVer} {$btnCancelar}</td>",
                 ];
             }
 

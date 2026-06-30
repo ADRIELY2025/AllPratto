@@ -43,9 +43,10 @@
                             </select>
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
-                            <a href="/cliente/detalhes" target="_blank" class="btn btn-outline-primary w-100">
+                            <!-- DEPOIS -->
+                            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#modalNovoCliente">
                                 <i class="fa-solid fa-user-plus me-1"></i> Novo Cliente
-                            </a>
+                            </button>
                         </div>
 
                         <!-- Endereço de entrega -->
@@ -266,6 +267,36 @@
     </div><!-- /row -->
 </div>
 
+<div class="modal fade" id="modalNovoCliente" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Novo Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-bold">CPF ou CNPJ <span class="text-danger">*</span></label>
+          <input type="text" id="modal_cpf" class="form-control" placeholder="000.000.000-00">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Nome <span class="text-danger">*</span></label>
+          <input type="text" id="modal_nome" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Sobrenome</label>
+          <input type="text" id="modal_sobrenome" class="form-control">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btn-salvar-cliente">
+          <i class="fa-solid fa-floppy-disk me-1"></i> Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block script %}
