@@ -60,10 +60,6 @@ final class ItemSale extends Base
      *   4. Soma todos os itens da venda e grava o total atualizado em sale
      *      (total_bruto / total_liquido) — é isso que fazia a venda nunca
      *      bater com os itens lançados.
-     *
-     * IMPORTANTE: este insert NÃO movimenta estoque. A baixa de estoque só
-     * acontece quando a venda é finalizada (estado_venda -> 'VENDA'), via
-     * trigger no banco (trg_sale_to_stock_movement em sale).
      */
     public function insert($request, $response)
     {

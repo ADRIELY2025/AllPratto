@@ -66,15 +66,8 @@ final class Product extends Base
         try {
             $conn = \App\Database\DB::connection();
 
-            // Não usamos $conn->insert() + lastInsertId() aqui de propósito.
-            // A tabela "product" tem o trigger trg_init_product_stock, que insere
-            // automaticamente uma linha em stock_movement (outra tabela com BIGSERIAL).
-            // No PostgreSQL, lastInsertId() sem argumento chama LASTVAL(), que retorna
-            // o valor da ÚLTIMA sequence usada na sessão — e não necessariamente a da
-            // tabela "product". Como o trigger dispara nextval() na sequence de
-            // stock_movement DEPOIS do insert em product, o lastInsertId() acabava
-            // retornando o id da stock_movement, não o id real do produto.
-            // Usando "RETURNING id" pegamos o id certo direto do INSERT em product.
+            // Usamos "RETURNING id" em vez de $conn->insert() + lastInsertId()
+            // para pegar o id certo direto do INSERT, sem depender de LASTVAL().
             $id = (int) $conn->fetchOne(
                 'INSERT INTO product (
                     nome, codigo_barra, grupo, unidade, imagem_url,

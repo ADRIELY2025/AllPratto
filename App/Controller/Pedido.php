@@ -266,42 +266,15 @@ final class Pedido extends Base
                     ]);
                 }
 
-                // 7. purchase
-                $conn->insert('purchase', [
-                    'id_fornecedor' => null,
-                    'total_bruto'   => $total,
-                    'total_liquido' => $total,
-                    'desconto'      => 0,
-                    'acrescimo'     => 0,
-                    'observacao'    => "Saída automática — Pedido Virtual #{$pedidoId}",
-                ]);
-                $purchaseId = (int) $conn->lastInsertId();
-
-                // 8. item_purchase
-                foreach ($itensNormalizados as $item) {
-                    $conn->insert('item_purchase', [
-                        'nome'           => $item['nome'],
-                        'id_compra'      => $purchaseId,
-                        'id_produto'     => $item['id'],
-                        'quantidade'     => $item['quantidade'],
-                        'total_bruto'    => $item['subtotal'],
-                        'total_liquido'  => $item['subtotal'],
-                        'preco_unitario' => $item['preco'],
-                        'desconto'       => 0,
-                        'acrescimo'      => 0,
-                    ]);
-                }
-
-                // 9. installment_sale_purchase — uma linha por parcela
+                // 7. installment_sale — uma linha por parcela
                 for ($p = 1; $p <= $totalParcelas; $p++) {
                     $valorEsta      = $valorParcelaCentavos + ($p === $totalParcelas ? $resto : 0);
                     $diasOffset     = $intervalo * ($p - 1);
                     $dataVencimento = date('Y-m-d', strtotime("+{$diasOffset} days"));
 
-                    $conn->insert('installment_sale_purchase', [
+                    $conn->insert('installment_sale', [
                         'id_payment'      => $ptId,
                         'id_sale'         => $saleId,
-                        'id_purchase'     => null,
                         'id_installment'  => $installmentIds[$p],
                         'total_parcelas'  => $totalParcelas,
                         'numero_parcela'  => $p,
@@ -313,19 +286,17 @@ final class Pedido extends Base
                 }
 
                 return [
-                    'pedido_id'   => $pedidoId,
-                    'sale_id'     => $saleId,
-                    'purchase_id' => $purchaseId,
+                    'pedido_id' => $pedidoId,
+                    'sale_id'   => $saleId,
                 ];
             });
 
             return $this->json($response, [
-                'status'      => true,
-                'msg'         => 'Pedido virtual enviado para a cozinha!',
-                'id'          => $ids['pedido_id'],
-                'sale_id'     => $ids['sale_id'],
-                'purchase_id' => $ids['purchase_id'],
-                'total'       => $total,
+                'status'  => true,
+                'msg'     => 'Pedido virtual enviado para a cozinha!',
+                'id'      => $ids['pedido_id'],
+                'sale_id' => $ids['sale_id'],
+                'total'   => $total,
             ], 201);
 
         } catch (\Throwable $e) {
@@ -574,50 +545,16 @@ final class Pedido extends Base
                     ]);
                 }
 
-                // ── 7. purchase (custo interno dos itens retirados) ──────────
-                $conn->insert('purchase', [
-                    'id_fornecedor' => null,
-                    'total_bruto'   => $total,
-                    'total_liquido' => $total,
-                    'desconto'      => 0,
-                    'acrescimo'     => 0,
-                    'observacao'    => "Saída automática — Pedido #{$pedidoId}",
-                ]);
-                $purchaseId = (int) $conn->lastInsertId();
-
-                // ── 8. item_purchase ─────────────────────────────────────────
-                foreach ($itensNormalizados as $item) {
-                    $conn->insert('item_purchase', [
-                        'nome'           => $item['nome'],
-                        'id_compra'      => $purchaseId,
-                        'id_produto'     => $item['id'],
-                        'quantidade'     => $item['quantidade'],
-                        'total_bruto'    => $item['subtotal'],
-                        'total_liquido'  => $item['subtotal'],
-                        'preco_unitario' => $item['preco'],
-                        'desconto'       => 0,
-                        'acrescimo'      => 0,
-                    ]);
-                }
-
-                // ── 9. installment_sale_purchase — uma linha por parcela ──────
-                //
-                //  IMPORTANTE: id_purchase fica NULL aqui intencionalmente.
-                //  A constraint chk_isp_sale_or_purchase exige que a parcela
-                //  pertença a UMA venda OU UMA compra, nunca aos dois.
-                //  O purchase acima é um controle de custo/estoque interno —
-                //  não é uma obrigação financeira parcelável.
-                //
+                // ── 7. installment_sale — uma linha por parcela ───────────────
                 for ($p = 1; $p <= $totalParcelas; $p++) {
                     $valorEsta = $valorParcelaCentavos + ($p === $totalParcelas ? $resto : 0);
 
                     $diasOffset     = $intervalo * ($p - 1);
                     $dataVencimento = date('Y-m-d', strtotime("+{$diasOffset} days"));
 
-                    $conn->insert('installment_sale_purchase', [
+                    $conn->insert('installment_sale', [
                         'id_payment'      => $ptId,
                         'id_sale'         => $saleId,
-                        'id_purchase'     => null,          // ← NULL: parcela é da venda
                         'id_installment'  => $installmentIds[$p],
                         'total_parcelas'  => $totalParcelas,
                         'numero_parcela'  => $p,
@@ -628,28 +565,26 @@ final class Pedido extends Base
                     ]);
                 }
 
-                // ── 10. mesa → ocupada ────────────────────────────────────────
+                // ── 8. mesa → ocupada ─────────────────────────────────────────
                 $conn->update('mesa', [
                     'status'        => 'ocupada',
                     'atualizado_em' => date('Y-m-d H:i:s'),
                 ], ['id' => $idMesa]);
 
                 return [
-                    'pedido_id'   => $pedidoId,
-                    'sale_id'     => $saleId,
-                    'purchase_id' => $purchaseId,
-                    'pt_id'       => $ptId,
+                    'pedido_id' => $pedidoId,
+                    'sale_id'   => $saleId,
+                    'pt_id'     => $ptId,
                 ];
             });
 
             return $this->json($response, [
-                'status'      => true,
-                'msg'         => 'Pedido enviado para a cozinha!',
-                'id'          => $ids['pedido_id'],
-                'sale_id'     => $ids['sale_id'],
-                'purchase_id' => $ids['purchase_id'],
-                'mesa'        => $idMesa,
-                'total'       => $total,
+                'status'  => true,
+                'msg'     => 'Pedido enviado para a cozinha!',
+                'id'      => $ids['pedido_id'],
+                'sale_id' => $ids['sale_id'],
+                'mesa'    => $idMesa,
+                'total'   => $total,
             ], 201);
 
         } catch (\Throwable $e) {

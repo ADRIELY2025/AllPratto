@@ -257,7 +257,8 @@ final class Login extends Base
                     'cpf'            => $cpf,
                     'rg'             => '',
                     'senha'          => $senhaHash,
-                    'ativo'          => 1,
+                    // Criado como INATIVO por padrão — administrador deve ativar
+                    'ativo'          => 0,
                     'administrador'  => 0,
                 ];
 
@@ -286,7 +287,7 @@ final class Login extends Base
                     'cpf'           => $cpf,
                     'rg'            => '',
                     'senha'         => '',
-                    'ativo'         => true,
+                    'ativo'         => false,
                     'administrador' => false,
                     'email'         => $email,
                     'celular'       => null,
@@ -469,9 +470,7 @@ final class Login extends Base
         $userId = $_SESSION['user']['id'] ?? null;
 
         if ($userId) {
-
             try {
-
                 DB::connection()->update(
                     'users',
                     [
@@ -483,7 +482,6 @@ final class Login extends Base
                     ]
                 );
             } catch (\Throwable $e) {
-
                 error_log('[logout][DB] ' . $e->getMessage());
             }
         }

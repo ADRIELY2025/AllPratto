@@ -7,6 +7,7 @@ namespace App\Middleware;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Slim\Psr7\Response;
+use App\Database\DB;
 
 class Middleware
 {
@@ -21,6 +22,16 @@ class Middleware
                 if (!$token || empty($_SESSION['user']['logado'])) throw new \RuntimeException();
                 #Valida assinatura HS256 e expiração do payload contra a SECRET_KEY.
                 JWT::decode($token, new Key(SECRET_KEY, 'HS256'));
+                # Valida também se o usuário ainda existe no banco (protege contra DB recriado)
+                $userId = $_SESSION['user']['id'] ?? null;
+                if (!$userId) throw new \RuntimeException();
+                $exists = (int) DB::connection()->fetchOne('SELECT COUNT(*) FROM users WHERE id = ? AND ativo = TRUE', [$userId]);
+                if ($exists === 0) {
+                    // invalida sessão e cookie
+                    unset($_SESSION['user']);
+                    if (isset($_COOKIE['auth_token'])) setcookie('auth_token', '', time() - 3600, '/');
+                    throw new \RuntimeException();
+                }
             } catch (\Throwable $e) {
                 #Qualquer falha cai aqui: cookie ausente, expirado ou adulterado.
                 $response = new Response();
@@ -49,8 +60,22 @@ class Middleware
                 if ($token && !empty($_SESSION['user']['logado'])) {
                     #Valida assinatura HS256 e expiração do payload contra a SECRET_KEY.
                     JWT::decode($token, new Key(SECRET_KEY, 'HS256'));
-                    #Token íntegro e sessão ativa: marca o usuário como autenticado.
-                    $auth = true;
+                    // Valida existência do usuário no banco (protege contra DB recriado)
+                    $userId = $_SESSION['user']['id'] ?? null;
+                    if ($userId) {
+                        try {
+                            $exists = (int) DB::connection()->fetchOne('SELECT COUNT(*) FROM users WHERE id = ? AND ativo = TRUE', [$userId]);
+                            if ($exists > 0) {
+                                $auth = true;
+                            } else {
+                                // usuário foi removido — invalida sessão
+                                unset($_SESSION['user']);
+                                if (isset($_COOKIE['auth_token'])) setcookie('auth_token', '', time() - 3600, '/');
+                            }
+                        } catch (\Throwable $e) {
+                            // Em caso de erro no DB, assume não autenticado.
+                        }
+                    }
                 }
             } catch (\Throwable $e) {
                 #Qualquer falha é silenciosamente tratada como usuário não autenticado.

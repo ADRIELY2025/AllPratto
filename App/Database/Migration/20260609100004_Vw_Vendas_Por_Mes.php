@@ -7,7 +7,7 @@ namespace App\Database\Migration;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-// CORRIGIDO: mesmo bug do Vw_Top_Clientes — estado_venda é ENUM stock_movement_venda
+// CORRIGIDO: mesmo bug do Vw_Top_Clientes — estado_venda é ENUM venda_estado
 // e não aceita comparação com 'cancelado'/'devolvido'.
 // Solução: cast explícito ::TEXT antes do NOT IN, ou filtrar só 'VENDA'.
 
