@@ -555,6 +555,7 @@ final class Pedido extends Base
                     "<td>
                     <a class='btn btn-sm btn-warning' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-pen-to-square'></i> Ver</a>
                     <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal({$value['id']});'><i class='fa-solid fa-trash'></i> Cancelar</button>
+                    <a class='btn btn-sm btn-primary' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-print'></i> Imprimir</a>
                 </td>",
                 ];
             }

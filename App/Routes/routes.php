@@ -54,6 +54,7 @@ $app->get('/cardapio', Cardapio::class . ':index')->add(Middleware::web());
 $app->group('/cliente', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/lista',         Customer::class . ':list')->add(Middleware::web());
     $group->get('/detalhes/{id}', Customer::class . ':details')->add(Middleware::web());
+    $group->get('/imprimir/{id}',      Customer::class . ':imprimir')->add(Middleware::web());
     $group->get('/detalhes',      Customer::class . ':details')->add(Middleware::web());
     $group->post('/insert',       Customer::class . ':insert')->add(Middleware::api());
     $group->post('/update',       Customer::class . ':update')->add(Middleware::api());

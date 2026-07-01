@@ -49,7 +49,7 @@ final class Customer extends Base
             'sobrenome_razao'    => $form['nomeLegal']          ?? '',
             'cpf_cnpj'           => preg_replace('/\D/', '', $form['numeroDocumento'] ?? ''),
             'rg_ie'              => $form['registroSecundario'] ?? '',
-            'nascimento_fundacao'=> $this->convertBrDateToDatabaseFormat($form['dataRegistro'] ?? ''),
+            'nascimento_fundacao' => $this->convertBrDateToDatabaseFormat($form['dataRegistro'] ?? ''),
             'ativo'              => (($form['ativo'] ?? 'false') === 'true') ? true : false,
         ];
 
@@ -82,7 +82,7 @@ final class Customer extends Base
             'sobrenome_razao'    => $form['nomeLegal']          ?? null,
             'cpf_cnpj'           => preg_replace('/\D/', '', $form['numeroDocumento'] ?? ''),
             'rg_ie'              => $form['registroSecundario'] ?? null,
-            'nascimento_fundacao'=> $this->convertBrDateToDatabaseFormat($form['dataRegistro'] ?? ''),
+            'nascimento_fundacao' => $this->convertBrDateToDatabaseFormat($form['dataRegistro'] ?? ''),
             'ativo'              => (($form['ativo'] ?? 'false') === 'true') ? true : false,
             'atualizado_em'      => date('Y-m-d H:i:s'),
         ];
@@ -205,6 +205,7 @@ final class Customer extends Base
                     "<td>
                     <a class='btn btn-sm btn-warning' href='/cliente/detalhes/" . $value['id'] . "'><i class='fa-solid fa-pen-to-square'></i> Editar</a>
                     <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal(" . $value['id'] . ");'><i class='fa-solid fa-trash'></i> Excluir</button>
+                    <a class='btn btn-sm btn-primary' target='_blank' href='/cliente/imprimir/" . $value['id'] . "'><i class='fa-solid fa-print'></i> Imprimir</a>
                 </td>",
                 ];
             }
@@ -222,4 +223,73 @@ final class Customer extends Base
             ], 500);
         }
     }
+    public function imprimir($request, $response, $args)
+{
+    $id = $args['id'] ?? null;
+
+    if (is_null($id) || $id === '') {
+        return $this->json($response, ['status' => false, 'msg' => 'Informe o código do cliente', 'id' => 0], 403);
+    }
+
+    try {
+        $customer = \App\Database\DB::select('*')
+            ->from('customer')
+            ->where('id = ' . $id)
+            ->fetchAssociative();
+
+        if (!$customer) {
+            return $this->json($response, ['status' => false, 'msg' => 'Cliente não encontrado', 'id' => 0], 404);
+        }
+
+        $cpfCnpjLimpo = preg_replace('/\D/', '', $customer['cpf_cnpj'] ?? '');
+        $nomeCompleto = (strlen($cpfCnpjLimpo) <= 11)
+            ? trim(($customer['nome_fantasia'] ?? '') . ' ' . ($customer['sobrenome_razao'] ?? ''))
+            : ($customer['nome_fantasia'] ?? '');
+
+        $pdf = new \FPDF('P', 'mm', 'A4');
+        $pdf->AddPage();
+
+        $pdf->SetFont('Arial', 'B', 16);
+        $pdf->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'Ficha do Cliente'), 0, 1, 'C');
+        $pdf->Ln(4);
+
+        $pdf->SetFont('Arial', '', 11);
+
+        $linhas = [
+            ['ID:',           (string) $customer['id']],
+            ['Nome:',         $nomeCompleto],
+            ['CPF/CNPJ:',     $customer['cpf_cnpj'] ?? ''],
+            ['RG/IE:',        $customer['rg_ie'] ?? ''],
+            ['Nascimento/Fundação:', $customer['nascimento_fundacao']
+                ? (new \DateTime($customer['nascimento_fundacao']))->format('d/m/Y')
+                : ''],
+            ['Status:',       ($customer['ativo'] === true || $customer['ativo'] === 't') ? 'Ativo' : 'Inativo'],
+            ['Criado em:',    $customer['criado_em']
+                ? (new \DateTime($customer['criado_em']))->format('d/m/Y H:i:s')
+                : ''],
+            ['Atualizado em:', $customer['atualizado_em']
+                ? (new \DateTime($customer['atualizado_em']))->format('d/m/Y H:i:s')
+                : ''],
+        ];
+
+        foreach ($linhas as [$label, $valor]) {
+            $pdf->SetFont('Arial', 'B', 11);
+            $pdf->Cell(50, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $label), 0, 0);
+            $pdf->SetFont('Arial', '', 11);
+            $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $valor), 0, 1);
+        }
+
+        $pdfContent = $pdf->Output('S', 'cliente_' . $id . '.pdf');
+
+        $response->getBody()->write($pdfContent);
+
+        return $response
+            ->withHeader('Content-Type', 'application/pdf')
+            ->withHeader('Content-Disposition', 'inline; filename="cliente_' . $id . '.pdf"')
+            ->withStatus(200);
+    } catch (\Exception $e) {
+        return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
+    }
+}
+
 }
