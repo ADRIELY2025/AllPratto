@@ -21,7 +21,6 @@ use App\Controller\Stock;
 
 $app->post('/',     App\Controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home',  App\Controller\Home::class . ':home')->add(Middleware::web());
-$app->get('/home/destaques', App\Controller\Home::class . ':destaquesSemana')->add(Middleware::api());
 
 $app->get('/', function ($request, $response) {
     return $response->withHeader('Location', '/login')->withStatus(302);

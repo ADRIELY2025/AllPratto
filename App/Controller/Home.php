@@ -17,9 +17,6 @@ final class Home extends Base
             ->withHeader('Content-Type', 'text/html')
             ->withStatus(200);
     }
-
-
-    
     public function resultadoVendas($request, $response)
     {
         $conn = DB::connection();
@@ -220,109 +217,6 @@ final class Home extends Base
                 'value'     => (float) $r['total_valor'],
                 'itemStyle' => ['color' => $colors[$r['grupo']] ?? '#888'],
             ], $rows),
-        ]);
-    }
-
-     public function destaquesSemana($request, $response)
-    {
-        $conn = DB::connection();
- 
-        // ── 1. Produtos marcados manualmente ────────────────────────────────
-        $marcados = $conn->fetchAllAssociative(<<<'SQL'
-            SELECT
-                id,
-                nome,
-                descricao,
-                preco_venda,
-                imagem_url,
-                grupo AS categoria
-            FROM public.product
-            WHERE destaque_semana = TRUE
-              AND ativo    = TRUE
-              AND excluido = FALSE
-              AND (destaque_ate IS NULL OR destaque_ate >= CURRENT_DATE)
-            ORDER BY id
-            LIMIT 4
-        SQL);
- 
-        // ── 2. Completar com mais vendidos (cardápio + venda avulsa) ────────
-        if (count($marcados) < 4) {
-            $ids_ja = array_column($marcados, 'id');
-            $limit  = 4 - count($marcados);
- 
-            $exclude = '';
-            if (!empty($ids_ja)) {
-                $ph      = implode(',', $ids_ja);
-                $exclude = "AND p.id NOT IN ($ph)";
-            }
- 
-            $sql = <<<SQL
-                WITH vendas_recentes AS (
-                    SELECT oi.product_id AS id, SUM(oi.quantidade) AS qtd
-                    FROM public.order_item oi
-                    INNER JOIN public."order" o ON o.id = oi.order_id
-                    WHERE o.status <> 'cancelado'
-                      AND o.criado_em >= CURRENT_DATE - INTERVAL '7 days'
-                      AND oi.product_id IS NOT NULL
-                    GROUP BY oi.product_id
- 
-                    UNION ALL
- 
-                    SELECT it.id_produto AS id, SUM(it.quantidade) AS qtd
-                    FROM public.item_sale it
-                    INNER JOIN public.sale s ON s.id = it.id_venda
-                    WHERE (s.estado_venda IS NULL OR s.estado_venda::TEXT = 'VENDA')
-                      AND s.criado_em >= CURRENT_DATE - INTERVAL '7 days'
-                      AND it.id_produto IS NOT NULL
-                    GROUP BY it.id_produto
-                )
-                SELECT
-                    p.id,
-                    p.nome,
-                    p.descricao,
-                    p.preco_venda,
-                    p.imagem_url,
-                    p.grupo AS categoria,
-                    SUM(v.qtd) AS vendidos
-                FROM vendas_recentes v
-                JOIN public.product p ON p.id = v.id
-                WHERE p.ativo    = TRUE
-                  AND p.excluido = FALSE
-                  $exclude
-                GROUP BY p.id, p.nome, p.descricao, p.preco_venda, p.imagem_url, p.grupo
-                ORDER BY vendidos DESC
-                LIMIT $limit
-            SQL;
- 
-            $maisVendidos = $conn->fetchAllAssociative($sql);
-            $marcados     = array_merge($marcados, $maisVendidos);
-        }
- 
-        // ── 3. Formatar e retornar ───────────────────────────────────────────
-        $data = array_map(fn($p) => [
-            'id'         => (int) $p['id'],
-            'nome'       => $p['nome'],
-            'descricao'  => $p['descricao'] ?? '',
-            'preco'      => 'R$ ' . number_format((float) $p['preco_venda'], 2, ',', '.'),
-            'imagem_url' => $p['imagem_url'] ? '/product/get-imagem/' . $p['id'] : null,
-            'categoria'  => $p['categoria'] ?? null,
-        ], $marcados);
- 
-        return $this->json($response, ['success' => true, 'data' => $data]);
-    }
- 
-    public function getDashboardData($request, $response)
-    {
-        $conn = DB::connection();
- 
-        return $this->json($response, [
-            'categories' => ['Clientes', 'Fornecedores', 'Produtos', 'Empresas'],
-            'values'     => [
-                (int) $conn->fetchOne('SELECT COUNT(*) FROM customer'),
-                (int) $conn->fetchOne('SELECT COUNT(*) FROM supplier'),
-                (int) $conn->fetchOne('SELECT COUNT(*) FROM product'),
-                (int) $conn->fetchOne('SELECT COUNT(*) FROM company'),
-            ],
         ]);
     }
 }
