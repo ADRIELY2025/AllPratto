@@ -65,8 +65,46 @@ final class Product extends Base
 
         try {
             $conn = \App\Database\DB::connection();
-            $conn->insert('product', $data);
-            $id = (int) $conn->lastInsertId();
+
+            // Não usamos $conn->insert() + lastInsertId() aqui de propósito.
+            // A tabela "product" tem o trigger trg_init_product_stock, que insere
+            // automaticamente uma linha em stock_movement (outra tabela com BIGSERIAL).
+            // No PostgreSQL, lastInsertId() sem argumento chama LASTVAL(), que retorna
+            // o valor da ÚLTIMA sequence usada na sessão — e não necessariamente a da
+            // tabela "product". Como o trigger dispara nextval() na sequence de
+            // stock_movement DEPOIS do insert em product, o lastInsertId() acabava
+            // retornando o id da stock_movement, não o id real do produto.
+            // Usando "RETURNING id" pegamos o id certo direto do INSERT em product.
+            $id = (int) $conn->fetchOne(
+                'INSERT INTO product (
+                    nome, codigo_barra, grupo, unidade, imagem_url,
+                    preco_compra, total_imposto, margem_lucro, custo_operacional,
+                    valor_venda_sugerido, preco_venda, tempo_preparo, descricao,
+                    ativo, excluido
+                ) VALUES (
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?
+                ) RETURNING id',
+                [
+                    $data['nome'],
+                    $data['codigo_barra'],
+                    $data['grupo'],
+                    $data['unidade'],
+                    $data['imagem_url'],
+                    $data['preco_compra'],
+                    $data['total_imposto'],
+                    $data['margem_lucro'],
+                    $data['custo_operacional'],
+                    $data['valor_venda_sugerido'],
+                    $data['preco_venda'],
+                    $data['tempo_preparo'],
+                    $data['descricao'],
+                    $data['ativo'],
+                    $data['excluido'],
+                ]
+            );
             $name = null;
             if ($file && $file['error'] === UPLOAD_ERR_OK) {
                 $path = ROOT . '/storage/produtos/' . $id;
