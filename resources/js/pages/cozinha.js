@@ -69,12 +69,16 @@ function criarCardHTML(pedido) {
     const icone   = iconeCard(pedido.itens);
     const urgente = min > 20;
 
-    const itensHTML = (pedido.itens ?? []).map(item => `
-        <div class="cz-item">
+    const itensHTML = (pedido.itens ?? []).map(item => {
+        const cancelado = item.status === 'cancelado';
+        return `
+        <div class="cz-item${cancelado ? ' cz-item--cancelado' : ''}">
             <div class="cz-qtd">${item.quantidade}</div>
             <div class="cz-nome-prato">${item.nome}</div>
+            ${cancelado ? '<div class="cz-item-cancelado-badge">Cancelado</div>' : ''}
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     const obsHTML = pedido.observacao
         ? `<div class="cz-obs">⚠️ <strong>Obs:</strong> ${pedido.observacao}</div>`

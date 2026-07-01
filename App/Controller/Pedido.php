@@ -277,7 +277,8 @@ final class Pedido extends Base
                     nome,
                     quantidade,
                     preco,
-                    subtotal
+                    subtotal,
+                    status
                 ")
                 ->from('order_item')
                 ->where('order_id = :id')
@@ -334,31 +335,6 @@ final class Pedido extends Base
             ->withStatus(200);
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    //  Criar pedido — fluxo completo em uma única transação
-    //
-    //  Body JSON: {
-    //    mesa:      <id da mesa>,
-    //    itens:     [{ id, nome, preco, quantidade }],
-    //    pagamento: 'dinheiro' | 'pix' | 'credito' | 'debito' | <qualquer string>,
-    //    observacao: '...' (opcional),
-    //    id_cliente: <id> (opcional)
-    //  }
-    //
-    //  O que esta transação grava:
-    //    1. "order"                   — o pedido em si
-    //    2.  order_item               — itens do pedido
-    //       → trigger do banco popula kitchen automaticamente ao inserir order_item
-    //    3.  payment_terms            — busca ou cria o registro da forma de pagamento
-    //    4.  installment              — parcela(s) ligada(s) ao payment_terms
-    //    5.  sale                     — venda vinculada ao pedido
-    //    6.  item_sale                — um item_sale por item do carrinho
-    //    7.  purchase                 — registro de custo interno da saída de estoque
-    //    8.  item_purchase            — um item_purchase por item (custo de cada produto)
-    //    9.  installment_sale_purchase — vincula APENAS sale + payment_terms + installment
-    //                                   (id_purchase = NULL — parcela é financeira, não de custo)
-    //   10.  mesa.status              — marca a mesa como 'ocupada'
-    // ──────────────────────────────────────────────────────────────────────────
     public function insert($request, $response)
     {
         $form       = $request->getParsedBody();
@@ -614,6 +590,134 @@ final class Pedido extends Base
         return $mapa[$chave] ?? ucfirst($pagamento);
     }
 
+    public function cancelarItem($request, $response)
+    {
+        $form        = $request->getParsedBody();
+        $orderItemId = $form['order_item_id'] ?? null;
+
+        if (is_null($orderItemId) || $orderItemId === '') {
+            return $this->json($response, ['status' => false, 'msg' => 'Informe o item do pedido.'], 403);
+        }
+
+        try {
+            $conn = \App\Database\DB::connection();
+
+            $qbItem = \App\Database\DB::select('id, order_id, status')->from('order_item');
+            $item   = $qbItem
+                ->where('id = ' . $qbItem->createPositionalParameter((int) $orderItemId, \Doctrine\DBAL\ParameterType::INTEGER))
+                ->fetchAssociative();
+
+            if (!$item) {
+                return $this->json($response, ['status' => false, 'msg' => 'Item não encontrado.'], 404);
+            }
+
+            if ($item['status'] === 'cancelado') {
+                return $this->json($response, ['status' => false, 'msg' => 'Item já está cancelado.'], 422);
+            }
+
+            $qbPedido = \App\Database\DB::select('id, status')->from('"order"');
+            $pedido   = $qbPedido
+                ->where('id = ' . $qbPedido->createPositionalParameter((int) $item['order_id'], \Doctrine\DBAL\ParameterType::INTEGER))
+                ->fetchAssociative();
+
+            if (!$pedido) {
+                return $this->json($response, ['status' => false, 'msg' => 'Pedido não encontrado.'], 404);
+            }
+
+            $statusFinais = ['pronto', 'entregue', 'pago', 'cancelado'];
+            if (in_array($pedido['status'], $statusFinais, true)) {
+                return $this->json($response, [
+                    'status' => false,
+                    'msg'    => 'Pedido com status "' . $pedido['status'] . '" não pode mais ser editado.',
+                ], 422);
+            }
+
+            $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use ($orderItemId, $pedido): void {
+                $conn->update('order_item', ['status' => 'cancelado'], ['id' => (int) $orderItemId]);
+
+                $totalAtivo = (float) \App\Database\DB::select('COALESCE(SUM(subtotal), 0)')
+                    ->from('order_item')
+                    ->where('order_id = :id')
+                    ->andWhere("status = 'ativo'")
+                    ->setParameter('id', (int) $pedido['id'])
+                    ->fetchOne();
+
+                $conn->update('"order"', [
+                    'total'         => $totalAtivo,
+                    'atualizado_em' => date('Y-m-d H:i:s'),
+                ], ['id' => (int) $pedido['id']]);
+            });
+
+            return $this->json($response, ['status' => true, 'msg' => 'Item cancelado. A cozinha foi avisada.']);
+        } catch (\Exception $e) {
+            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function adicionarItem($request, $response)
+    {
+        $form      = $request->getParsedBody();
+        $pedidoId  = $form['order_id']    ?? null;
+        $produtoId = $form['product_id']  ?? null;
+        $nome      = trim((string) ($form['nome'] ?? ''));
+        $preco     = max(0, (float) ($form['preco'] ?? 0));
+        $qtd       = max(1, (int) ($form['quantidade'] ?? 1));
+
+        if (is_null($pedidoId) || $pedidoId === '' || $nome === '') {
+            return $this->json($response, ['status' => false, 'msg' => 'Informe o pedido e o produto.'], 403);
+        }
+
+        try {
+            $conn = \App\Database\DB::connection();
+
+            $qbPedido = \App\Database\DB::select('id, status')->from('"order"');
+            $pedido   = $qbPedido
+                ->where('id = ' . $qbPedido->createPositionalParameter((int) $pedidoId, \Doctrine\DBAL\ParameterType::INTEGER))
+                ->fetchAssociative();
+
+            if (!$pedido) {
+                return $this->json($response, ['status' => false, 'msg' => 'Pedido não encontrado.'], 404);
+            }
+
+            $statusFinais = ['pronto', 'entregue', 'pago', 'cancelado'];
+            if (in_array($pedido['status'], $statusFinais, true)) {
+                return $this->json($response, [
+                    'status' => false,
+                    'msg'    => 'Pedido com status "' . $pedido['status'] . '" não pode mais ser editado.',
+                ], 422);
+            }
+
+            $subtotal = round($preco * $qtd, 4);
+
+            $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use ($pedido, $produtoId, $nome, $preco, $qtd, $subtotal): void {
+                $conn->insert('order_item', [
+                    'order_id'   => (int) $pedido['id'],
+                    'product_id' => $produtoId !== '' && !is_null($produtoId) ? (int) $produtoId : null,
+                    'nome'       => $nome,
+                    'preco'      => $preco,
+                    'quantidade' => $qtd,
+                    'subtotal'   => $subtotal,
+                ]);
+
+                $totalAtivo = (float) \App\Database\DB::select('COALESCE(SUM(subtotal), 0)')
+                    ->from('order_item')
+                    ->where('order_id = :id')
+                    ->andWhere("status = 'ativo'")
+                    ->setParameter('id', (int) $pedido['id'])
+                    ->fetchOne();
+
+                $conn->update('"order"', [
+                    'total'         => $totalAtivo,
+                    'atualizado_em' => date('Y-m-d H:i:s'),
+                ], ['id' => (int) $pedido['id']]);
+            });
+
+            return $this->json($response, ['status' => true, 'msg' => 'Item adicionado ao pedido!'], 201);
+        } catch (\Exception $e) {
+            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function updateStatus($request, $response)
     {
         $form   = $request->getParsedBody();
@@ -673,10 +777,11 @@ final class Pedido extends Base
         }
 
         try {
-            $itens = \App\Database\DB::select('*')
+            $itens = \App\Database\DB::select('id, nome, preco, quantidade, subtotal, status')
                 ->from('order_item')
                 ->where('order_id = :id')
                 ->setParameter('id', (int) $id, \Doctrine\DBAL\ParameterType::INTEGER)
+                ->orderBy('id', 'ASC')
                 ->fetchAllAssociative();
 
             return $this->json($response, ['status' => true, 'itens' => $itens], 200);

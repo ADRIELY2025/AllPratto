@@ -144,6 +144,8 @@ $app->group('/pedido', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->post('/insert',        Pedido::class . ':insert')->add(Middleware::api());
     $group->post('/virtual/insert', Pedido::class . ':insertVirtual')->add(Middleware::api());
     $group->post('/update-status', Pedido::class . ':updateStatus')->add(Middleware::api());
+    $group->post('/item/cancelar',  Pedido::class . ':cancelarItem')->add(Middleware::api());
+    $group->post('/item/adicionar', Pedido::class . ':adicionarItem')->add(Middleware::api());
     $group->post('/delete',        Pedido::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   Pedido::class . ':listingdata')->add(Middleware::api());
 });

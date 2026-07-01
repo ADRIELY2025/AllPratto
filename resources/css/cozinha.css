@@ -301,6 +301,32 @@ body {
     line-height: 1.3;
 }
 
+.cz-item--cancelado {
+    opacity: .55;
+}
+
+.cz-item--cancelado .cz-nome-prato {
+    text-decoration: line-through;
+    text-decoration-color: var(--vermelho, #dc2626);
+    text-decoration-thickness: 2px;
+}
+
+.cz-item--cancelado .cz-qtd {
+    background: #9ca3af;
+}
+
+.cz-item-cancelado-badge {
+    background: #fee2e2;
+    color: #b91c1c;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
 .cz-obs {
     margin: 10px 0 2px;
     background: #fff8e1;
