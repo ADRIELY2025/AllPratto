@@ -54,14 +54,6 @@ final class Pedido extends Base
         $intervalo = isset($form['intervalo']) && (int) $form['intervalo'] >= 0
             ? (int) $form['intervalo']
             : (($pagamento === 'credito' && $totalParcelas > 1) ? 30 : 0);
-        $enderecoId = null;
-        if (isset($form['id_endereco']) && $form['id_endereco'] !== '') {
-            $enderecoId = (int) $form['id_endereco'];
-        } elseif (isset($form['id_endereco_salvo']) && $form['id_endereco_salvo'] !== '') {
-            $enderecoId = (int) $form['id_endereco_salvo'];
-        }
-
-        $salvarEndereco = (($form['salvar_endereco'] ?? 'false') === 'true');
         $enderecoData = [
             'logradouro'  => trim((string) ($form['endereco_rua'] ?? '')),
             'numero'      => trim((string) ($form['endereco_numero'] ?? '')),
@@ -127,7 +119,7 @@ final class Pedido extends Base
 
         $observacaoFinal = $prefixoObs . ($observacao ? ' | ' . $observacao : '');
 
-        if ($tipoEntrega === 'delivery' && ($enderecoData['logradouro'] !== '' || $enderecoId)) {
+        if ($tipoEntrega === 'delivery' && $enderecoData['logradouro'] !== '') {
             $enderecoTexto = trim(implode(' — ', array_filter([
                 $enderecoData['logradouro'],
                 $enderecoData['numero'],
@@ -147,7 +139,7 @@ final class Pedido extends Base
 
             $ids = $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use (
                 $idCliente, $total, $itensNormalizados, $pagamento, $observacaoFinal,
-                $totalParcelas, $intervalo, $tipoEntrega, $enderecoId, $salvarEndereco, $enderecoData, $idPaymentTerms
+                $totalParcelas, $intervalo, $tipoEntrega, $enderecoData, $idPaymentTerms
             ): array {
 
                 // 1. order — id_mesa NULL (pedido virtual)
@@ -232,49 +224,16 @@ final class Pedido extends Base
 
                 $conn->update('"order"', ['payment_terms_id' => $ptId], ['id' => $pedidoId]);
 
-                $enderecoPedido = null;
-                if ($tipoEntrega === 'delivery' && ($enderecoId || !empty(array_filter($enderecoData, static fn ($value) => trim((string) $value) !== '')))) {
-                    if ($enderecoId) {
-                        $enderecoPedido = \App\Database\DB::select('*')
-                            ->from('customer_address')
-                            ->where('id = :id')
-                            ->setParameter('id', $enderecoId, \Doctrine\DBAL\ParameterType::INTEGER)
-                            ->fetchAssociative();
-                    }
-
-                    if (!$enderecoPedido && ($salvarEndereco || !$enderecoId)) {
-                        $conn->insert('customer_address', [
-                            'id_cliente'  => $idCliente,
-                            'logradouro'  => $enderecoData['logradouro'],
-                            'numero'      => $enderecoData['numero'],
-                            'complemento' => $enderecoData['complemento'],
-                            'bairro'      => $enderecoData['bairro'],
-                            'cidade'      => $enderecoData['cidade'],
-                            'cep'         => $enderecoData['cep'],
-                            'referencia'  => $enderecoData['referencia'],
-                            'principal'   => false,
-                        ]);
-                        $enderecoPedido = [
-                            'id' => (int) $conn->lastInsertId(),
-                            'logradouro' => $enderecoData['logradouro'],
-                            'numero' => $enderecoData['numero'],
-                            'complemento' => $enderecoData['complemento'],
-                            'bairro' => $enderecoData['bairro'],
-                            'cidade' => $enderecoData['cidade'],
-                            'cep' => $enderecoData['cep'],
-                            'referencia' => $enderecoData['referencia'],
-                        ];
-                    }
-
+                $temEndereco = !empty(array_filter($enderecoData, static fn ($value) => trim((string) $value) !== ''));
+                if ($tipoEntrega === 'delivery' && $temEndereco) {
                     $conn->update('"order"', [
-                        'id_endereco'         => $enderecoPedido['id'] ?? $enderecoId,
-                        'endereco_logradouro' => $enderecoPedido['logradouro'] ?? $enderecoData['logradouro'],
-                        'endereco_numero'     => $enderecoPedido['numero'] ?? $enderecoData['numero'],
-                        'endereco_complemento' => $enderecoPedido['complemento'] ?? $enderecoData['complemento'],
-                        'endereco_bairro'     => $enderecoPedido['bairro'] ?? $enderecoData['bairro'],
-                        'endereco_cidade'     => $enderecoPedido['cidade'] ?? $enderecoData['cidade'],
-                        'endereco_cep'        => $enderecoPedido['cep'] ?? $enderecoData['cep'],
-                        'endereco_referencia' => $enderecoPedido['referencia'] ?? $enderecoData['referencia'],
+                        'endereco_logradouro'  => $enderecoData['logradouro'],
+                        'endereco_numero'      => $enderecoData['numero'],
+                        'endereco_complemento' => $enderecoData['complemento'],
+                        'endereco_bairro'      => $enderecoData['bairro'],
+                        'endereco_cidade'      => $enderecoData['cidade'],
+                        'endereco_cep'         => $enderecoData['cep'],
+                        'endereco_referencia'  => $enderecoData['referencia'],
                     ], ['id' => $pedidoId]);
                 }
 

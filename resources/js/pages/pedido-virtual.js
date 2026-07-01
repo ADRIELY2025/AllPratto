@@ -55,31 +55,12 @@ function initClienteSelect() {
         },
     });
 
-    $('#id_cliente').on('select2:select', function (e) {
-        const idCliente = e.params.data.id;
-        carregarEnderecosCliente(idCliente);
+    $('#id_cliente').on('select2:select', function () {
+        // Cliente selecionado — endereço é sempre digitado manualmente para este pedido.
     });
 
     $('#id_cliente').on('select2:clear', function () {
-        limparEnderecos();
-    });
-
-    document.getElementById('id_endereco_salvo').addEventListener('change', function () {
-        if (!this.value) {
-            limparCamposEndereco();
-            return;
-        }
-
-        const selected = this.options[this.selectedIndex];
-        preencherCamposEndereco({
-            logradouro: selected.dataset.logradouro || '',
-            numero: selected.dataset.numero || '',
-            complemento: selected.dataset.complemento || '',
-            bairro: selected.dataset.bairro || '',
-            cidade: selected.dataset.cidade || '',
-            cep: selected.dataset.cep || '',
-            referencia: selected.dataset.referencia || '',
-        });
+        limparCamposEndereco();
     });
 }
 
@@ -138,6 +119,7 @@ async function selectPaymentMethod(paymentValue) {
     const termo = findPaymentTermByKey(paymentValue);
     setPaymentTerm(termo);
 
+    const blocoParcelas  = document.getElementById('bloco-parcelas');
     const selectParcelas = document.getElementById('num_parcelas');
     if (!selectParcelas) return;
 
@@ -145,18 +127,17 @@ async function selectPaymentMethod(paymentValue) {
     const isCredito = paymentValue === 'credito';
     const isNoInstallment = termo?.codigo && NO_INSTALLMENT_CODES.includes(termo.codigo.toString().trim());
 
+    // Só faz sentido mostrar o seletor de parcelas para pagamento em crédito
+    blocoParcelas.classList.toggle('d-none', !isCredito);
+
     if (termId) {
         try {
             const requests = new Requests();
             const response = await requests.get(`/sale/installments/${termId}`);
-            if (response?.status && Array.isArray(response.data)) {
+            if (response?.status && Array.isArray(response.data) && response.data.length) {
                 const maxParcelas = Math.max(...response.data.map(i => parseInt(i.parcela, 10) || 1));
-                selectParcelas.innerHTML = Array.from({ length: maxParcelas }, (_, index) => {
-                    const n = index + 1;
-                    return `<option value="${n}">${n}x</option>`;
-                }).join('');
-                selectParcelas.value = '1';
-                selectParcelas.disabled = !isCredito || isNoInstallment;
+                preencherOpcoesParcelas(maxParcelas);
+                selectParcelas.disabled = !isCredito || isNoInstallment || maxParcelas <= 1;
                 return;
             }
         } catch (error) {
@@ -164,50 +145,25 @@ async function selectPaymentMethod(paymentValue) {
         }
     }
 
-    // Fallback: use default one-installment behavior
-    selectParcelas.innerHTML = '<option value="1">1x à vista</option>';
+    // Fallback: pagamento à vista (sem parcelamento cadastrado para essa condição)
+    preencherOpcoesParcelas(1);
+    selectParcelas.disabled = true;
+}
+
+function preencherOpcoesParcelas(maxParcelas) {
+    const selectParcelas = document.getElementById('num_parcelas');
+    if (!selectParcelas) return;
+
+    const subtotal = carrinho.reduce((s, i) => s + i.subtotal, 0);
+    const taxa     = strParaFloat(document.getElementById('taxa_entrega').value || '0');
+    const total    = subtotal + taxa;
+
+    selectParcelas.innerHTML = Array.from({ length: maxParcelas }, (_, index) => {
+        const n = index + 1;
+        const rotulo = total > 0 ? `${n}x de R$ ${floatParaBR(total / n)}` : `${n}x`;
+        return `<option value="${n}">${rotulo}</option>`;
+    }).join('');
     selectParcelas.value = '1';
-    selectParcelas.disabled = !isCredito || isNoInstallment;
-}
-
-async function carregarEnderecosCliente(idCliente) {
-    const select = document.getElementById('id_endereco_salvo');
-    select.innerHTML = '<option value="">Novo endereço</option>';
-
-    if (!idCliente) {
-        return;
-    }
-
-    try {
-        const requests = new Requests();
-        const response = await requests.get(`/cliente/enderecos/${idCliente}`);
-
-        if (!response?.status || !Array.isArray(response.data)) {
-            return;
-        }
-
-        response.data.forEach(endereco => {
-            const option = document.createElement('option');
-            option.value = endereco.id;
-            option.textContent = `${endereco.logradouro || ''}${endereco.numero ? ', ' + endereco.numero : ''}${endereco.bairro ? ' - ' + endereco.bairro : ''}`.trim();
-            option.dataset.logradouro = endereco.logradouro || '';
-            option.dataset.numero = endereco.numero || '';
-            option.dataset.complemento = endereco.complemento || '';
-            option.dataset.bairro = endereco.bairro || '';
-            option.dataset.cidade = endereco.cidade || '';
-            option.dataset.cep = endereco.cep || '';
-            option.dataset.referencia = endereco.referencia || '';
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-function limparEnderecos() {
-    const select = document.getElementById('id_endereco_salvo');
-    select.innerHTML = '<option value="">Novo endereço</option>';
-    limparCamposEndereco();
 }
 
 function limparCamposEndereco() {
@@ -218,16 +174,6 @@ function limparCamposEndereco() {
     document.getElementById('endereco_cidade').value = '';
     document.getElementById('endereco_cep').value = '';
     document.getElementById('endereco_referencia').value = '';
-}
-
-function preencherCamposEndereco(endereco) {
-    document.getElementById('endereco_rua').value = endereco.logradouro || '';
-    document.getElementById('endereco_numero').value = endereco.numero || '';
-    document.getElementById('endereco_complemento').value = endereco.complemento || '';
-    document.getElementById('endereco_bairro').value = endereco.bairro || '';
-    document.getElementById('endereco_cidade').value = endereco.cidade || '';
-    document.getElementById('endereco_cep').value = endereco.cep || '';
-    document.getElementById('endereco_referencia').value = endereco.referencia || '';
 }
 
 // ─── Select2: Produto ─────────────────────────────────────────────────────────
@@ -381,6 +327,15 @@ function atualizarResumo() {
     document.getElementById('resumo-total').textContent    = 'R$ ' + floatParaBR(total);
 
     calcularTroco();
+
+    // Mantém os valores das parcelas atualizados se o seletor estiver visível
+    const selectParcelas = document.getElementById('num_parcelas');
+    const blocoParcelas  = document.getElementById('bloco-parcelas');
+    if (selectParcelas && blocoParcelas && !blocoParcelas.classList.contains('d-none')) {
+        const parcelaAtual = selectParcelas.value;
+        preencherOpcoesParcelas(selectParcelas.options.length || 1);
+        selectParcelas.value = parcelaAtual;
+    }
 }
 
 // ─── Forma de pagamento ───────────────────────────────────────────────────────
@@ -483,8 +438,6 @@ async function finalizarPedido() {
     const tipoEntrega = tipoEntregaEl.value;
     const taxa        = strParaFloat(document.getElementById('taxa_entrega').value || '0');
     const parcelas    = parseInt(document.getElementById('num_parcelas').value || '1', 10);
-    const idEndereco  = document.getElementById('id_endereco_salvo').value || '';
-    const salvarEndereco = document.getElementById('salvar_endereco').checked ? 'true' : 'false';
 
     // Monta endereço em observação
     let enderecoStr = '';
@@ -524,8 +477,6 @@ async function finalizarPedido() {
         parcelas:      parcelas,
         intervalo:     pagamento === 'credito' && parcelas > 1 ? 30 : 0,
         id_payment_terms: selectedPaymentTermId || '',
-        id_endereco:   idEndereco,
-        salvar_endereco: salvarEndereco,
         endereco_rua: document.getElementById('endereco_rua').value.trim(),
         endereco_numero: document.getElementById('endereco_numero').value.trim(),
         endereco_complemento: document.getElementById('endereco_complemento').value.trim(),
