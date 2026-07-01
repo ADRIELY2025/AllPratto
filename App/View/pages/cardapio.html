@@ -9,7 +9,7 @@
     {{ vite('resources/css/cardapio.css') }}
 </head>
 
-<body data-mesa-id="{{ mesa_id }}">
+<body data-mesa-id="{{ mesa_id }}" data-mesa-numero="{{ mesa }}">
 
     {% if not mesaValida %}
     <div class="alerta-mesa">
@@ -20,13 +20,14 @@
 
     <!-- CABEÇALHO -->
     <header class="topo">
-        <div class="topo-marca">
+        <button type="button" class="topo-marca topo-marca--clicavel" id="btn-meus-pedidos" aria-label="Ver meus pedidos">
             <img src="/img/logo.jpeg" alt="{{ nomeLocal }}" class="topo-logo">
             <div class="topo-textos">
                 <span class="topo-nome">{{ nomeLocal }}</span>
                 <span class="topo-tagline">Cardápio Digital</span>
             </div>
-        </div>
+            <span class="badge-meus-pedidos oculto" id="badge-meus-pedidos">0</span>
+        </button>
 
         {% if mesaValida %}
             <div class="badge-mesa">
@@ -95,26 +96,38 @@
 
             <div class="pagamento-titulo">Forma de pagamento</div>
             <div class="pagamento-opcoes" id="forma-pagamento">
-                <label class="pagamento-card">
-                    <input type="radio" name="pagamento" value="pix">
-                    <i class="fa-solid fa-qrcode"></i>
-                    <span>PIX</span>
-                </label>
-                <label class="pagamento-card">
-                    <input type="radio" name="pagamento" value="credito">
-                    <i class="fa-regular fa-credit-card"></i>
-                    <span>Crédito</span>
-                </label>
-                <label class="pagamento-card">
-                    <input type="radio" name="pagamento" value="debito">
-                    <i class="fa-solid fa-credit-card"></i>
-                    <span>Débito</span>
-                </label>
-                <label class="pagamento-card">
-                    <input type="radio" name="pagamento" value="dinheiro">
-                    <i class="fa-solid fa-money-bill-wave"></i>
-                    <span>Dinheiro</span>
-                </label>
+                    <label class="pagamento-card" data-forma="pix">
+                        <input type="checkbox" name="pagamento_cb" value="pix">
+                        <i class="fa-solid fa-qrcode"></i>
+                        <span>PIX</span>
+                        <div class="pagamento-valor oculto">
+                            <input type="text" class="form-control pagamento-valor-input" placeholder="0,00">
+                        </div>
+                    </label>
+                    <label class="pagamento-card" data-forma="credito">
+                        <input type="checkbox" name="pagamento_cb" value="credito">
+                        <i class="fa-regular fa-credit-card"></i>
+                        <span>Crédito</span>
+                        <div class="pagamento-valor oculto">
+                            <input type="text" class="form-control pagamento-valor-input" placeholder="0,00">
+                        </div>
+                    </label>
+                    <label class="pagamento-card" data-forma="debito">
+                        <input type="checkbox" name="pagamento_cb" value="debito">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>Débito</span>
+                        <div class="pagamento-valor oculto">
+                            <input type="text" class="form-control pagamento-valor-input" placeholder="0,00">
+                        </div>
+                    </label>
+                    <label class="pagamento-card" data-forma="dinheiro">
+                        <input type="checkbox" name="pagamento_cb" value="dinheiro">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                        <span>Dinheiro</span>
+                        <div class="pagamento-valor oculto">
+                            <input type="text" class="form-control pagamento-valor-input" placeholder="0,00">
+                        </div>
+                    </label>
             </div>
 
             <!-- PARCELAMENTO — visível apenas em crédito -->
@@ -137,6 +150,40 @@
             </button>
         </div>
     </aside>
+
+    <!-- PAINEL LATERAL — MEUS PEDIDOS (histórico enviado à cozinha) -->
+    <div class="painel-overlay" id="painel-overlay-pedidos"></div>
+
+    <aside class="painel-pedido" id="modalMeusPedidos" aria-hidden="true">
+        <div class="painel-cabecalho">
+            <h5 class="painel-titulo">
+                <i class="fa-solid fa-receipt"></i> Meus Pedidos
+            </h5>
+            <button type="button" class="btn-fechar-painel" id="btn-fechar-meus-pedidos" aria-label="Fechar">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="painel-corpo">
+            <div id="lista-meus-pedidos">
+                <div class="carrinho-vazio">
+                    <i class="fa-solid fa-receipt"></i>Carregando seus pedidos...
+                </div>
+            </div>
+
+            <div class="total-row" id="total-row-meus-pedidos">
+                <span>Total consumido</span>
+                <span class="total-val" id="valor-total-meus-pedidos">R$ 0,00</span>
+            </div>
+
+            <button class="btn-finalizar" id="btn-imprimir-nota" type="button">
+                <i class="fa-solid fa-print"></i> Imprimir nota
+            </button>
+        </div>
+    </aside>
+
+    <!-- Overlay de impressão: invisível na tela, só aparece no @media print -->
+    <div id="area-impressao" class="area-impressao"></div>
 
     {{ vite('resources/js/pages/cardapio.js') }}
 </body>

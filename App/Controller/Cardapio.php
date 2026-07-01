@@ -109,6 +109,11 @@ final class Cardapio extends Base
             return $this->json($response, ['sucesso' => false, 'erro' => 'Nome é obrigatório.'], 400);
         }
 
+        // Exigir CPF no cardápio: remove máscaras e valida tamanho
+        if ($cpf === '' || strlen($cpf) !== 11) {
+            return $this->json($response, ['sucesso' => false, 'erro' => 'CPF é obrigatório e deve conter 11 dígitos.'], 400);
+        }
+
         try {
             $conn = \App\Database\DB::connection();
 
@@ -122,11 +127,11 @@ final class Cardapio extends Base
             }
 
             if (!$cliente) {
-                // Cria novo cliente
+                // Cria novo cliente (CPF agora obrigatório aqui)
                 $conn->insert('customer', [
                     'nome_fantasia'   => $nome,
                     'sobrenome_razao' => '',
-                    'cpf_cnpj'        => $cpf !== '' ? $cpf : '00000000000',
+                    'cpf_cnpj'        => $cpf,
                     'ativo'           => true,
                 ]);
                 $idCliente = (int) $conn->lastInsertId();
@@ -150,10 +155,10 @@ final class Cardapio extends Base
     {
         $body = $request->getParsedBody();
 
-        if (empty($body['mesa_id']) || empty($body['itens']) || empty($body['pagamento'])) {
+        if (empty($body['mesa_id']) || empty($body['itens']) || (empty($body['pagamento']) && empty($body['pagamentos']))) {
             return $this->json($response, [
                 'sucesso' => false,
-                'erro'    => 'Dados incompletos. Informe mesa_id, itens e pagamento.',
+                'erro'    => 'Dados incompletos. Informe mesa_id, itens e pagamento (ou pagamentos).',
             ], 400);
         }
 
@@ -167,6 +172,51 @@ final class Cardapio extends Base
         ]);
 
         $requestModificado = $request->withParsedBody($novoBody);
+        // Se já existe um pedido aberto para a mesma mesa e mesmo cliente,
+        // adicionamos os itens ao pedido existente em vez de criar um novo.
+        $qbExist = \App\Database\DB::select('id, id_cliente, status')->from('"order"');
+        $exist = $qbExist
+            ->where('id_mesa = ' . $qbExist->createPositionalParameter($novoBody['mesa'], \Doctrine\DBAL\ParameterType::INTEGER))
+            ->andWhere("status IN ('pendente','em_preparo')")
+            ->orderBy('criado_em', 'DESC')
+            ->setMaxResults(1)
+            ->fetchAssociative();
+
+        if ($exist && $novoBody['id_cliente'] !== null && (int) $exist['id_cliente'] === (int) $novoBody['id_cliente']) {
+            // Adiciona itens um a um usando o método adicionarItem
+            $added = 0;
+            $errors = [];
+            foreach ($novoBody['itens'] as $it) {
+                $itemBody = [
+                    'order_id'   => (int) $exist['id'],
+                    'product_id' => isset($it['id']) && $it['id'] !== '' ? (int) $it['id'] : null,
+                    'nome'       => $it['nome'] ?? '',
+                    'preco'      => isset($it['preco']) ? (float) $it['preco'] : 0,
+                    'quantidade' => isset($it['quantidade']) ? (int) $it['quantidade'] : 1,
+                ];
+                $reqItem = $request->withParsedBody($itemBody);
+                $resItem = (new Pedido())->adicionarItem($reqItem, new \Slim\Psr7\Response());
+                $bd = json_decode((string) $resItem->getBody(), true);
+                if (($bd['status'] ?? $bd['sucesso'] ?? false) === true) {
+                    $added++;
+                } else {
+                    $errors[] = $bd['msg'] ?? $bd['erro'] ?? 'Erro ao adicionar item';
+                }
+            }
+
+            // Recupera total atualizado do pedido
+            $qbTotal = \App\Database\DB::select('total')->from('"order"');
+            $total = $qbTotal->where('id = ' . $qbTotal->createPositionalParameter((int) $exist['id'], \Doctrine\DBAL\ParameterType::INTEGER))->fetchOne();
+
+            return $this->json($response, [
+                'sucesso'   => empty($errors),
+                'pedido_id' => (int) $exist['id'],
+                'adicionados'=> $added,
+                'erro'      => $errors ? implode('; ', $errors) : null,
+                'total'     => (float) $total,
+                'mensagem'  => empty($errors) ? 'Itens adicionados ao pedido existente.' : 'Alguns itens não puderam ser adicionados.',
+            ], empty($errors) ? 200 : 207);
+        }
 
         // Importante: passamos uma resposta NOVA e isolada aqui, e não a $response
         // recebida pela função. Se reaproveitássemos a mesma $response, o corpo
@@ -192,5 +242,143 @@ final class Cardapio extends Base
             'total'     => $dados['total'],
             'mensagem'  => 'Pedido enviado para a cozinha!',
         ], 200);
+    }
+
+    // GET /cardapio/pedidos/mesa/{id} → JSON
+    // Lista os pedidos já enviados à cozinha para a mesa, com status por
+    // ITEM (via tabela kitchen), usado no painel "Meus Pedidos" do cliente.
+    public function meusPedidos($request, $response, $args)
+    {
+        $mesaId = isset($args['id']) ? (int) $args['id'] : null;
+
+        if (!$mesaId) {
+            return $this->json($response, ['sucesso' => false, 'erro' => 'Informe a mesa.'], 400);
+        }
+
+        try {
+            $pedidos = \App\Database\DB::select("
+                o.id,
+                o.status,
+                o.total,
+                o.observacao,
+                to_char(o.criado_em, 'DD/MM/YYYY HH24:MI') AS criado_em,
+                pt.titulo AS pagamento,
+                c.nome_fantasia AS cliente_nome
+            ")
+                ->from('"order"', 'o')
+                ->leftJoin('o', 'payment_terms', 'pt', 'pt.id = o.payment_terms_id')
+                ->leftJoin('o', 'customer', 'c', 'c.id = o.id_cliente')
+                ->where('o.id_mesa = :mesa')
+                ->andWhere("o.status != 'pago'")
+                ->setParameter('mesa', $mesaId, \Doctrine\DBAL\ParameterType::INTEGER)
+                ->orderBy('o.criado_em', 'ASC')
+                ->fetchAllAssociative();
+
+            foreach ($pedidos as &$pedido) {
+                $itens = \App\Database\DB::select("
+                    oi.id AS order_item_id,
+                    oi.nome,
+                    oi.preco,
+                    oi.quantidade,
+                    oi.subtotal,
+                    k.id AS kitchen_id,
+                    COALESCE(k.status, 'Awaiting') AS status_cozinha
+                ")
+                    ->from('order_item', 'oi')
+                    ->leftJoin('oi', 'kitchen', 'k', 'k.order_item_id = oi.id')
+                    ->where('oi.order_id = :id')
+                    ->setParameter('id', $pedido['id'], \Doctrine\DBAL\ParameterType::INTEGER)
+                    ->orderBy('oi.id')
+                    ->fetchAllAssociative();
+
+                $pedido['itens'] = $itens;
+            }
+            unset($pedido);
+
+            return $this->json($response, [
+                'sucesso' => true,
+                'pedidos' => $pedidos,
+            ], 200);
+        } catch (\Exception $e) {
+            return $this->json($response, [
+                'sucesso' => false,
+                'erro'    => 'Erro ao buscar pedidos: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // POST /cardapio/pedido/cancelar-item → JSON
+    // Cancela um item específico do pedido, mas só se ele ainda não estiver
+    // "Ready" (pronto), "Delivered" (entregue) ou já "Cancelled".
+    // Recalcula o total do pedido descontando o item cancelado.
+    public function cancelarItem($request, $response)
+    {
+        $form        = $request->getParsedBody();
+        $orderItemId = isset($form['order_item_id']) ? (int) $form['order_item_id'] : null;
+
+        if (!$orderItemId) {
+            return $this->json($response, ['sucesso' => false, 'erro' => 'Informe o item do pedido.'], 400);
+        }
+
+        try {
+            $conn = \App\Database\DB::connection();
+
+            $kitchen = \App\Database\DB::select('id, status, order_id')
+                ->from('kitchen')
+                ->where('order_item_id = :oid')
+                ->setParameter('oid', $orderItemId, \Doctrine\DBAL\ParameterType::INTEGER)
+                ->fetchAssociative();
+
+            if (!$kitchen) {
+                return $this->json($response, ['sucesso' => false, 'erro' => 'Item não encontrado.'], 404);
+            }
+
+            if (in_array($kitchen['status'], ['Ready', 'Delivered', 'Cancelled'], true)) {
+                return $this->json($response, [
+                    'sucesso' => false,
+                    'erro'    => 'Este item já está pronto e não pode mais ser cancelado.',
+                ], 409);
+            }
+
+            // Bloqueia cancelamento se o pedido estiver em status final (pronto/pago/entregue/cancelado)
+            $qbOrder = \App\Database\DB::select('status')->from('"order"');
+            $order = $qbOrder
+                ->where('id = ' . $qbOrder->createPositionalParameter((int) $kitchen['order_id'], \Doctrine\DBAL\ParameterType::INTEGER))
+                ->fetchAssociative();
+
+            if ($order && in_array($order['status'], ['pronto', 'pago', 'entregue', 'cancelado'], true)) {
+                return $this->json($response, [
+                    'sucesso' => false,
+                    'erro'    => 'Pedido com status "' . $order['status'] . '" não permite cancelamento de itens.',
+                ], 409);
+            }
+
+            $conn->update('kitchen', [
+                'status'     => 'Cancelled',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], ['id' => (int) $kitchen['id']]);
+
+            // Recalcula o total do pedido, excluindo itens cancelados
+            $novoTotal = (float) \App\Database\DB::select("COALESCE(SUM(oi.subtotal), 0)")
+                ->from('order_item', 'oi')
+                ->leftJoin('oi', 'kitchen', 'k', 'k.order_item_id = oi.id')
+                ->where('oi.order_id = :id')
+                ->andWhere("COALESCE(k.status, 'Awaiting') != 'Cancelled'")
+                ->setParameter('id', (int) $kitchen['order_id'], \Doctrine\DBAL\ParameterType::INTEGER)
+                ->fetchOne();
+
+            $conn->update('"order"', [
+                'total'         => $novoTotal,
+                'atualizado_em' => date('Y-m-d H:i:s'),
+            ], ['id' => (int) $kitchen['order_id']]);
+
+            return $this->json($response, [
+                'sucesso'   => true,
+                'mensagem'  => 'Item cancelado com sucesso!',
+                'novoTotal' => $novoTotal,
+            ], 200);
+        } catch (\Exception $e) {
+            return $this->json($response, ['sucesso' => false, 'erro' => 'Erro: ' . $e->getMessage()], 500);
+        }
     }
 }

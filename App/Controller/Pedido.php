@@ -356,14 +356,15 @@ final class Pedido extends Base
 
             foreach ($pedidos as &$pedido) {
                 $itens = \App\Database\DB::select("
-                    nome,
-                    quantidade,
-                    preco,
-                    subtotal,
-                    status
+                    oi.nome,
+                    oi.quantidade,
+                    oi.preco,
+                    oi.subtotal,
+                    CASE WHEN k.status = 'Cancelled' THEN 'cancelado' ELSE 'ativo' END AS status
                 ")
-                ->from('order_item')
-                ->where('order_id = :id')
+                ->from('order_item', 'oi')
+                ->leftJoin('oi', 'kitchen', 'k', 'k.order_item_id = oi.id')
+                ->where('oi.order_id = :id')
                 ->setParameter('id', $pedido['id'])
                 ->fetchAllAssociative();
 
@@ -684,7 +685,7 @@ final class Pedido extends Base
         try {
             $conn = \App\Database\DB::connection();
 
-            $qbItem = \App\Database\DB::select('id, order_id, status')->from('order_item');
+            $qbItem = \App\Database\DB::select('id, order_id')->from('order_item');
             $item   = $qbItem
                 ->where('id = ' . $qbItem->createPositionalParameter((int) $orderItemId, \Doctrine\DBAL\ParameterType::INTEGER))
                 ->fetchAssociative();
@@ -693,8 +694,20 @@ final class Pedido extends Base
                 return $this->json($response, ['status' => false, 'msg' => 'Item não encontrado.'], 404);
             }
 
-            if ($item['status'] === 'cancelado') {
+            $qbKitchen = \App\Database\DB::select('id, status')->from('kitchen');
+            $kitchen   = $qbKitchen
+                ->where('order_item_id = ' . $qbKitchen->createPositionalParameter((int) $orderItemId, \Doctrine\DBAL\ParameterType::INTEGER))
+                ->fetchAssociative();
+
+            if ($kitchen && $kitchen['status'] === 'Cancelled') {
                 return $this->json($response, ['status' => false, 'msg' => 'Item já está cancelado.'], 422);
+            }
+
+            if ($kitchen && in_array($kitchen['status'], ['Ready', 'Delivered'], true)) {
+                return $this->json($response, [
+                    'status' => false,
+                    'msg'    => 'Este item já está pronto e não pode mais ser cancelado.',
+                ], 422);
             }
 
             $qbPedido = \App\Database\DB::select('id, status')->from('"order"');
@@ -715,12 +728,16 @@ final class Pedido extends Base
             }
 
             $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use ($orderItemId, $pedido): void {
-                $conn->update('order_item', ['status' => 'cancelado'], ['id' => (int) $orderItemId]);
+                $conn->update('kitchen', [
+                    'status'     => 'Cancelled',
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ], ['order_item_id' => (int) $orderItemId]);
 
-                $totalAtivo = (float) \App\Database\DB::select('COALESCE(SUM(subtotal), 0)')
-                    ->from('order_item')
-                    ->where('order_id = :id')
-                    ->andWhere("status = 'ativo'")
+                $totalAtivo = (float) \App\Database\DB::select('COALESCE(SUM(oi.subtotal), 0)')
+                    ->from('order_item', 'oi')
+                    ->leftJoin('oi', 'kitchen', 'k', 'k.order_item_id = oi.id')
+                    ->where('oi.order_id = :id')
+                    ->andWhere("COALESCE(k.status, 'Awaiting') != 'Cancelled'")
                     ->setParameter('id', (int) $pedido['id'])
                     ->fetchOne();
 
@@ -781,10 +798,11 @@ final class Pedido extends Base
                     'subtotal'   => $subtotal,
                 ]);
 
-                $totalAtivo = (float) \App\Database\DB::select('COALESCE(SUM(subtotal), 0)')
-                    ->from('order_item')
-                    ->where('order_id = :id')
-                    ->andWhere("status = 'ativo'")
+                $totalAtivo = (float) \App\Database\DB::select('COALESCE(SUM(oi.subtotal), 0)')
+                    ->from('order_item', 'oi')
+                    ->leftJoin('oi', 'kitchen', 'k', 'k.order_item_id = oi.id')
+                    ->where('oi.order_id = :id')
+                    ->andWhere("COALESCE(k.status, 'Awaiting') != 'Cancelled'")
                     ->setParameter('id', (int) $pedido['id'])
                     ->fetchOne();
 
@@ -859,11 +877,19 @@ final class Pedido extends Base
         }
 
         try {
-            $itens = \App\Database\DB::select('id, nome, preco, quantidade, subtotal, status')
-                ->from('order_item')
-                ->where('order_id = :id')
+            $itens = \App\Database\DB::select("
+                oi.id,
+                oi.nome,
+                oi.preco,
+                oi.quantidade,
+                oi.subtotal,
+                CASE WHEN k.status = 'Cancelled' THEN 'cancelado' ELSE 'ativo' END AS status
+            ")
+                ->from('order_item', 'oi')
+                ->leftJoin('oi', 'kitchen', 'k', 'k.order_item_id = oi.id')
+                ->where('oi.order_id = :id')
                 ->setParameter('id', (int) $id, \Doctrine\DBAL\ParameterType::INTEGER)
-                ->orderBy('id', 'ASC')
+                ->orderBy('oi.id', 'ASC')
                 ->fetchAllAssociative();
 
             return $this->json($response, ['status' => true, 'itens' => $itens], 200);
