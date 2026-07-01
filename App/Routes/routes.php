@@ -44,6 +44,7 @@ $app->group('/cardapio', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/mesa/{id}', Cardapio::class . ':index');
     $group->get('/itens',     Cardapio::class . ':getItens');
     $group->post('/pedido',   Cardapio::class . ':salvarPedido');
+    $group->post('/identificar', Cardapio::class . ':identificarCliente');
 });
 
 $app->get('/cardapio', Cardapio::class . ':index')->add(Middleware::web());
@@ -56,6 +57,8 @@ $app->group('/cliente', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/detalhes/{id}', Customer::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',      Customer::class . ':details')->add(Middleware::web());
     $group->post('/insert',       Customer::class . ':insert')->add(Middleware::api());
+    $group->get('/enderecos/{id}', Customer::class . ':enderecos')->add(Middleware::api());
+    $group->post('/endereco/insert', Customer::class . ':enderecoInsert')->add(Middleware::api());
     $group->post('/update',       Customer::class . ':update')->add(Middleware::api());
     $group->post('/delete',       Customer::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',  Customer::class . ':listingdata')->add(Middleware::api());
@@ -136,11 +139,15 @@ $app->group('/pedido', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/cozinha/listar', Pedido::class . ':listarCozinha')->add(Middleware::api());
     $group->get('/cozinha',        Pedido::class . ':cozinha')->add(Middleware::web());
     $group->get('/lista',          Pedido::class . ':list')->add(Middleware::web());
+    $group->get('/virtual',        Pedido::class . ':virtual')->add(Middleware::web());
     $group->get('/detalhes/{id}',  Pedido::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',       Pedido::class . ':details')->add(Middleware::web());
     $group->get('/itens/{id}',     Pedido::class . ':getItens')->add(Middleware::api());
     $group->post('/insert',        Pedido::class . ':insert')->add(Middleware::api());
+    $group->post('/virtual/insert', Pedido::class . ':insertVirtual')->add(Middleware::api());
     $group->post('/update-status', Pedido::class . ':updateStatus')->add(Middleware::api());
+    $group->post('/item/cancelar',  Pedido::class . ':cancelarItem')->add(Middleware::api());
+    $group->post('/item/adicionar', Pedido::class . ':adicionarItem')->add(Middleware::api());
     $group->post('/delete',        Pedido::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   Pedido::class . ':listingdata')->add(Middleware::api());
 });

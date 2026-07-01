@@ -34,7 +34,7 @@
 
                         <div class="col-lg-4 col-md-6">
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" disabled
+                                <input type="text" class="form-control" disabled id="total-pedido-input"
                                     value="R$ {{ pedido.total ? pedido.total | number_format(2, ',', '.') : '0,00' }}">
                                 <label>Total</label>
                             </div>
@@ -64,7 +64,52 @@
 
                     </div>
 
-                    {# Itens do pedido — carregados via JS #}
+                    {# ── Alerta exibido quando o pedido já está em status final ─────── #}
+                    <div class="alert alert-secondary d-none" id="alerta-bloqueado">
+                        <i class="fa-solid fa-lock me-1"></i>
+                        Este pedido já está <strong id="alerta-bloqueado-status"></strong> e não pode mais ser editado.
+                    </div>
+
+                    {# ── Adicionar Item (só habilitado se o pedido ainda pode ser editado) ── #}
+                    <div class="card shadow-sm mb-3 border-primary" id="card-adicionar-item">
+                        <div class="card-header bg-light">
+                            <h2 class="h6 mb-0 text-primary">
+                                <i class="fa-solid fa-plus-circle me-1"></i> Adicionar Item
+                            </h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-5">
+                                    <label for="id_produto" class="form-label small fw-bold">Produto <span class="text-danger">*</span></label>
+                                    <select id="id_produto" name="id_produto" class="form-select w-100" required>
+                                        <option value="">Buscar produto...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="quantidade" class="form-label small fw-bold">Qtd</label>
+                                    <input type="text" id="quantidade" name="quantidade"
+                                        class="form-control" value="1,00" autocomplete="off">
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="unitario" class="form-label small fw-bold">Preço Unit.</label>
+                                    <input type="text" id="unitario" class="form-control" readonly
+                                        style="background-color:#e9ecef;cursor:not-allowed;">
+                                </div>
+                                <div class="col-md-1">
+                                    <label for="valor-total" class="form-label small fw-bold">Total</label>
+                                    <input type="text" id="valor-total" class="form-control" readonly
+                                        style="background-color:#e9ecef;cursor:not-allowed;">
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button type="button" class="btn btn-primary w-100 py-2" id="insert-item">
+                                        <i class="fa-solid fa-plus me-1"></i> Inserir
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# ── Itens do pedido (leitura + cancelamento) ── #}
                     <div class="row mt-3" id="itens-container" style="display:none">
                         <div class="col-12">
                             <h6 class="fw-bold">Itens do pedido</h6>
@@ -75,6 +120,7 @@
                                         <th class="text-end">Qtd</th>
                                         <th class="text-end">Preço</th>
                                         <th class="text-end">Subtotal</th>
+                                        <th class="text-center" style="width:60px">Del.</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbody-itens"></tbody>
@@ -82,6 +128,7 @@
                                     <tr>
                                         <th colspan="3" class="text-end">Total</th>
                                         <th class="text-end" id="total-itens"></th>
+                                        <th></th>
                                     </tr>
                                 </tfoot>
                             </table>
