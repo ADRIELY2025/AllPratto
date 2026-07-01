@@ -10,7 +10,9 @@ if ($currentHandler === 'redis' && !extension_loaded('redis')) {
 	ini_set('session.save_path', sys_get_temp_dir());
 }
 
-session_start();
+if (php_sapi_name() !== 'cli' && session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 define('PROTOCOL', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'http');
 # Domínio atual da requisição — usado no payload JWT (iss/aud) e no cookie auth_token
