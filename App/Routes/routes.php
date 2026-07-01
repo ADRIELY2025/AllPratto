@@ -57,6 +57,8 @@ $app->group('/cliente', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/detalhes/{id}', Customer::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',      Customer::class . ':details')->add(Middleware::web());
     $group->post('/insert',       Customer::class . ':insert')->add(Middleware::api());
+    $group->get('/enderecos/{id}', Customer::class . ':enderecos')->add(Middleware::api());
+    $group->post('/endereco/insert', Customer::class . ':enderecoInsert')->add(Middleware::api());
     $group->post('/update',       Customer::class . ':update')->add(Middleware::api());
     $group->post('/delete',       Customer::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',  Customer::class . ':listingdata')->add(Middleware::api());

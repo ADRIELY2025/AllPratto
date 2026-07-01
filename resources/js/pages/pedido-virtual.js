@@ -4,6 +4,10 @@ import Requests from '../components/requests.js';
 // ─── Estado do carrinho ───────────────────────────────────────────────────────
 
 const carrinho = [];   // [{ id, nome, preco, quantidade, subtotal }]
+let paymentTerms = [];
+let selectedPaymentTermId = null;
+let selectedPaymentTermCode = '';
+const NO_INSTALLMENT_CODES = ['01', '04', '17'];
 
 // ─── Utilitários ─────────────────────────────────────────────────────────────
 
@@ -50,6 +54,180 @@ function initClienteSelect() {
             }),
         },
     });
+
+    $('#id_cliente').on('select2:select', function (e) {
+        const idCliente = e.params.data.id;
+        carregarEnderecosCliente(idCliente);
+    });
+
+    $('#id_cliente').on('select2:clear', function () {
+        limparEnderecos();
+    });
+
+    document.getElementById('id_endereco_salvo').addEventListener('change', function () {
+        if (!this.value) {
+            limparCamposEndereco();
+            return;
+        }
+
+        const selected = this.options[this.selectedIndex];
+        preencherCamposEndereco({
+            logradouro: selected.dataset.logradouro || '',
+            numero: selected.dataset.numero || '',
+            complemento: selected.dataset.complemento || '',
+            bairro: selected.dataset.bairro || '',
+            cidade: selected.dataset.cidade || '',
+            cep: selected.dataset.cep || '',
+            referencia: selected.dataset.referencia || '',
+        });
+    });
+}
+
+const PAYMENT_METHOD_TERM_KEY = {
+    dinheiro: ['dinheiro', '01', 'din'],
+    pix:      ['pix', '17'],
+    credito:  ['credito', 'cartao de credito', 'cartão de crédito', '03'],
+    debito:   ['debito', 'cartao de debito', 'cartão de débito', '04'],
+};
+
+function findPaymentTermByKey(key) {
+    const normalized = key?.toString().trim().toLowerCase();
+    if (!normalized) return null;
+
+    const exact = paymentTerms.find(term => {
+        const matches = [term.codigo, term.titulo, term.atalho]
+            .filter(Boolean)
+            .map(value => value.toString().trim().toLowerCase());
+        return matches.some(value => value.includes(normalized) || normalized.includes(value));
+    });
+    if (exact) return exact;
+
+    const fallbackKeys = PAYMENT_METHOD_TERM_KEY[normalized] || [normalized];
+    return paymentTerms.find(term => {
+        const matches = [term.codigo, term.titulo, term.atalho]
+            .filter(Boolean)
+            .map(value => value.toString().trim().toLowerCase());
+        return fallbackKeys.some(keyValue => matches.includes(keyValue));
+    }) || null;
+}
+
+async function loadPaymentTerms() {
+    try {
+        const requests = new Requests();
+        const response = await requests.get('/sale/payment-terms');
+        if (!response?.status || !Array.isArray(response.data)) {
+            return;
+        }
+        paymentTerms = response.data;
+    } catch (error) {
+        console.error('Erro ao carregar condições de pagamento:', error);
+    }
+}
+
+function setPaymentTerm(term) {
+    selectedPaymentTermId = term?.id ? parseInt(term.id, 10) : null;
+    selectedPaymentTermCode = term?.codigo ? term.codigo.toString().trim().toLowerCase() : '';
+    document.getElementById('id_payment_terms').value = selectedPaymentTermId || '';
+}
+
+async function selectPaymentMethod(paymentValue) {
+    if (!paymentTerms.length) {
+        await loadPaymentTerms();
+    }
+
+    const termo = findPaymentTermByKey(paymentValue);
+    setPaymentTerm(termo);
+
+    const selectParcelas = document.getElementById('num_parcelas');
+    if (!selectParcelas) return;
+
+    const termId = termo?.id;
+    const isCredito = paymentValue === 'credito';
+    const isNoInstallment = termo?.codigo && NO_INSTALLMENT_CODES.includes(termo.codigo.toString().trim());
+
+    if (termId) {
+        try {
+            const requests = new Requests();
+            const response = await requests.get(`/sale/installments/${termId}`);
+            if (response?.status && Array.isArray(response.data)) {
+                const maxParcelas = Math.max(...response.data.map(i => parseInt(i.parcela, 10) || 1));
+                selectParcelas.innerHTML = Array.from({ length: maxParcelas }, (_, index) => {
+                    const n = index + 1;
+                    return `<option value="${n}">${n}x</option>`;
+                }).join('');
+                selectParcelas.value = '1';
+                selectParcelas.disabled = !isCredito || isNoInstallment;
+                return;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar parcelas:', error);
+        }
+    }
+
+    // Fallback: use default one-installment behavior
+    selectParcelas.innerHTML = '<option value="1">1x à vista</option>';
+    selectParcelas.value = '1';
+    selectParcelas.disabled = !isCredito || isNoInstallment;
+}
+
+async function carregarEnderecosCliente(idCliente) {
+    const select = document.getElementById('id_endereco_salvo');
+    select.innerHTML = '<option value="">Novo endereço</option>';
+
+    if (!idCliente) {
+        return;
+    }
+
+    try {
+        const requests = new Requests();
+        const response = await requests.get(`/cliente/enderecos/${idCliente}`);
+
+        if (!response?.status || !Array.isArray(response.data)) {
+            return;
+        }
+
+        response.data.forEach(endereco => {
+            const option = document.createElement('option');
+            option.value = endereco.id;
+            option.textContent = `${endereco.logradouro || ''}${endereco.numero ? ', ' + endereco.numero : ''}${endereco.bairro ? ' - ' + endereco.bairro : ''}`.trim();
+            option.dataset.logradouro = endereco.logradouro || '';
+            option.dataset.numero = endereco.numero || '';
+            option.dataset.complemento = endereco.complemento || '';
+            option.dataset.bairro = endereco.bairro || '';
+            option.dataset.cidade = endereco.cidade || '';
+            option.dataset.cep = endereco.cep || '';
+            option.dataset.referencia = endereco.referencia || '';
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function limparEnderecos() {
+    const select = document.getElementById('id_endereco_salvo');
+    select.innerHTML = '<option value="">Novo endereço</option>';
+    limparCamposEndereco();
+}
+
+function limparCamposEndereco() {
+    document.getElementById('endereco_rua').value = '';
+    document.getElementById('endereco_numero').value = '';
+    document.getElementById('endereco_complemento').value = '';
+    document.getElementById('endereco_bairro').value = '';
+    document.getElementById('endereco_cidade').value = '';
+    document.getElementById('endereco_cep').value = '';
+    document.getElementById('endereco_referencia').value = '';
+}
+
+function preencherCamposEndereco(endereco) {
+    document.getElementById('endereco_rua').value = endereco.logradouro || '';
+    document.getElementById('endereco_numero').value = endereco.numero || '';
+    document.getElementById('endereco_complemento').value = endereco.complemento || '';
+    document.getElementById('endereco_bairro').value = endereco.bairro || '';
+    document.getElementById('endereco_cidade').value = endereco.cidade || '';
+    document.getElementById('endereco_cep').value = endereco.cep || '';
+    document.getElementById('endereco_referencia').value = endereco.referencia || '';
 }
 
 // ─── Select2: Produto ─────────────────────────────────────────────────────────
@@ -209,7 +387,7 @@ function atualizarResumo() {
 
 function initPagamento() {
     document.querySelectorAll('.pagamento-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', async function () {
             document.querySelectorAll('.pagamento-btn').forEach(b => {
                 b.classList.remove('btn-primary', 'btn-success', 'btn-info', 'btn-warning');
                 b.classList.add('btn-outline-secondary');
@@ -217,6 +395,8 @@ function initPagamento() {
             this.classList.remove('btn-outline-secondary');
             this.classList.add('btn-primary');
             document.getElementById('pagamento').value = this.dataset.valor;
+
+            await selectPaymentMethod(this.dataset.valor);
 
             const blocoTroco = document.getElementById('bloco-troco');
             if (this.dataset.valor === 'dinheiro') {
@@ -295,8 +475,16 @@ async function finalizarPedido() {
         return;
     }
 
-    const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
+    const tipoEntregaEl = document.querySelector('input[name="tipo_entrega"]:checked');
+    if (!tipoEntregaEl) {
+        Swal.fire({ icon: 'warning', title: 'Selecione o tipo de entrega', timer: 2000, timerProgressBar: true });
+        return;
+    }
+    const tipoEntrega = tipoEntregaEl.value;
     const taxa        = strParaFloat(document.getElementById('taxa_entrega').value || '0');
+    const parcelas    = parseInt(document.getElementById('num_parcelas').value || '1', 10);
+    const idEndereco  = document.getElementById('id_endereco_salvo').value || '';
+    const salvarEndereco = document.getElementById('salvar_endereco').checked ? 'true' : 'false';
 
     // Monta endereço em observação
     let enderecoStr = '';
@@ -333,6 +521,18 @@ async function finalizarPedido() {
         tipo_entrega:  tipoEntrega,
         taxa_entrega:  taxa,
         total_geral:   total,
+        parcelas:      parcelas,
+        intervalo:     pagamento === 'credito' && parcelas > 1 ? 30 : 0,
+        id_payment_terms: selectedPaymentTermId || '',
+        id_endereco:   idEndereco,
+        salvar_endereco: salvarEndereco,
+        endereco_rua: document.getElementById('endereco_rua').value.trim(),
+        endereco_numero: document.getElementById('endereco_numero').value.trim(),
+        endereco_complemento: document.getElementById('endereco_complemento').value.trim(),
+        endereco_bairro: document.getElementById('endereco_bairro').value.trim(),
+        endereco_cidade: document.getElementById('endereco_cidade').value.trim(),
+        endereco_cep: document.getElementById('endereco_cep').value.trim(),
+        endereco_referencia: document.getElementById('endereco_referencia').value.trim(),
     };
 
     document.getElementById('btn-finalizar').disabled = true;
@@ -402,6 +602,7 @@ window.removerItemCarrinho = removerItem;
 initClienteSelect();
 initProdutoSelect();
 initQuantidade();
+loadPaymentTerms();
 initPagamento();
 initTipoEntrega();
 

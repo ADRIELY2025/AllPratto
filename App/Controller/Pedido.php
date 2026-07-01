@@ -30,22 +30,70 @@ final class Pedido extends Base
     // ──────────────────────────────────────────────────────────────────────────
     public function insertVirtual($request, $response)
     {
-        $form        = $request->getParsedBody();
-        $idCliente   = isset($form['id_cliente']) && $form['id_cliente'] !== ''
-            ? (int) $form['id_cliente'] : null;
-        $itensJson   = $form['itens']       ?? '[]';
-        $pagamento   = trim((string) ($form['pagamento']  ?? 'dinheiro'));
-        $observacao  = $form['observacao']  ?? null;
+        $form = $request->getParsedBody();
+
+        $idCliente = null;
+        if (isset($form['id_cliente']) && $form['id_cliente'] !== '') {
+            $idCliente = filter_var($form['id_cliente'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        }
+
+        $idPaymentTerms = null;
+        if (isset($form['id_payment_terms']) && $form['id_payment_terms'] !== '') {
+            $idPaymentTerms = filter_var($form['id_payment_terms'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        }
+        $itensJson   = $form['itens'] ?? '[]';
+        $pagamento   = trim((string) ($form['pagamento'] ?? 'dinheiro'));
+        $observacao  = $form['observacao'] ?? null;
         $tipoEntrega = $form['tipo_entrega'] ?? 'delivery';
-        $taxaEntrega   = isset($form['taxa_entrega'])
+        $taxaEntrega = isset($form['taxa_entrega'])
             ? round((float) str_replace(',', '.', (string) $form['taxa_entrega']), 4)
             : 0.0;
-        $totalParcelas = isset($form['num_parcelas']) && (int) $form['num_parcelas'] >= 1
-            ? (int) $form['num_parcelas'] : 1;
-        $intervalo     = ($pagamento === 'credito' && $totalParcelas > 1) ? 30 : 0;
+        $totalParcelas = isset($form['parcelas']) && (int) $form['parcelas'] >= 1
+            ? (int) $form['parcelas']
+            : (isset($form['num_parcelas']) && (int) $form['num_parcelas'] >= 1 ? (int) $form['num_parcelas'] : 1);
+        $intervalo = isset($form['intervalo']) && (int) $form['intervalo'] >= 0
+            ? (int) $form['intervalo']
+            : (($pagamento === 'credito' && $totalParcelas > 1) ? 30 : 0);
+        $enderecoId = null;
+        if (isset($form['id_endereco']) && $form['id_endereco'] !== '') {
+            $enderecoId = (int) $form['id_endereco'];
+        } elseif (isset($form['id_endereco_salvo']) && $form['id_endereco_salvo'] !== '') {
+            $enderecoId = (int) $form['id_endereco_salvo'];
+        }
+
+        $salvarEndereco = (($form['salvar_endereco'] ?? 'false') === 'true');
+        $enderecoData = [
+            'logradouro'  => trim((string) ($form['endereco_rua'] ?? '')),
+            'numero'      => trim((string) ($form['endereco_numero'] ?? '')),
+            'complemento' => trim((string) ($form['endereco_complemento'] ?? '')),
+            'bairro'      => trim((string) ($form['endereco_bairro'] ?? '')),
+            'cidade'      => trim((string) ($form['endereco_cidade'] ?? '')),
+            'cep'         => trim((string) ($form['endereco_cep'] ?? '')),
+            'referencia'  => trim((string) ($form['endereco_referencia'] ?? '')),
+        ];
 
         if (!$idCliente) {
             return $this->json($response, ['status' => false, 'msg' => 'Cliente é obrigatório para pedido virtual.', 'id' => 0], 400);
+        }
+
+        $qbCliente = \App\Database\DB::select('id')->from('customer');
+        $cliente   = $qbCliente
+            ->where('id = ' . $qbCliente->createPositionalParameter($idCliente, \Doctrine\DBAL\ParameterType::INTEGER))
+            ->fetchAssociative();
+
+        if (!$cliente) {
+            return $this->json($response, ['status' => false, 'msg' => 'Cliente não encontrado.', 'id' => 0], 404);
+        }
+
+        if ($idPaymentTerms) {
+            $qbPaymentTerm = \App\Database\DB::select('id')->from('payment_terms');
+            $paymentTermExists = $qbPaymentTerm
+                ->where('id = ' . $qbPaymentTerm->createPositionalParameter($idPaymentTerms, \Doctrine\DBAL\ParameterType::INTEGER))
+                ->fetchOne();
+
+            if (!$paymentTermExists) {
+                return $this->json($response, ['status' => false, 'msg' => 'Condição de pagamento não encontrada.', 'id' => 0], 400);
+            }
         }
 
         $itens = json_decode($itensJson, true);
@@ -76,14 +124,30 @@ final class Pedido extends Base
         if ($taxaEntrega > 0) {
             $prefixoObs .= ' | Taxa: R$ ' . number_format($taxaEntrega, 2, ',', '.');
         }
+
         $observacaoFinal = $prefixoObs . ($observacao ? ' | ' . $observacao : '');
+
+        if ($tipoEntrega === 'delivery' && ($enderecoData['logradouro'] !== '' || $enderecoId)) {
+            $enderecoTexto = trim(implode(' — ', array_filter([
+                $enderecoData['logradouro'],
+                $enderecoData['numero'],
+                $enderecoData['complemento'] ? 'Comp. ' . $enderecoData['complemento'] : null,
+                $enderecoData['bairro'],
+                $enderecoData['cidade'],
+                $enderecoData['cep'] ? 'CEP ' . $enderecoData['cep'] : null,
+                $enderecoData['referencia'] ? 'Ref.: ' . $enderecoData['referencia'] : null,
+            ], static fn ($v) => $v !== null && $v !== '')));
+            if ($enderecoTexto !== '') {
+                $observacaoFinal = $observacaoFinal . ' | Endereço: ' . $enderecoTexto;
+            }
+        }
 
         try {
             $conn = \App\Database\DB::connection();
 
             $ids = $conn->transactional(function (\Doctrine\DBAL\Connection $conn) use (
                 $idCliente, $total, $itensNormalizados, $pagamento, $observacaoFinal,
-                $totalParcelas, $intervalo
+                $totalParcelas, $intervalo, $tipoEntrega, $enderecoId, $salvarEndereco, $enderecoData, $idPaymentTerms
             ): array {
 
                 // 1. order — id_mesa NULL (pedido virtual)
@@ -110,18 +174,33 @@ final class Pedido extends Base
                 }
 
                 // 3. payment_terms
-                $ptLabel = $this->normalizarPagamento($pagamento);
-                $pt      = \App\Database\DB::select('id')
-                    ->from('payment_terms')
-                    ->where('titulo = :titulo')
-                    ->setParameter('titulo', $ptLabel)
-                    ->fetchAssociative();
+                if ($idPaymentTerms) {
+                    $qbPayment = \App\Database\DB::select('id, titulo, codigo')
+                        ->from('payment_terms');
+                    $pt = $qbPayment
+                        ->where('id = ' . $qbPayment->createPositionalParameter($idPaymentTerms, \Doctrine\DBAL\ParameterType::INTEGER))
+                        ->fetchAssociative();
+
+                    if (!$pt) {
+                        throw new \RuntimeException('Condição de pagamento inválida.');
+                    }
+                } else {
+                    $ptLabel = $this->normalizarPagamento($pagamento);
+                    $qbPayment = \App\Database\DB::select('id, titulo, codigo')
+                        ->from('payment_terms');
+                    $pt = $qbPayment
+                        ->where('LOWER(titulo) = LOWER(:titulo)')
+                        ->setParameter('titulo', $ptLabel)
+                        ->fetchAssociative();
+                }
 
                 if (!$pt) {
+                    $codigo = strtolower(str_replace(' ', '_', $this->normalizarPagamento($pagamento)));
+                    $titulo = $this->normalizarPagamento($pagamento);
                     $conn->insert('payment_terms', [
-                        'codigo' => strtolower(str_replace(' ', '_', $ptLabel)),
-                        'titulo' => $ptLabel,
-                        'atalho' => strtoupper(substr($ptLabel, 0, 3)),
+                        'codigo' => $codigo,
+                        'titulo' => $titulo,
+                        'atalho' => strtoupper(substr($titulo, 0, 3)),
                     ]);
                     $ptId = (int) $conn->lastInsertId();
                 } else {
@@ -152,6 +231,52 @@ final class Pedido extends Base
                 }
 
                 $conn->update('"order"', ['payment_terms_id' => $ptId], ['id' => $pedidoId]);
+
+                $enderecoPedido = null;
+                if ($tipoEntrega === 'delivery' && ($enderecoId || !empty(array_filter($enderecoData, static fn ($value) => trim((string) $value) !== '')))) {
+                    if ($enderecoId) {
+                        $enderecoPedido = \App\Database\DB::select('*')
+                            ->from('customer_address')
+                            ->where('id = :id')
+                            ->setParameter('id', $enderecoId, \Doctrine\DBAL\ParameterType::INTEGER)
+                            ->fetchAssociative();
+                    }
+
+                    if (!$enderecoPedido && ($salvarEndereco || !$enderecoId)) {
+                        $conn->insert('customer_address', [
+                            'id_cliente'  => $idCliente,
+                            'logradouro'  => $enderecoData['logradouro'],
+                            'numero'      => $enderecoData['numero'],
+                            'complemento' => $enderecoData['complemento'],
+                            'bairro'      => $enderecoData['bairro'],
+                            'cidade'      => $enderecoData['cidade'],
+                            'cep'         => $enderecoData['cep'],
+                            'referencia'  => $enderecoData['referencia'],
+                            'principal'   => false,
+                        ]);
+                        $enderecoPedido = [
+                            'id' => (int) $conn->lastInsertId(),
+                            'logradouro' => $enderecoData['logradouro'],
+                            'numero' => $enderecoData['numero'],
+                            'complemento' => $enderecoData['complemento'],
+                            'bairro' => $enderecoData['bairro'],
+                            'cidade' => $enderecoData['cidade'],
+                            'cep' => $enderecoData['cep'],
+                            'referencia' => $enderecoData['referencia'],
+                        ];
+                    }
+
+                    $conn->update('"order"', [
+                        'id_endereco'         => $enderecoPedido['id'] ?? $enderecoId,
+                        'endereco_logradouro' => $enderecoPedido['logradouro'] ?? $enderecoData['logradouro'],
+                        'endereco_numero'     => $enderecoPedido['numero'] ?? $enderecoData['numero'],
+                        'endereco_complemento' => $enderecoPedido['complemento'] ?? $enderecoData['complemento'],
+                        'endereco_bairro'     => $enderecoPedido['bairro'] ?? $enderecoData['bairro'],
+                        'endereco_cidade'     => $enderecoPedido['cidade'] ?? $enderecoData['cidade'],
+                        'endereco_cep'        => $enderecoPedido['cep'] ?? $enderecoData['cep'],
+                        'endereco_referencia' => $enderecoPedido['referencia'] ?? $enderecoData['referencia'],
+                    ], ['id' => $pedidoId]);
+                }
 
                 // 5. sale
                 $conn->insert('sale', [
@@ -227,8 +352,6 @@ final class Pedido extends Base
                         'data_vencimento' => $dataVencimento,
                     ]);
                 }
-
-                // Sem atualização de mesa — pedido virtual não tem mesa física.
 
                 return [
                     'pedido_id'   => $pedidoId,
