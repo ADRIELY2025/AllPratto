@@ -940,6 +940,11 @@ final class Pedido extends Base
                     $statusBadge,
                     $value['criado_em'],
                     $value['atualizado_em'],
+                    "<td>
+                    <a class='btn btn-sm btn-warning' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-pen-to-square'></i> Ver</a>
+                    <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal({$value['id']});'><i class='fa-solid fa-trash'></i> Cancelar</button>
+                    <a class='btn btn-sm btn-primary' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-print'></i> Imprimir</a>
+                </td>",
                     "<td class='d-flex gap-1'>{$btnVer} {$btnCancelar}</td>",
                 ];
             }
