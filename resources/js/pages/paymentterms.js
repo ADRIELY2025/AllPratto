@@ -27,6 +27,18 @@ const MAX_INTERVALO = 40;
 
 let installments = [];
 
+// ─── Helper: o Requests.post() só manda o que estiver em setBody/setForm,
+// então pra mandar dados soltos (sem ser via <form>) montamos um
+// URLSearchParams manualmente e setamos com .setBody() antes do .post().
+// (Sem isso, o segundo argumento de requests.post(url, dados) é ignorado
+// e a requisição vai sem id_pagamento/id — por isso a lista não aparecia
+// e o excluir não removia de fato do banco.)
+async function postData(url, data) {
+    const params = new URLSearchParams();
+    Object.entries(data).forEach(([key, value]) => params.append(key, value));
+    return new Requests().setBody(params).post(url);
+}
+
 // ─── Formata número como moeda BR
 function fmtBRL(value) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -111,9 +123,8 @@ window.removeParcela = async function (index) {
     const item = installments[index];
 
     if (item.id) {
-        const requests = new Requests();
         try {
-            const res = await requests.post('/payment/installment/delete', { id: item.id });
+            const res = await postData('/payment/installment/delete', { id: item.id });
             if (!res.status) {
                 Swal.fire({ icon: 'error', title: 'Erro', text: res.msg, timer: 3000, timerProgressBar: true });
                 return;
@@ -133,8 +144,7 @@ async function loadInstallments() {
     if (!Id.value) return;
 
     try {
-        const requests = new Requests();
-        const res = await requests.post('/payment/installment/list', { id_pagamento: Id.value });
+        const res = await postData('/payment/installment/list', { id_pagamento: Id.value });
         if (res.status && res.data) {
             installments = res.data.map(r => ({
                 id: r.id,
