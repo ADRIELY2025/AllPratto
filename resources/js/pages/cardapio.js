@@ -241,8 +241,10 @@ let _selectedInstallment = null;
 let _selectedPaymentId   = null;
 
 function pagamentoSelecionado() {
-    const marcado = opcoesPagamento.querySelector('input[name="pagamento"]:checked');
-    return marcado ? marcado.value : '';
+    // retorna um array com as formas selecionadas (até 2) — compatível com legacy retornando string
+    const checks = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
+    const vals = checks.map(c => c.value);
+    return vals.length === 1 ? vals[0] : vals; // string for single, array for multiple
 }
 
 /** Busca payment_terms de crédito e carrega installments no dropdown */
@@ -316,24 +318,65 @@ function syncInstallmentSelecionado(selectEl) {
         : null;
 }
 
-opcoesPagamento.querySelectorAll('input[name="pagamento"]').forEach(input => {
-    input.addEventListener('change', () => {
-        opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
-            card.classList.toggle('selecionado', card.contains(input) && input.checked);
+opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]').forEach(input => {
+        input.addEventListener('change', () => {
+            // Limita seleção a 2 checkboxes
+            const checked = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
+            if (checked.length > 2) {
+                // desmarca o último selecionado
+                input.checked = false;
+                Swal.fire({ icon: 'warning', title: 'Limite', text: 'Você pode escolher no máximo 2 formas de pagamento.' });
+                return;
+            }
+
+            // atualiza visual e mostra input de valor
+            opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
+                const chk = card.querySelector('input[name="pagamento_cb"]');
+                card.classList.toggle('selecionado', !!(chk && chk.checked));
+                const valorBox = card.querySelector('.pagamento-valor');
+                if (valorBox) valorBox.classList.toggle('oculto', !(chk && chk.checked));
+            });
+
+            // Se apenas crédito selecionado, carregar parcelas
+            const selectedVals = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked')).map(c => c.value);
+            const isCredito = selectedVals.includes('credito');
+            blocoParcelamento.classList.toggle('oculto', !isCredito);
+
+            if (isCredito) {
+                carregarInstallmentsCredito();
+            } else {
+                _selectedInstallment = null;
+                _selectedPaymentId   = null;
+            }
+
+            // Ajuste default de valores: se 1 selecionado → preenche total; se 2 selecionados → divide meio-a-meio
+            const totalEl = document.getElementById('valor-total');
+            const total = totalEl ? parseFloat((totalEl.textContent || 'R$ 0,00').replace(/[R$\.\s]/g, '').replace(',', '.')) || 0 : 0;
+            const visibleInputs = Array.from(opcoesPagamento.querySelectorAll('.pagamento-valor-input')).filter(i => !i.closest('.pagamento-valor').classList.contains('oculto'));
+            if (visibleInputs.length === 1) {
+                visibleInputs[0].value = total.toFixed(2).replace('.', ',');
+            } else if (visibleInputs.length === 2) {
+                const half = Math.round((total / 2) * 100) / 100;
+                visibleInputs[0].value = half.toFixed(2).replace('.', ',');
+                visibleInputs[1].value = (Math.round((total - half) * 100) / 100).toFixed(2).replace('.', ',');
+            }
         });
-
-        // Apenas crédito exibe parcelamento
-        const isCredito = input.value === 'credito';
-        blocoParcelamento.classList.toggle('oculto', !isCredito);
-
-        if (isCredito) {
-            carregarInstallmentsCredito();
-        } else {
-            _selectedInstallment = null;
-            _selectedPaymentId   = null;
-        }
     });
-});
+
+// Formata valores dos inputs de pagamento ao perder foco
+opcoesPagamento.addEventListener('blur', (e) => {
+    if (!e.target.classList) return;
+    if (e.target.classList.contains('pagamento-valor-input')) {
+        const v = e.target.value.trim();
+        if (!v) return;
+        const n = parseFloat(v.replace('.', '').replace(',', '.'));
+        if (isNaN(n)) {
+            e.target.value = '';
+        } else {
+            e.target.value = n.toFixed(2).replace('.', ',');
+        }
+    }
+}, true);
 
 blocoParcelamento.addEventListener('change', e => {
     if (e.target && e.target.id === 'select-parcelas-credito') {
@@ -353,22 +396,39 @@ async function identificarClienteSeNecessario() {
         html: `
             <p style="margin-bottom:12px;color:#555;font-size:.95rem;">Para fazermos seu pedido, precisamos de algumas informações.</p>
             <input id="swal-nome"  class="swal2-input" placeholder="Seu nome *" autocomplete="name">
-            <input id="swal-cpf"   class="swal2-input" placeholder="CPF (opcional)" inputmode="numeric">
+            <input id="swal-cpf"   class="swal2-input" placeholder="CPF *" inputmode="numeric">
             <input id="swal-email" class="swal2-input" placeholder="E-mail (opcional)" type="email">
         `,
         confirmButtonText: 'Continuar',
         showCancelButton:  true,
         cancelButtonText:  'Cancelar',
         focusConfirm: false,
+        didOpen: () => {
+            const nomeEl = document.getElementById('swal-nome');
+            const cpfEl  = document.getElementById('swal-cpf');
+            if (nomeEl) nomeEl.focus();
+            try {
+                if (typeof Inputmask !== 'undefined') {
+                    Inputmask({ mask: '999.999.999-99' }).mask(cpfEl);
+                }
+            } catch (e) {
+                // ignore if Inputmask not loaded
+            }
+        },
         preConfirm: () => {
             const nome  = document.getElementById('swal-nome').value.trim();
-            const cpf   = document.getElementById('swal-cpf').value.trim();
+            const cpfRaw   = document.getElementById('swal-cpf').value.trim();
+            const cpfDigits = cpfRaw.replace(/\D/g, '');
             const email = document.getElementById('swal-email').value.trim();
             if (!nome) {
                 Swal.showValidationMessage('Nome é obrigatório');
                 return false;
             }
-            return { nome, cpf, email };
+            if (!cpfDigits || cpfDigits.length !== 11) {
+                Swal.showValidationMessage('CPF inválido. Use formato 000.000.000-00');
+                return false;
+            }
+            return { nome, cpf: cpfDigits, email };
         },
     });
 
@@ -413,6 +473,58 @@ async function finalizarPedido() {
     const identificado = await identificarClienteSeNecessario();
     if (!identificado) return;
 
+    // Constrói o payload de pagamentos a partir dos checkboxes e inputs visíveis
+    let pagamentosPayload = null;
+    const totalPedido = carrinho.reduce((s, i) => s + (Number(i.qty) * Number(i.produto.preco_venda || i.produto.preco || 0)), 0);
+    const selectedChecks = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
+    if (selectedChecks.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Selecione a forma de pagamento.', timer: 2000, timerProgressBar: true });
+        return;
+    }
+
+    // coleta valores dos inputs correspondentes
+    pagamentosPayload = [];
+    let soma = 0;
+    for (const chk of selectedChecks) {
+        const card = chk.closest('.pagamento-card');
+        const inputValor = card ? card.querySelector('.pagamento-valor-input') : null;
+        let valor = totalPedido;
+        if (inputValor && inputValor.value.trim() !== '') {
+            valor = parseFloat(inputValor.value.replace('.', '').replace(',', '.'));
+            if (isNaN(valor) || valor < 0) valor = 0;
+        }
+        soma += Math.round(valor * 100) / 100;
+
+        pagamentosPayload.push({ forma: chk.value, valor: Math.round(valor * 100) / 100, parcelas: 1, intervalo: 0 });
+    }
+
+    // Se apenas 1 forma selecionada, ok — se 2, valida soma igual ao total (com tolerância de 0.01)
+    if (selectedChecks.length === 2) {
+        if (Math.abs(soma - Math.round(totalPedido * 100) / 100) > 0.01) {
+            Swal.fire({ icon: 'warning', title: 'Valores divergentes', text: 'A soma dos valores informados deve ser igual ao total do pedido.', timer: 2500 });
+            return;
+        }
+    } else {
+        // single: garante que o slice cubra todo o total
+        pagamentosPayload[0].valor = Math.round(totalPedido * 100) / 100;
+    }
+
+    // Ajusta parcelas/intervalo para crédito caso haja crédito selecionado
+    for (const p of pagamentosPayload) {
+        if (p.forma === 'credito') {
+            if (_selectedInstallment) {
+                p.parcelas = _selectedInstallment.parcela || 1;
+                p.intervalo = _selectedInstallment.intervalo || 30;
+            } else {
+                const sel = document.getElementById('select-parcelas-credito');
+                if (sel && sel.value) {
+                    p.parcelas = parseInt(sel.value, 10) || 1;
+                    p.intervalo = parseInt(sel.options[sel.selectedIndex]?.dataset.intervalo) || 30;
+                }
+            }
+        }
+    }
+
     // Captura parcelas/intervalo só quando crédito
     const isCredito = pgto === 'credito';
     let parcelas  = 1;
@@ -438,19 +550,27 @@ async function finalizarPedido() {
     try {
         const requests = new Requests();
         requests.headers['Content-Type'] = 'application/json';
-        const response = await requests.setBody(JSON.stringify({
+        const payload = {
             mesa_id:    mesaId,
-            pagamento:  pgto,
-            parcelas,
-            intervalo,
             id_cliente: clienteIdentificado?.id_cliente ?? null,
             itens: carrinho.map(i => ({
                 id:         i.produto.id,
                 nome:       i.produto.nome,
                 quantidade: i.qty,
-                preco:      i.produto.preco_venda,
+                preco:      i.produto.preco_venda || i.produto.preco,
             })),
-        })).post('/cardapio/pedido');
+        };
+
+        if (pagamentosPayload) {
+            payload.pagamentos = pagamentosPayload;
+        } else {
+            // formato legado
+            payload.pagamento  = pgto;
+            payload.parcelas   = parcelas;
+            payload.intervalo  = intervalo;
+        }
+
+        const response = await requests.setBody(JSON.stringify(payload)).post('/cardapio/pedido');
 
         if (!response.sucesso) {
             Swal.fire({ icon: 'error', title: 'Erro', text: response.erro || 'Erro ao salvar pedido.', timer: 3000, timerProgressBar: true });
@@ -468,6 +588,7 @@ async function finalizarPedido() {
         carrinho = [];
         atualizarUI();
         fecharPainel();
+        carregarMeusPedidos();
 
     } catch (error) {
         Swal.fire({ icon: 'error', title: 'Erro', text: `Restrição: ${error.message}`, timer: 3000, timerProgressBar: true });
@@ -479,5 +600,260 @@ async function finalizarPedido() {
 
 document.getElementById('btn-finalizar').addEventListener('click', finalizarPedido);
 
+// ── MEUS PEDIDOS (histórico enviado à cozinha) ─────────────────────
+const MAPA_STATUS_ITEM = {
+    Awaiting:  { texto: 'Aguardando', classe: 'badge-status--aguardando', cancelavel: true  },
+    Preparing: { texto: 'Em preparo', classe: 'badge-status--preparo',    cancelavel: true  },
+    Ready:     { texto: 'Pronto',     classe: 'badge-status--pronto',     cancelavel: false },
+    Delivered: { texto: 'Entregue',   classe: 'badge-status--entregue',  cancelavel: false },
+    Cancelled: { texto: 'Cancelado',  classe: 'badge-status--cancelado', cancelavel: false },
+};
+
+const MAPA_STATUS_PEDIDO = {
+    pendente:   'Recebido',
+    em_preparo: 'Em preparo',
+    pronto:     'Pronto',
+    entregue:   'Entregue',
+    cancelado:  'Cancelado',
+    pago:       'Pago',
+};
+
+let meusPedidosCache = [];
+
+function infoStatusItem(status) {
+    return MAPA_STATUS_ITEM[status] || MAPA_STATUS_ITEM.Awaiting;
+}
+
+async function carregarMeusPedidos() {
+    const mesaId = getMesaId();
+    const badge  = document.getElementById('badge-meus-pedidos');
+
+    if (!mesaId) {
+        meusPedidosCache = [];
+        badge.classList.add('oculto');
+        return;
+    }
+
+    try {
+        const requests = new Requests();
+        const response  = await requests.get(`/cardapio/pedidos/mesa/${mesaId}`);
+        if (!response.sucesso) return;
+
+        meusPedidosCache = response.pedidos || [];
+
+        // Badge = qtde de itens ainda não cancelados em pedidos abertos
+        const qtdAtiva = meusPedidosCache.reduce((soma, pedido) => {
+            return soma + pedido.itens
+                .filter(i => i.status_cozinha !== 'Cancelled')
+                .reduce((s, i) => s + Number(i.quantidade), 0);
+        }, 0);
+
+        if (qtdAtiva > 0) {
+            badge.textContent = qtdAtiva;
+            badge.classList.remove('oculto');
+        } else {
+            badge.classList.add('oculto');
+        }
+    } catch (error) {
+        console.warn('Erro ao carregar meus pedidos:', error.message);
+    }
+}
+
+function renderMeusPedidos() {
+    const container = document.getElementById('lista-meus-pedidos');
+    const totalRow   = document.getElementById('total-row-meus-pedidos');
+    const btnImprimir = document.getElementById('btn-imprimir-nota');
+
+    if (meusPedidosCache.length === 0) {
+        container.innerHTML = `<div class="carrinho-vazio"><i class="fa-solid fa-receipt"></i>Você ainda não enviou nenhum pedido para a cozinha.</div>`;
+        totalRow.style.display = 'none';
+        btnImprimir.style.display = 'none';
+        return;
+    }
+
+    totalRow.style.display = '';
+    btnImprimir.style.display = '';
+
+    let totalGeral = 0;
+
+    container.innerHTML = meusPedidosCache.map(pedido => {
+        const itensHTML = pedido.itens.map(item => {
+            const info = infoStatusItem(item.status_cozinha);
+            const podeCancel = info.cancelavel;
+            if (item.status_cozinha !== 'Cancelled') {
+                totalGeral += Number(item.subtotal);
+            }
+            return `
+                <div class="item-pedido-status">
+                    <div class="item-pedido-status__qtd">${item.quantidade}x</div>
+                    <div class="item-pedido-status__info">
+                        <div class="item-pedido-status__nome${item.status_cozinha === 'Cancelled' ? ' cancelado' : ''}">${item.nome}</div>
+                        <div class="item-pedido-status__preco">${formatBRL(item.subtotal)}</div>
+                    </div>
+                    <span class="badge-status ${info.classe}">${info.texto}</span>
+                    ${podeCancel ? `<button class="btn-cancelar-item" title="Cancelar item" data-order-item-id="${item.order_item_id}"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="pedido-bloco">
+                <div class="pedido-bloco__topo">
+                    <div>
+                        <div class="pedido-bloco__numero">Pedido #${String(pedido.id).padStart(3, '0')}</div>
+                        <div class="pedido-bloco__hora">${pedido.criado_em || ''}</div>
+                    </div>
+                    <span class="status-pedido-geral">${MAPA_STATUS_PEDIDO[pedido.status] || pedido.status}</span>
+                </div>
+                ${itensHTML}
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('valor-total-meus-pedidos').textContent = formatBRL(totalGeral);
+
+    container.querySelectorAll('.btn-cancelar-item').forEach(btn => {
+        btn.addEventListener('click', () => cancelarItemPedido(Number(btn.dataset.orderItemId)));
+    });
+}
+
+async function cancelarItemPedido(orderItemId) {
+    const confirmacao = await Swal.fire({
+        icon: 'warning',
+        title: 'Cancelar item?',
+        text: 'Esse item ainda não começou a ser preparado e será removido do seu pedido.',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, cancelar',
+        cancelButtonText: 'Voltar',
+        confirmButtonColor: '#6b1f2a',
+    });
+    if (!confirmacao.isConfirmed) return;
+
+    try {
+        const requests = new Requests();
+        requests.headers['Content-Type'] = 'application/json';
+        const response = await requests.setBody(JSON.stringify({ order_item_id: orderItemId })).post('/cardapio/pedido/cancelar-item');
+
+        if (!response.sucesso) {
+            Swal.fire({ icon: 'error', title: 'Não foi possível cancelar', text: response.erro, timer: 3000, timerProgressBar: true });
+            return;
+        }
+
+        Swal.fire({ icon: 'success', title: 'Item cancelado!', timer: 1800, timerProgressBar: true });
+        await carregarMeusPedidos();
+        renderMeusPedidos();
+    } catch (error) {
+        // Mensagem mais amigável quando o pedido já está finalizado
+        const isFinalStatus = error && (error.status === 409 || (error.body && typeof error.body.erro === 'string' && error.body.erro.toLowerCase().includes('pedido com status')));
+        if (isFinalStatus) {
+            Swal.fire({ icon: 'warning', title: 'Pedido finalizado', text: 'O seu pedido já está pronto, não é possível cancelá-lo.', timer: 3000, timerProgressBar: true });
+            await carregarMeusPedidos();
+            renderMeusPedidos();
+            return;
+        }
+
+        Swal.fire({ icon: 'error', title: 'Erro', text: error.message || 'Erro ao cancelar item.', timer: 3000, timerProgressBar: true });
+    }
+}
+
+// ── NOTA DE IMPRESSÃO ────────────────────────────────────────────
+function gerarNotaHTML() {
+    const mesaNumero = document.body.dataset.mesaNumero || '-';
+    const agora = new Date().toLocaleString('pt-BR');
+
+    let totalGeral = 0;
+    const clienteNome = clienteIdentificado?.nome
+        || meusPedidosCache.find(p => p.cliente_nome)?.cliente_nome
+        || 'Consumidor';
+
+    const blocosHTML = meusPedidosCache.map(pedido => {
+        const itensAtivos = pedido.itens.filter(i => i.status_cozinha !== 'Cancelled');
+        if (itensAtivos.length === 0) return '';
+
+        const subtotalPedido = itensAtivos.reduce((s, i) => s + Number(i.subtotal), 0);
+        totalGeral += subtotalPedido;
+
+        const linhasHTML = itensAtivos.map(item => `
+            <tr>
+                <td style="padding:4px 0;font-size:13px;">${item.quantidade}x</td>
+                <td style="padding:4px 0;font-size:13px;">${item.nome}</td>
+                <td style="padding:4px 0;font-size:13px;text-align:right;">${formatBRL(item.subtotal)}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12px;font-weight:bold;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:4px;display:flex;justify-content:space-between;">
+                    <span>Pedido #${String(pedido.id).padStart(3, '0')}</span>
+                    <span>${pedido.pagamento || '-'}</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;">
+                    ${linhasHTML}
+                </table>
+                <div style="text-align:right;font-size:12px;margin-top:2px;">Subtotal: <strong>${formatBRL(subtotalPedido)}</strong></div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div style="font-family:Arial,sans-serif;max-width:380px;margin:0 auto;padding:20px;">
+            <div style="text-align:center;border-bottom:2px solid #333;padding-bottom:12px;margin-bottom:16px;">
+                <div style="font-size:16px;font-weight:bold;">AllPratto</div>
+                <div style="font-size:11px;color:#666;margin-top:2px;">${agora}</div>
+                <div style="font-size:13px;margin-top:6px;">🪑 Mesa ${mesaNumero} &nbsp;|&nbsp; ${clienteNome}</div>
+            </div>
+
+            ${blocosHTML}
+
+            <div style="border-top:2px solid #333;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;font-size:16px;font-weight:bold;">
+                <span>TOTAL</span>
+                <span>${formatBRL(totalGeral)}</span>
+            </div>
+
+            <div style="text-align:center;margin-top:20px;font-size:11px;color:#999;border-top:1px dashed #ccc;padding-top:12px;">
+                Obrigado pela preferência!
+            </div>
+        </div>
+    `;
+}
+
+function imprimirNota() {
+    const area = document.getElementById('area-impressao');
+    area.innerHTML = gerarNotaHTML();
+    window.print();
+    setTimeout(() => { area.innerHTML = ''; }, 1000);
+}
+
+// ── PAINEL "MEUS PEDIDOS" — abrir/fechar ────────────────────────────
+const painelPedidos        = document.getElementById('modalMeusPedidos');
+const painelOverlayPedidos = document.getElementById('painel-overlay-pedidos');
+
+async function abrirPainelMeusPedidos() {
+    painelPedidos.classList.add('aberto');
+    painelOverlayPedidos.classList.add('aberto');
+    painelPedidos.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('lista-meus-pedidos').innerHTML =
+        '<div class="carrinho-vazio"><i class="fa-solid fa-spinner fa-spin"></i>Carregando seus pedidos...</div>';
+
+    await carregarMeusPedidos();
+    renderMeusPedidos();
+}
+
+function fecharPainelMeusPedidos() {
+    painelPedidos.classList.remove('aberto');
+    painelOverlayPedidos.classList.remove('aberto');
+    painelPedidos.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('btn-meus-pedidos').addEventListener('click', abrirPainelMeusPedidos);
+document.getElementById('btn-fechar-meus-pedidos').addEventListener('click', fecharPainelMeusPedidos);
+document.getElementById('btn-imprimir-nota').addEventListener('click', imprimirNota);
+painelOverlayPedidos.addEventListener('click', fecharPainelMeusPedidos);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPainelMeusPedidos(); });
+
 // ── INIT ─────────────────────────────────────────────────────────
 carregarItens();
+carregarMeusPedidos();

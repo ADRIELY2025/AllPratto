@@ -562,3 +562,19 @@ document.getElementById('taxa_entrega').addEventListener('input', atualizarResum
 document.getElementById('troco_para').addEventListener('input', calcularTroco);
 document.getElementById('insert-item').addEventListener('click', adicionarItem);
 document.getElementById('btn-finalizar').addEventListener('click', finalizarPedido);
+
+// Aplica máscara e foco ao modal de novo cliente
+const modalNovo = document.getElementById('modalNovoCliente');
+if (modalNovo) {
+    modalNovo.addEventListener('shown.bs.modal', () => {
+        try {
+            const cpfEl = document.getElementById('modal_cpf');
+            if (typeof Inputmask !== 'undefined' && cpfEl) {
+                Inputmask({ mask: '999.999.999-99' }).mask(cpfEl);
+                cpfEl.focus();
+            }
+        } catch (e) {
+            // ignore
+        }
+    });
+}

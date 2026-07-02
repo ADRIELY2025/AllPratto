@@ -17,6 +17,7 @@ use App\Controller\Sale;
 use App\Controller\ItemSale;
 use App\Controller\Installment;
 
+
 $app->post('/',     App\Controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home',  App\Controller\Home::class . ':home')->add(Middleware::web());
 
@@ -43,6 +44,8 @@ $app->group('/cardapio', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/itens',     Cardapio::class . ':getItens');
     $group->post('/pedido',   Cardapio::class . ':salvarPedido');
     $group->post('/identificar', Cardapio::class . ':identificarCliente');
+    $group->get('/pedidos/mesa/{id}',    Cardapio::class . ':meusPedidos');
+    $group->post('/pedido/cancelar-item', Cardapio::class . ':cancelarItem');
 });
 
 $app->get('/cardapio', Cardapio::class . ':index')->add(Middleware::web());
@@ -166,6 +169,7 @@ $app->group('/home/grafico', function (\Slim\Routing\RouteCollectorProxy $group)
 
 $app->get('/home/resultado-vendas',    App\Controller\Home::class . ':resultadoVendas')->add(Middleware::api());
 $app->get('/home/resultado-marketing', App\Controller\Home::class . ':resultadoMarketing')->add(Middleware::api());
+
 
 // ══════════════════════════════════════════════
 //  Formas de Pagamento

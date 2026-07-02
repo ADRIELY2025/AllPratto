@@ -969,3 +969,185 @@ body::before {
   border-color: var(--cor-dourado, #b8943f);
   box-shadow: 0 0 0 2px rgba(184, 148, 63, .15);
 }
+
+/* =====================================================
+   LOGO CLICÁVEL — abre "Meus Pedidos"
+===================================================== */
+
+.topo-marca--clicavel {
+  position: relative;
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  text-align: left;
+  border-radius: var(--ap-radius-sm);
+  transition: var(--transicao);
+}
+
+.topo-marca--clicavel:hover { background: rgba(201, 168, 76, .1); }
+.topo-marca--clicavel:active { transform: scale(.98); }
+
+.badge-meus-pedidos {
+  position: absolute;
+  top: -4px;
+  left: 30px;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--ap-wine);
+  color: var(--ap-cream);
+
+  border-radius: 999px;
+  border: 2px solid var(--ap-cream-2);
+
+  font-size: .65rem;
+  font-weight: 800;
+}
+
+.badge-meus-pedidos.oculto { display: none; }
+
+/* =====================================================
+   PAINEL "MEUS PEDIDOS"
+===================================================== */
+
+.pedido-bloco {
+  border: 1px solid var(--ap-line);
+  border-radius: var(--ap-radius-sm);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.pedido-bloco__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+
+  padding: .7rem .9rem;
+  background: var(--ap-cream);
+  border-bottom: 1px solid var(--ap-line);
+}
+
+.pedido-bloco__numero {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--ap-navy);
+}
+
+.pedido-bloco__hora {
+  font-size: .72rem;
+  color: var(--ap-muted);
+}
+
+.status-pedido-geral {
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: .25rem .55rem;
+  border-radius: 999px;
+  background: var(--ap-navy);
+  color: var(--ap-cream);
+}
+
+.item-pedido-status {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+
+  padding: .7rem .9rem;
+  border-bottom: 1px solid var(--ap-line);
+}
+
+.item-pedido-status:last-child { border-bottom: none; }
+
+.item-pedido-status__qtd {
+  min-width: 26px;
+  font-weight: 800;
+  color: var(--ap-navy);
+  font-size: .85rem;
+}
+
+.item-pedido-status__info { flex: 1; min-width: 0; }
+
+.item-pedido-status__nome {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--ap-navy);
+}
+
+.item-pedido-status__nome.cancelado {
+  text-decoration: line-through;
+  color: var(--ap-muted);
+  font-weight: 500;
+}
+
+.item-pedido-status__preco {
+  font-size: .78rem;
+  color: var(--ap-muted);
+}
+
+.badge-status {
+  flex-shrink: 0;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  padding: .3rem .55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge-status--aguardando { background: #fef3c7; color: #92400e; }
+.badge-status--preparo    { background: #dbeafe; color: #1e40af; }
+.badge-status--pronto     { background: #dcfce7; color: #166534; }
+.badge-status--entregue   { background: var(--ap-navy); color: var(--ap-cream); }
+.badge-status--cancelado  { background: #fee2e2; color: #991b1b; }
+
+.btn-cancelar-item {
+  flex-shrink: 0;
+  border: 1.5px solid var(--ap-wine);
+  background: transparent;
+  color: var(--ap-wine);
+
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+
+  font-size: .78rem;
+  transition: var(--transicao);
+}
+
+.btn-cancelar-item:hover { background: var(--ap-wine); color: var(--ap-cream); }
+.btn-cancelar-item:disabled { opacity: .4; cursor: not-allowed; }
+
+/* =====================================================
+   IMPRESSÃO DA NOTA
+===================================================== */
+
+.area-impressao { display: none; }
+
+@media print {
+  body * { visibility: hidden; }
+
+  .area-impressao,
+  .area-impressao * { visibility: visible; }
+
+  .area-impressao {
+    display: block;
+    position: absolute;
+    inset: 0;
+    padding: 0;
+  }
+}
