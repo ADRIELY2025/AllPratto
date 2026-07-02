@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Database\Connection;
+use App\Helpers\QrCodeGenerator;
 
 require_once __DIR__ . '/../../../App/bootstrap.php';
 
@@ -44,9 +45,16 @@ foreach ($mesas as $mesa) {
         'atualizado_em'=> (new DateTimeImmutable())->format('Y-m-d H:i:s'),
     ]);
 
+    $mesaId = (int) $conn->lastInsertId();
+
+    // Gerar QR code para a mesa
+    if ($mesaId) {
+        if (QrCodeGenerator::generateForMesa($mesaId, $mesa['numero'])) {
+            echo "✅ QR code gerado para mesa {$mesa['numero']} (ID: {$mesaId})\n";
+        }
+    }
+
     $inserted++;
 }
 
 echo '✅ Seed mesa: ' . $inserted . " registros inseridos (mesas 1–15).\n";
-
-echo '✅ Seed mesa: ' . count($mesas) . " registros inseridos (mesas 1–15).\n";
