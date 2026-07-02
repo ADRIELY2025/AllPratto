@@ -78,9 +78,10 @@
 
                         <div class="form-group mt-1">
                             <div class="icheck-primary d-inline">
+                                <input type="hidden" name="ativo" value="false">
                                 <input class="form-check-input" type="checkbox"
                                     id="ativo" name="ativo" value="true"
-                                    {% if customer.ativo %} checked {% endif %}>
+                                    {% if action == 'e' %}{% if customer.ativo %}checked{% endif %}{% else %}checked{% endif %}>
                                 <label for="ativo">Ativo?</label>
                             </div>
                         </div>

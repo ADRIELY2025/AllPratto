@@ -16,8 +16,6 @@ use App\Controller\Pedido;
 use App\Controller\Sale;
 use App\Controller\ItemSale;
 use App\Controller\Installment;
-use App\Controller\Purchase;
-use App\Controller\Stock;
 
 $app->post('/',     App\Controller\Home::class . ':home')->add(Middleware::web());
 $app->get('/home',  App\Controller\Home::class . ':home')->add(Middleware::web());
@@ -44,6 +42,7 @@ $app->group('/cardapio', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/mesa/{id}', Cardapio::class . ':index');
     $group->get('/itens',     Cardapio::class . ':getItens');
     $group->post('/pedido',   Cardapio::class . ':salvarPedido');
+    $group->post('/identificar', Cardapio::class . ':identificarCliente');
 });
 
 $app->get('/cardapio', Cardapio::class . ':index')->add(Middleware::web());
@@ -57,6 +56,8 @@ $app->group('/cliente', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/imprimir/{id}',      Customer::class . ':imprimir')->add(Middleware::web());
     $group->get('/detalhes',      Customer::class . ':details')->add(Middleware::web());
     $group->post('/insert',       Customer::class . ':insert')->add(Middleware::api());
+    $group->get('/enderecos/{id}', Customer::class . ':enderecos')->add(Middleware::api());
+    $group->post('/endereco/insert', Customer::class . ':enderecoInsert')->add(Middleware::api());
     $group->post('/update',       Customer::class . ':update')->add(Middleware::api());
     $group->post('/delete',       Customer::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',  Customer::class . ':listingdata')->add(Middleware::api());
@@ -137,11 +138,15 @@ $app->group('/pedido', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/cozinha/listar', Pedido::class . ':listarCozinha')->add(Middleware::api());
     $group->get('/cozinha',        Pedido::class . ':cozinha')->add(Middleware::web());
     $group->get('/lista',          Pedido::class . ':list')->add(Middleware::web());
+    $group->get('/virtual',        Pedido::class . ':virtual')->add(Middleware::web());
     $group->get('/detalhes/{id}',  Pedido::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',       Pedido::class . ':details')->add(Middleware::web());
     $group->get('/itens/{id}',     Pedido::class . ':getItens')->add(Middleware::api());
     $group->post('/insert',        Pedido::class . ':insert')->add(Middleware::api());
+    $group->post('/virtual/insert', Pedido::class . ':insertVirtual')->add(Middleware::api());
     $group->post('/update-status', Pedido::class . ':updateStatus')->add(Middleware::api());
+    $group->post('/item/cancelar',  Pedido::class . ':cancelarItem')->add(Middleware::api());
+    $group->post('/item/adicionar', Pedido::class . ':adicionarItem')->add(Middleware::api());
     $group->post('/delete',        Pedido::class . ':delete')->add(Middleware::api());
     $group->post('/listingdata',   Pedido::class . ':listingdata')->add(Middleware::api());
 });
@@ -160,24 +165,6 @@ $app->group('/home/grafico', function (\Slim\Routing\RouteCollectorProxy $group)
 
 $app->get('/home/resultado-vendas',    App\Controller\Home::class . ':resultadoVendas')->add(Middleware::api());
 $app->get('/home/resultado-marketing', App\Controller\Home::class . ':resultadoMarketing')->add(Middleware::api());
-
-// ══════════════════════════════════════════════
-//  Compras
-// ══════════════════════════════════════════════
-$app->group('/compra', function (\Slim\Routing\RouteCollectorProxy $group) {
-    $group->get('/lista',        Purchase::class . ':list')->add(Middleware::web());
-    $group->post('/delete',      Purchase::class . ':delete')->add(Middleware::api());
-    $group->post('/listingdata', Purchase::class . ':listingdata')->add(Middleware::api());
-    $group->get('/pdf/{id}',     Purchase::class . ':pdf')->add(Middleware::api());
-});
-
-// Alias /purchase/* (chamado pelo JS e URL direta)
-$app->group('/purchase', function (\Slim\Routing\RouteCollectorProxy $group) {
-    $group->get('/lista',        Purchase::class . ':list')->add(Middleware::web());
-    $group->post('/delete',      Purchase::class . ':delete')->add(Middleware::api());
-    $group->post('/listingdata', Purchase::class . ':listingdata')->add(Middleware::api());
-    $group->get('/pdf/{id}',     Purchase::class . ':pdf')->add(Middleware::api());
-});
 
 // ══════════════════════════════════════════════
 //  Formas de Pagamento

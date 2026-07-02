@@ -8,7 +8,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 // CORRIGIDO: id_cliente era BIGINT sem FK. Agora referencia customer(id).
-// estado_venda usa o ENUM stock_movement_venda em vez de VARCHAR solto.
+// estado_venda usa o ENUM venda_estado em vez de VARCHAR solto.
 
 final class Version20260528183259 extends AbstractMigration
 {
@@ -28,7 +28,7 @@ final class Version20260528183259 extends AbstractMigration
                 desconto      NUMERIC(18,4)          NULL,
                 acrescimo     NUMERIC(18,4)          NULL,
                 observacao    TEXT                   NULL,
-                estado_venda  stock_movement_venda   NULL, -- Adicionado aqui
+                estado_venda  venda_estado           NULL, -- Adicionado aqui
                 criado_em     TIMESTAMP              NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP              NOT NULL DEFAULT CURRENT_TIMESTAMP
             )

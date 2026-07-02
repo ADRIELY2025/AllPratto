@@ -9,50 +9,38 @@ const grid           = document.getElementById('cz-grid');
 const badgePendentes = document.getElementById('cz-badge-pendentes');
 const badgePreparo   = document.getElementById('cz-badge-preparo');
 const badgeProntos   = document.getElementById('cz-badge-prontos');
+const badgeTodos     = document.getElementById('cz-badge-todos');
 const printArea      = document.getElementById('cz-print-area');
 
 // ─── ESTADO LOCAL ────────────────────────────────────────────────
 const renderizados = new Set();
+let   filtroAtivo  = 'todos';   // 'todos' | 'pendente' | 'pronto'
 
 // ─── HELPERS ─────────────────────────────────────────────────────
 
 /**
- * Calcula minutos desde criado_em.
- * O Postgres retorna strings como "2026-06-25 19:27:00" sem timezone.
- * Substituímos o espaço por 'T' e adicionamos 'Z' para garantir UTC,
- * mas se o servidor já estiver no fuso local, usamos sem 'Z'.
- * A forma mais segura: tentar com Z, se resultar em futuro, tentar sem.
+ * Calcula minutos desde criado_em (string do Postgres: "2026-06-25 19:27:00").
  */
 function minutosDesde(criadoEm) {
     if (!criadoEm) return 0;
-
-    // Normaliza "2026-06-25 19:27:00" → "2026-06-25T19:27:00"
     const normalizado = criadoEm.toString().replace(' ', 'T');
-
     let data = new Date(normalizado);
-
-    // Se a data for inválida, retorna 0
     if (isNaN(data.getTime())) return 0;
-
     const diff = Date.now() - data.getTime();
-
-    // Se o diff for negativo (data no futuro), provavelmente é fuso local
-    // Tenta interpretar como UTC adicionando Z
     if (diff < 0 && !normalizado.endsWith('Z')) {
         data = new Date(normalizado + 'Z');
         const diffZ = Date.now() - data.getTime();
         if (diffZ >= 0) return Math.floor(diffZ / 60000);
         return 0;
     }
-
     return Math.max(0, Math.floor(diff / 60000));
 }
 
 function infoStatus(status) {
     const mapa = {
-        pendente:   { classe: 'cz-status--novo',    texto: 'NOVO',       dataBefore: 'pendente' },
-        em_preparo: { classe: 'cz-status--preparo', texto: 'EM PREPARO', dataBefore: 'em_preparo' },
-        pronto:     { classe: 'cz-status--pronto',  texto: 'PRONTO',     dataBefore: 'pronto' },
+        pendente:   { classe: 'cz-status--novo',    texto: 'NOVO',        dataBefore: 'pendente' },
+        em_preparo: { classe: 'cz-status--preparo', texto: 'EM PREPARO',  dataBefore: 'em_preparo' },
+        pronto:     { classe: 'cz-status--pronto',  texto: 'FINALIZADO',  dataBefore: 'pronto' },
     };
     return mapa[status] ?? { classe: 'cz-status--novo', texto: status.toUpperCase(), dataBefore: 'pendente' };
 }
@@ -70,35 +58,52 @@ function iconeCard(itens) {
 }
 
 function criarCardHTML(pedido) {
-    const { classe, texto, dataBefore } = infoStatus(pedido.status);
-    const min    = minutosDesde(pedido.criado_em);
-    const mesa   = pedido.mesa_numero ? `Mesa ${pedido.mesa_numero}` : 'Delivery';
-    const num    = String(pedido.id).padStart(3, '0');
-    const icone  = iconeCard(pedido.itens);
+    const { classe, texto }  = infoStatus(pedido.status);
+    const min     = minutosDesde(pedido.criado_em);
+    const mesaNum = pedido.mesa_numero ? `Mesa ${pedido.mesa_numero}` : 'Delivery';
+    // Monta linha da mesa com nome do cliente se disponível
+    const mesaLabel = pedido.nome_cliente
+        ? `${mesaNum} — ${pedido.nome_cliente}`
+        : mesaNum;
+    const num     = String(pedido.id).padStart(3, '0');
+    const icone   = iconeCard(pedido.itens);
     const urgente = min > 20;
 
-    const itensHTML = (pedido.itens ?? []).map(item => `
-        <div class="cz-item">
+    const itensHTML = (pedido.itens ?? []).map(item => {
+        const cancelado = item.status === 'cancelado';
+        return `
+        <div class="cz-item${cancelado ? ' cz-item--cancelado' : ''}">
             <div class="cz-qtd">${item.quantidade}</div>
             <div class="cz-nome-prato">${item.nome}</div>
+            ${cancelado ? '<div class="cz-item-cancelado-badge">Cancelado</div>' : ''}
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     const obsHTML = pedido.observacao
         ? `<div class="cz-obs">⚠️ <strong>Obs:</strong> ${pedido.observacao}</div>`
         : '';
 
     // Botão de ação muda conforme status atual
-    const btnProximo = pedido.status === 'pendente'
-        ? `<button class="cz-btn cz-btn--acao" data-acao="preparo">🔥 Iniciar Preparo</button>`
-        : `<button class="cz-btn cz-btn--pronto" data-acao="pronto">✔ Pedido Pronto</button>`;
+    let btnProximo = '';
+    if (pedido.status === 'pendente') {
+        btnProximo = `<button class="cz-btn cz-btn--acao" data-acao="preparo">🔥 Iniciar Preparo</button>`;
+    } else if (pedido.status === 'em_preparo') {
+        btnProximo = `<button class="cz-btn cz-btn--pronto" data-acao="pronto">✔ Pedido Pronto</button>`;
+    }
+    // status 'pronto' (finalizado) não exibe botão de avanço
+
+    // Botão de imprimir só aparece quando o pedido está finalizado
+    const btnImprimir = pedido.status === 'pronto'
+        ? `<button class="cz-btn cz-btn--imprimir" data-acao="imprimir">🖨️ Imprimir</button>`
+        : '';
 
     return `
         <article class="cz-card" data-id="${pedido.id}" data-status="${pedido.status ?? 'pendente'}">
             <div class="cz-card__topo">
                 <div class="cz-topo-icone" aria-hidden="true">${icone}</div>
                 <div class="cz-card__numero">Pedido nº ${num}</div>
-                <div class="cz-card__mesa">🪑 ${mesa}</div>
+                <div class="cz-card__mesa">🪑 ${mesaLabel}</div>
                 <div class="cz-card__info">
                     <div class="cz-status ${classe}">${texto}</div>
                     <div class="cz-tempo${urgente ? ' cz-tempo--urgente' : ''}">
@@ -116,9 +121,7 @@ function criarCardHTML(pedido) {
             <div class="cz-divisor"></div>
 
             <div class="cz-acoes">
-                <button class="cz-btn cz-btn--imprimir" data-acao="imprimir">
-                    🖨️ Imprimir
-                </button>
+                ${btnImprimir}
                 ${btnProximo}
             </div>
         </article>
@@ -131,6 +134,9 @@ function htmlParaImprimir(pedido) {
     const mesa = pedido.mesa_numero ? `Mesa ${pedido.mesa_numero}` : 'Delivery';
     const num  = String(pedido.id).padStart(3, '0');
     const agora = new Date().toLocaleString('pt-BR');
+    const clienteHTML = pedido.nome_cliente
+        ? `<div style="font-size:13px;margin-top:4px;">👤 ${pedido.nome_cliente}</div>`
+        : '';
 
     const itensHTML = (pedido.itens ?? []).map(item => `
         <tr>
@@ -152,6 +158,7 @@ function htmlParaImprimir(pedido) {
                 <div style="font-size:11px;color:#666;">${agora} &nbsp;|&nbsp; Painel da Cozinha</div>
                 <div style="font-size:22px;font-weight:bold;margin-top:6px;">PEDIDO Nº ${num}</div>
                 <div style="font-size:14px;margin-top:4px;">🪑 ${mesa}</div>
+                ${clienteHTML}
             </div>
 
             <div style="margin-bottom:16px;">
@@ -174,16 +181,64 @@ function htmlParaImprimir(pedido) {
     `;
 }
 
-// ─── BADGES ──────────────────────────────────────────────────────
+// ─── BADGES / FILTROS ─────────────────────────────────────────────
 
 function atualizarBadges(pedidos) {
     const pendentes = pedidos.filter(p => p.status === 'pendente').length;
     const preparo   = pedidos.filter(p => p.status === 'em_preparo').length;
     const prontos   = pedidos.filter(p => p.status === 'pronto').length;
+    const ativos    = pendentes + preparo;  // "Todos" = pedidos em andamento
 
-    if (badgePendentes) badgePendentes.textContent = `${pendentes} Pendente${pendentes !== 1 ? 's' : ''}`;
+    if (badgeTodos)     badgeTodos.textContent     = `${ativos} Todos`;
+    if (badgePendentes) badgePendentes.textContent = `${pendentes} Novo${pendentes !== 1 ? 's' : ''}`;
     if (badgePreparo)   badgePreparo.textContent   = `${preparo} Em Preparo`;
-    if (badgeProntos)   badgeProntos.textContent   = `${prontos} Pronto${prontos !== 1 ? 's' : ''}`;
+    if (badgeProntos)   badgeProntos.textContent   = `${prontos} Finalizado${prontos !== 1 ? 's' : ''}`;
+}
+
+function setFiltroAtivo(novoFiltro) {
+    filtroAtivo = novoFiltro;
+
+    // Atualiza classe active nos botões
+    document.querySelectorAll('.cz-badge').forEach(btn => {
+        btn.classList.toggle('cz-badge--active', btn.dataset.filtro === filtroAtivo);
+    });
+
+    // Re-renderiza com o filtro aplicado
+    aplicarFiltro();
+}
+
+function aplicarFiltro() {
+    const cards = grid.querySelectorAll('.cz-card');
+    cards.forEach(card => {
+        const status = card.dataset.status;
+        let visivel = false;
+        if (filtroAtivo === 'todos') {
+            // "Todos" = pedidos ativos (novos + em preparo), não inclui finalizados
+            visivel = status === 'pendente' || status === 'em_preparo';
+        } else if (filtroAtivo === 'pendente') {
+            visivel = status === 'pendente';
+        } else if (filtroAtivo === 'em_preparo') {
+            visivel = status === 'em_preparo';
+        } else if (filtroAtivo === 'pronto') {
+            visivel = status === 'pronto';
+        }
+        card.style.display = visivel ? '' : 'none';
+    });
+
+    // Mensagem "nenhum" se todos ocultos
+    const visiveis = grid.querySelectorAll('.cz-card:not([style*="display: none"]):not([style*="display:none"])').length;
+    let semResultado = grid.querySelector('.cz-sem-filtro');
+    if (visiveis === 0) {
+        if (!semResultado) {
+            semResultado = document.createElement('div');
+            semResultado.className = 'cz-vazio cz-sem-filtro';
+            semResultado.innerHTML = `<span class="cz-vazio__icone">🔍</span>
+                <div class="cz-vazio__titulo">Nenhum pedido nessa categoria</div>`;
+            grid.appendChild(semResultado);
+        }
+    } else {
+        semResultado?.remove();
+    }
 }
 
 // ─── RENDER ───────────────────────────────────────────────────────
@@ -202,7 +257,7 @@ function renderizarPedidos(pedidos) {
         return;
     }
 
-    const vazio = grid.querySelector('.cz-vazio');
+    const vazio = grid.querySelector('.cz-vazio:not(.cz-sem-filtro)');
     if (vazio) vazio.remove();
 
     const idsAtuais = new Set(pedidos.map(p => String(p.id)));
@@ -215,15 +270,27 @@ function renderizarPedidos(pedidos) {
         }
     });
 
-    // Adiciona novos cards
+    // Adiciona novos cards ou atualiza status de existentes
     pedidos.forEach(pedido => {
         const idStr = String(pedido.id);
-        if (renderizados.has(idStr)) return;
-        grid.insertAdjacentHTML('beforeend', criarCardHTML(pedido));
-        renderizados.add(idStr);
+        const cardExistente = grid.querySelector(`.cz-card[data-id="${idStr}"]`);
+
+        if (cardExistente) {
+            // Atualiza status se mudou (ex: passou de pendente para em_preparo)
+            if (cardExistente.dataset.status !== pedido.status) {
+                const novoHTML = document.createElement('div');
+                novoHTML.innerHTML = criarCardHTML(pedido);
+                const novoCard = novoHTML.firstElementChild;
+                cardExistente.replaceWith(novoCard);
+            }
+        } else {
+            grid.insertAdjacentHTML('beforeend', criarCardHTML(pedido));
+            renderizados.add(idStr);
+        }
     });
 
     atualizarBadges(pedidos);
+    aplicarFiltro();
 }
 
 // ─── AÇÕES ────────────────────────────────────────────────────────
@@ -243,12 +310,9 @@ grid.addEventListener('click', async e => {
     if (acao === 'imprimir') {
         const pedido = dadosPedidos.find(p => String(p.id) === String(id));
         if (!pedido) { window.print(); return; }
-
-        // Injeta HTML limpo na área de impressão dedicada
         printArea.innerHTML = htmlParaImprimir(pedido);
         printArea.classList.add('cz-print-ativo');
         window.print();
-        // Após imprimir, limpa
         setTimeout(() => {
             printArea.innerHTML = '';
             printArea.classList.remove('cz-print-ativo');
@@ -301,6 +365,12 @@ async function mudarStatus(btn, card, id, novoStatus) {
         btn.innerHTML = textoOriginal;
     }
 }
+
+// ─── FILTROS — click nos badges ───────────────────────────────────
+
+document.querySelectorAll('.cz-badge[data-filtro]').forEach(btn => {
+    btn.addEventListener('click', () => setFiltroAtivo(btn.dataset.filtro));
+});
 
 // ─── POLLING ─────────────────────────────────────────────────────
 

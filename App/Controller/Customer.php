@@ -40,6 +40,77 @@ final class Customer extends Base
             ->withStatus(200);
     }
 
+    public function enderecos($request, $response, $args)
+    {
+        $idCliente = $args['id'] ?? null;
+
+        if (is_null($idCliente) || $idCliente === '') {
+            return $this->json($response, ['status' => false, 'msg' => 'Informe o ID do cliente.'], 400);
+        }
+
+        try {
+            $enderecos = \App\Database\DB::select('id, logradouro, numero, complemento, bairro, cidade, cep, referencia, principal')
+                ->from('customer_address')
+                ->where('id_cliente = :id')
+                ->setParameter('id', (int) $idCliente, \Doctrine\DBAL\ParameterType::INTEGER)
+                ->orderBy('principal', 'DESC')
+                ->addOrderBy('id', 'DESC')
+                ->fetchAllAssociative();
+
+            return $this->json($response, ['status' => true, 'data' => $enderecos], 200);
+        } catch (\Exception $e) {
+            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function enderecoInsert($request, $response)
+    {
+        $form = $request->getParsedBody();
+        $idCliente = $form['id_cliente'] ?? null;
+
+        if (is_null($idCliente) || $idCliente === '') {
+            return $this->json($response, ['status' => false, 'msg' => 'Informe o cliente para salvar o endereço.'], 400);
+        }
+
+        $logradouro = trim((string) ($form['logradouro'] ?? $form['endereco_rua'] ?? ''));
+        if ($logradouro === '') {
+            return $this->json($response, ['status' => false, 'msg' => 'Informe o logradouro do endereço.'], 400);
+        }
+
+        $data = [
+            'id_cliente'  => (int) $idCliente,
+            'logradouro'  => $logradouro,
+            'numero'      => trim((string) ($form['numero'] ?? $form['endereco_numero'] ?? '')),
+            'complemento' => trim((string) ($form['complemento'] ?? $form['endereco_complemento'] ?? '')),
+            'bairro'      => trim((string) ($form['bairro'] ?? $form['endereco_bairro'] ?? '')),
+            'cidade'      => trim((string) ($form['cidade'] ?? $form['endereco_cidade'] ?? '')),
+            'cep'         => trim((string) ($form['cep'] ?? $form['endereco_cep'] ?? '')),
+            'referencia'  => trim((string) ($form['referencia'] ?? $form['endereco_referencia'] ?? '')),
+            'principal'   => (($form['principal'] ?? 'false') === 'true') ? true : false,
+        ];
+
+        try {
+            $conn = \App\Database\DB::connection();
+
+            $qtd = \App\Database\DB::select('COUNT(*)')
+                ->from('customer_address')
+                ->where('id_cliente = :id')
+                ->setParameter('id', (int) $idCliente, \Doctrine\DBAL\ParameterType::INTEGER)
+                ->fetchOne();
+
+            if ((int) $qtd === 0) {
+                $data['principal'] = true;
+            }
+
+            $conn->insert('customer_address', $data);
+            $id = (int) $conn->lastInsertId();
+
+            return $this->json($response, ['status' => true, 'msg' => 'Endereço salvo com sucesso!', 'id' => $id], 201);
+        } catch (\Exception $e) {
+            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
+        }
+    }
+
     public function insert($request, $response)
     {
         $form = $request->getParsedBody();

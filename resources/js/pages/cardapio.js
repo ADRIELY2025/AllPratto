@@ -341,6 +341,55 @@ blocoParcelamento.addEventListener('change', e => {
     }
 });
 
+// ── IDENTIFICAÇÃO DO CLIENTE ──────────────────────────────────────
+// Guarda dados do cliente identificado na sessão (reload apaga, como esperado)
+let clienteIdentificado = null;  // { id_cliente, nome }
+
+async function identificarClienteSeNecessario() {
+    if (clienteIdentificado) return true;  // já identificado
+
+    const { value: formValues } = await Swal.fire({
+        title: 'Identificação',
+        html: `
+            <p style="margin-bottom:12px;color:#555;font-size:.95rem;">Para fazermos seu pedido, precisamos de algumas informações.</p>
+            <input id="swal-nome"  class="swal2-input" placeholder="Seu nome *" autocomplete="name">
+            <input id="swal-cpf"   class="swal2-input" placeholder="CPF (opcional)" inputmode="numeric">
+            <input id="swal-email" class="swal2-input" placeholder="E-mail (opcional)" type="email">
+        `,
+        confirmButtonText: 'Continuar',
+        showCancelButton:  true,
+        cancelButtonText:  'Cancelar',
+        focusConfirm: false,
+        preConfirm: () => {
+            const nome  = document.getElementById('swal-nome').value.trim();
+            const cpf   = document.getElementById('swal-cpf').value.trim();
+            const email = document.getElementById('swal-email').value.trim();
+            if (!nome) {
+                Swal.showValidationMessage('Nome é obrigatório');
+                return false;
+            }
+            return { nome, cpf, email };
+        },
+    });
+
+    if (!formValues) return false;  // cancelou
+
+    try {
+        const requests = new Requests();
+        requests.headers['Content-Type'] = 'application/json';
+        const res = await requests.setBody(JSON.stringify(formValues)).post('/cardapio/identificar');
+        if (!res.sucesso) {
+            Swal.fire({ icon: 'error', title: 'Erro', text: res.erro || 'Não foi possível identificar o cliente.', timer: 3000, timerProgressBar: true });
+            return false;
+        }
+        clienteIdentificado = { id_cliente: res.id_cliente, nome: res.nome };
+        return true;
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Erro', text: err.message, timer: 3000, timerProgressBar: true });
+        return false;
+    }
+}
+
 // ── FINALIZAR PEDIDO ─────────────────────────────────────────────
 async function finalizarPedido() {
     if (carrinho.length === 0) {
@@ -359,6 +408,10 @@ async function finalizarPedido() {
         Swal.fire({ icon: 'error', title: 'Mesa não identificada', text: 'Utilize o QR Code da sua mesa para fazer pedidos.', timer: 3000, timerProgressBar: true });
         return;
     }
+
+    // Identifica o cliente (nome/CPF/email) antes de prosseguir
+    const identificado = await identificarClienteSeNecessario();
+    if (!identificado) return;
 
     // Captura parcelas/intervalo só quando crédito
     const isCredito = pgto === 'credito';
@@ -386,10 +439,11 @@ async function finalizarPedido() {
         const requests = new Requests();
         requests.headers['Content-Type'] = 'application/json';
         const response = await requests.setBody(JSON.stringify({
-            mesa_id:   mesaId,
-            pagamento: pgto,
+            mesa_id:    mesaId,
+            pagamento:  pgto,
             parcelas,
             intervalo,
+            id_cliente: clienteIdentificado?.id_cliente ?? null,
             itens: carrinho.map(i => ({
                 id:         i.produto.id,
                 nome:       i.produto.nome,
