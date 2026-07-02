@@ -943,7 +943,8 @@ final class Pedido extends Base
                     "<td>
                     <a class='btn btn-sm btn-warning' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-pen-to-square'></i> Ver</a>
                     <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal({$value['id']});'><i class='fa-solid fa-trash'></i> Cancelar</button>
-                    <a class='btn btn-sm btn-primary' href='/pedido/detalhes/{$value['id']}'><i class='fa-solid fa-print'></i> Imprimir</a>
+                    
+                    <a class='btn btn-sm btn-primary' target='_blank' href='/pedido/imprimir/{$value['id']}'><i class='fa-solid fa-print'></i> Imprimir</a>
                 </td>",
                     "<td class='d-flex gap-1'>{$btnVer} {$btnCancelar}</td>",
                 ];
@@ -962,4 +963,199 @@ final class Pedido extends Base
             ], 500);
         }
     }
+
+    public function imprimir($request, $response, $args)
+{
+    $id = $args['id'] ?? null;
+
+    if (is_null($id) || $id === '') {
+        return $this->json($response, ['status' => false, 'msg' => 'Informe o código do Pedido', 'id' => 0], 403);
+    }
+
+    try {
+        // ── Dados da empresa (cabeçalho do comprovante) ──────────────────
+        $empresa = \App\Database\DB::select('nome, razao_social, cnpj, telefone, email')
+            ->from('company')
+            ->where('ativo = true')
+            ->orderBy('id', 'ASC')
+            ->setMaxResults(1)
+            ->fetchAssociative();
+
+        // ── Pedido + mesa + cliente + forma de pagamento ─────────────────
+        $qb = \App\Database\DB::select("
+            o.id,
+            o.total,
+            o.status,
+            o.observacao,
+            o.id_mesa,
+            o.endereco_logradouro,
+            o.endereco_numero,
+            o.endereco_complemento,
+            o.endereco_bairro,
+            o.endereco_cidade,
+            o.endereco_cep,
+            o.endereco_referencia,
+            m.numero  AS mesa_numero,
+            TRIM(COALESCE(c.nome_fantasia,'') || ' ' || COALESCE(c.sobrenome_razao,'')) AS nome_cliente,
+            pt.titulo AS forma_pagamento,
+            to_char(o.criado_em,     'DD/MM/YYYY HH24:MI:SS') AS criado_em,
+            to_char(o.atualizado_em, 'DD/MM/YYYY HH24:MI:SS') AS atualizado_em
+        ")
+        ->from('"order"', 'o')
+        ->leftJoin('o', 'mesa', 'm', 'm.id = o.id_mesa')
+        ->leftJoin('o', 'customer', 'c', 'c.id = o.id_cliente')
+        ->leftJoin('o', 'payment_terms', 'pt', 'pt.id = o.payment_terms_id');
+
+        $pedido = $qb
+            ->where('o.id = ' . $qb->createPositionalParameter((int) $id, \Doctrine\DBAL\ParameterType::INTEGER))
+            ->fetchAssociative();
+
+        if (!$pedido) {
+            return $this->json($response, ['status' => false, 'msg' => 'Pedido não encontrado', 'id' => 0], 404);
+        }
+
+        // ── Itens do pedido (apenas os ativos — cancelados não entram) ───
+        $itens = \App\Database\DB::select('nome, quantidade, preco, subtotal')
+            ->from('order_item')
+            ->where('order_id = :id')
+            ->andWhere("status = 'ativo'")
+            ->setParameter('id', (int) $id, \Doctrine\DBAL\ParameterType::INTEGER)
+            ->orderBy('id', 'ASC')
+            ->fetchAllAssociative();
+
+        // ── Monta o PDF ────────────────────────────────────────────────────
+        $pdf = new \FPDF('P', 'mm', 'A4');
+        $pdf->AddPage();
+        $pdf->SetMargins(15, 15, 15);
+        $pdf->SetAutoPageBreak(true, 20);
+
+        $t = fn(string $s) => iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $s);
+
+        // ── Cabeçalho (dados da empresa) ──────────────────────────────────
+        $nomeEmpresa = $empresa['nome'] ?? 'Restaurante';
+        $pdf->SetFont('Arial', 'B', 16);
+        $pdf->Cell(0, 8, $t($nomeEmpresa), 0, 1, 'C');
+
+        $linhaContato = array_filter([
+            !empty($empresa['cnpj'])     ? 'CNPJ: ' . $empresa['cnpj']         : null,
+            !empty($empresa['telefone']) ? 'Tel.: ' . $empresa['telefone']     : null,
+        ]);
+        if ($linhaContato) {
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(0, 5, $t(implode('  •  ', $linhaContato)), 0, 1, 'C');
+        }
+        $pdf->Ln(3);
+
+        $pdf->SetFont('Arial', 'B', 13);
+        $pdf->Cell(0, 8, $t('Comprovante de Pedido'), 0, 1, 'C');
+
+        $pdf->SetDrawColor(0, 0, 0);
+        $pdf->SetLineWidth(0.4);
+        $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
+        $pdf->Ln(6);
+
+        // ── Dados do pedido ────────────────────────────────────────────────
+        $statusLabel = match ($pedido['status']) {
+            'pendente'   => 'Pendente',
+            'em_preparo' => 'Em preparo',
+            'pronto'     => 'Pronto',
+            'entregue'   => 'Entregue',
+            'pago'       => 'Pago',
+            'cancelado'  => 'Cancelado',
+            default      => ucfirst((string) $pedido['status']),
+        };
+
+        $nomeCliente = trim((string) ($pedido['nome_cliente'] ?? ''));
+        $localAtendimento = $pedido['mesa_numero']
+            ? 'Mesa ' . $pedido['mesa_numero']
+            : 'Pedido Virtual (Delivery/Retirada)';
+
+        $pdf->SetFont('Arial', '', 10);
+        $linhas = [
+            ['Pedido:', '#' . $pedido['id']],
+            ['Atendimento:', $localAtendimento],
+            ['Cliente:', $nomeCliente !== '' ? $nomeCliente : 'Não informado'],
+            ['Data:', $pedido['criado_em'] ?? '-'],
+            ['Forma de pagamento:', $pedido['forma_pagamento'] ?? '-'],
+            ['Status:', $statusLabel],
+        ];
+        foreach ($linhas as [$label, $valor]) {
+            $pdf->SetFont('Arial', 'B', 10);
+            $pdf->Cell(50, 6, $t($label), 0, 0);
+            $pdf->SetFont('Arial', '', 10);
+            $pdf->Cell(0, 6, $t((string) $valor), 0, 1);
+        }
+
+        // ── Endereço de entrega (só aparece se houver) ────────────────────
+        $enderecoTexto = trim(implode(' — ', array_filter([
+            $pedido['endereco_logradouro'] ?? null,
+            $pedido['endereco_numero'] ?? null,
+            $pedido['endereco_bairro'] ?? null,
+            $pedido['endereco_cidade'] ?? null,
+            !empty($pedido['endereco_cep']) ? 'CEP ' . $pedido['endereco_cep'] : null,
+        ], static fn ($v) => $v !== null && trim((string) $v) !== '')));
+
+        if ($enderecoTexto !== '') {
+            $pdf->SetFont('Arial', 'B', 10);
+            $pdf->Cell(50, 6, $t('Endereço:'), 0, 0);
+            $pdf->SetFont('Arial', '', 10);
+            $pdf->MultiCell(0, 6, $t($enderecoTexto));
+        }
+
+        if (!empty($pedido['observacao'])) {
+            $pdf->SetFont('Arial', 'B', 10);
+            $pdf->Cell(50, 6, $t('Observação:'), 0, 0);
+            $pdf->SetFont('Arial', '', 10);
+            $pdf->MultiCell(0, 6, $t((string) $pedido['observacao']));
+        }
+
+        $pdf->Ln(4);
+
+        // ── Tabela de itens ────────────────────────────────────────────────
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->SetFillColor(230, 230, 230);
+        $pdf->Cell(85, 8, $t('Item'), 1, 0, 'L', true);
+        $pdf->Cell(20, 8, $t('Qtd'), 1, 0, 'C', true);
+        $pdf->Cell(35, 8, $t('Unitário'), 1, 0, 'R', true);
+        $pdf->Cell(37, 8, $t('Subtotal'), 1, 1, 'R', true);
+
+        $pdf->SetFont('Arial', '', 10);
+        foreach ($itens as $item) {
+            $pdf->Cell(85, 7, $t((string) $item['nome']), 1, 0, 'L');
+            $pdf->Cell(20, 7, (string) $item['quantidade'], 1, 0, 'C');
+            $pdf->Cell(35, 7, 'R$ ' . number_format((float) $item['preco'], 2, ',', '.'), 1, 0, 'R');
+            $pdf->Cell(37, 7, 'R$ ' . number_format((float) $item['subtotal'], 2, ',', '.'), 1, 1, 'R');
+        }
+
+        if (empty($itens)) {
+            $pdf->SetFont('Arial', 'I', 10);
+            $pdf->Cell(177, 8, $t('Nenhum item ativo neste pedido.'), 1, 1, 'C');
+        }
+
+        // ── Total ─────────────────────────────────────────────────────────
+        $pdf->SetFont('Arial', 'B', 11);
+        $pdf->SetFillColor(230, 230, 230);
+        $pdf->Cell(140, 9, $t('TOTAL'), 1, 0, 'R', true);
+        $pdf->Cell(37, 9, 'R$ ' . number_format((float) $pedido['total'], 2, ',', '.'), 1, 1, 'R', true);
+
+        $pdf->Ln(10);
+
+        // ── Rodapé ────────────────────────────────────────────────────────
+        $pdf->SetFont('Arial', 'I', 9);
+        $pdf->Cell(0, 6, $t('Obrigado pela preferência!'), 0, 1, 'C');
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(0, 5, $t('Comprovante gerado em ' . date('d/m/Y H:i:s')), 0, 1, 'C');
+
+        $pdfContent = $pdf->Output('S', 'pedido_' . $id . '.pdf');
+
+        $response->getBody()->write($pdfContent);
+
+        return $response
+            ->withHeader('Content-Type', 'application/pdf')
+            ->withHeader('Content-Disposition', 'inline; filename="pedido_' . $id . '.pdf"')
+            ->withStatus(200);
+    } catch (\Exception $e) {
+        return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
+    }
+}
 }

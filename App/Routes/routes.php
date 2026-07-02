@@ -142,6 +142,7 @@ $app->group('/pedido', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/detalhes/{id}',  Pedido::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',       Pedido::class . ':details')->add(Middleware::web());
     $group->get('/itens/{id}',     Pedido::class . ':getItens')->add(Middleware::api());
+    $group->get('/imprimir/{id}',  Pedido::class . ':imprimir')->add(Middleware::web());
     $group->post('/insert',        Pedido::class . ':insert')->add(Middleware::api());
     $group->post('/virtual/insert', Pedido::class . ':insertVirtual')->add(Middleware::api());
     $group->post('/update-status', Pedido::class . ':updateStatus')->add(Middleware::api());
