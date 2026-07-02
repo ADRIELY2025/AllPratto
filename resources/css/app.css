@@ -20,3 +20,113 @@
 
 @import 'filepond/dist/filepond.min.css';
 @import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css';
+
+/* Navbar customizada */
+.app-navbar {
+    background: #1e2e5c;
+    border-radius: 0;
+    padding: 0.5rem 1rem;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 28px rgba(0, 0, 0, 0.16);
+}
+
+.app-navbar-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.app-navbar-brand {
+    color: #ffffff !important;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    background: #ffcc00;
+    color: #252770;
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.brand-text {
+    font-size: 0.95rem;
+}
+
+.app-navbar-center {
+    margin: 0 auto;
+    gap: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.app-navbar-center .nav-link {
+    color: #ffffff !important;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.app-navbar-center .nav-link:hover,
+.app-navbar-center .nav-link.active {
+    color: #ffffff !important;
+    background: #d62f2f;
+}
+
+.app-navbar-center .dropdown-menu {
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #0b3d91;
+}
+
+.app-navbar-center .dropdown-item {
+    color: #f8f9fa !important;
+    border-radius: 6px;
+}
+
+.app-navbar-center .dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.app-navbar-right {
+    margin-left: auto;
+}
+
+.logout-link {
+    padding: 0.65rem 1.3rem;
+    border-radius: 8px;
+    background: #ffcc00;
+    color: #0b3d91 !important;
+    font-weight: 700;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.logout-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(255, 204, 0, 0.25);
+}
+
+@media (max-width: 991px) {
+    .app-navbar {
+        padding: 0.75rem 0.9rem;
+    }
+    .app-navbar-center {
+        justify-content: flex-start;
+    }
+    .app-navbar-right {
+        margin-left: 0;
+        margin-top: 0.75rem;
+    }
+}

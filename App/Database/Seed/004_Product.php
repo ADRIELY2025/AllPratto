@@ -24,9 +24,28 @@ if (!is_dir($storageDir)) {
 $dirImagens = ROOT . '/public/img';
 
 $produtos = [
-    ['nome' => 'Coca-Cola 350ml', 'grupo' => 'Bebidas', 'preco_compra' => 2.50,  'preco_venda' => 6.00,  'imagem' => 'coca-cola.jpg'],
-    ['nome' => 'X-Burger',        'grupo' => 'Lancher', 'preco_compra' => 18.50, 'preco_venda' => 23.00, 'imagem' => 'x-burguer.jpg'],
-    ['nome' => 'X-Bacon',         'grupo' => 'Lancher', 'preco_compra' => 20.50, 'preco_venda' => 26.00, 'imagem' => 'x-bacon.jpg'],
+    // Entradas e Aperitivos
+    ['nome' => 'Bruschetta de Tomate',      'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 3.00,  'preco_venda' => 12.00, 'imagem' => 'bruschetta-de-tomate.jpg'],
+    ['nome' => 'Salada Caprese',            'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 4.00,  'preco_venda' => 16.00, 'imagem' => 'salada-caprese.jpg'],
+    ['nome' => 'Coxinha de Frango',         'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 2.50,  'preco_venda' => 8.00,  'imagem' => 'coxinha-de-frango.jpg'],
+    ['nome' => 'Queso Fundido',             'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 5.00,  'preco_venda' => 20.00, 'imagem' => 'queso-fundido.jpg'],
+
+    // Prato Principal
+    ['nome' => 'Spaghetti alla Carbonara',  'grupo' => 'Prato Principal',        'preco_compra' => 6.00,  'preco_venda' => 28.00, 'imagem' => 'spaghetti-carbonara.jpg'],
+    ['nome' => 'Frango à Passarinho',       'grupo' => 'Prato Principal',        'preco_compra' => 8.00,  'preco_venda' => 32.00, 'imagem' => 'frango-a-passarinho.jpg'],
+    ['nome' => 'Tacos de Carnitas',        'grupo' => 'Prato Principal',        'preco_compra' => 7.00,  'preco_venda' => 30.00, 'imagem' => 'tacos-carnitas.jpg'],
+    ['nome' => 'Boeuf Bourguignon',        'grupo' => 'Prato Principal',        'preco_compra' => 12.00, 'preco_venda' => 55.00, 'imagem' => 'boeuf-bourguignon.jpg'],
+    ['nome' => 'Lasanha de Berinjela (Vegana)', 'grupo' => 'Prato Principal',    'preco_compra' => 5.50,  'preco_venda' => 26.00, 'imagem' => 'lasanha-berinjela.jpg'],
+
+    // Sobremesas
+    ['nome' => 'Tiramisu',                  'grupo' => 'Sobremesas',             'preco_compra' => 3.50,  'preco_venda' => 14.00, 'imagem' => 'tiramisu.jpg'],
+    ['nome' => 'Pudim de Leite',           'grupo' => 'Sobremesas',             'preco_compra' => 2.50,  'preco_venda' => 10.00, 'imagem' => 'pudim-de-leite.jpg'],
+    ['nome' => 'Creme Brûlée',             'grupo' => 'Sobremesas',             'preco_compra' => 3.80,  'preco_venda' => 15.00, 'imagem' => 'creme-brulee.jpg'],
+
+    // Bebidas
+    ['nome' => 'Suco de Laranja Natural',  'grupo' => 'Bebidas',                'preco_compra' => 1.20,  'preco_venda' => 7.00,  'imagem' => 'suco-laranja.jpg'],
+    ['nome' => 'Agua Mineral',             'grupo' => 'Bebidas',                'preco_compra' => 0.50,  'preco_venda' => 4.00,  'imagem' => 'agua-mineral.jpg'],
+    ['nome' => 'Margarita',                'grupo' => 'Bebidas',                'preco_compra' => 4.00,  'preco_venda' => 22.00, 'imagem' => 'margarita.jpg'],
 ];
 
 // Busca arquivo ignorando maiúsculas/minúsculas (Windows ↔ Linux)

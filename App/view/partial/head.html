@@ -1,79 +1,58 @@
-<nav class="navbar bg-primary navbar-expand-lg bg-body-tertiary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/home">Senac</a>
+<nav class="navbar navbar-expand-lg app-navbar">
+    <div class="container-fluid app-navbar-container">
+        <a class="navbar-brand app-navbar-brand" href="/home">
+            <span class="brand-mark">AP</span>
+            <span class="brand-text">AllPratto</span>
+        </a>
+
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav app-navbar-center mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="/home">
-                        <i class="fa-solid fa-house"></i>
-                        Home
-                    </a>
+                    <a class="nav-link" href="/cardapio">Cardápio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/pedido/lista">Pedido</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/mesa/lista">Mesa</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/pedido/cozinha">Cozinha</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <i class="fa-solid fa-plus"></i>
-                        Cadastro
-                    </a>
+                        aria-expanded="false">Cadastro</a>
                     <ul class="dropdown-menu">
                         <li>
-                            <a class="dropdown-item" href="/cliente/lista">
-                                <i class="fa-solid fa-user-plus"></i>
-                                Cliente
-                            </a>
+                            <a class="dropdown-item" href="/cliente/lista">Cliente</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="/product/lista">
-                                <i class="fa-solid fa-box-open"></i>
-                                Produto
-                            </a>
+                            <a class="dropdown-item" href="/product/lista">Produto</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="/supplier/lista">
-                                <i class="fa-solid fa-truck"></i>
-                                Fornecedor
-                            </a>
+                            <a class="dropdown-item" href="/supplier/lista">Fornecedor</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="/company/lista">
-                                <i class="fa-solid fa-building"></i>
-                                Empresa
-                            </a>
+                            <a class="dropdown-item" href="/company/lista">Empresa</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="/users/lista">
-                                <i class="fa-solid fa-users"></i>
-                                Usuários
-                            </a>
+                            <a class="dropdown-item" href="/users/lista">Usuários</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="/payment/lista">
-                                <i class="fa-solid fa-credit-card"></i>
-                                Formas de Pagamento
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item" href="/kitchen/lista">
-                                <i class="fa-solid fa-utensils"></i>
-                                Cozinha
-                            </a>
+                            <a class="dropdown-item" href="/payment/lista">Formas de Pagamento</a>
                         </li>
                     </ul>
                 </li>
+            </ul>
+
+            <ul class="navbar-nav app-navbar-right mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a href="/logout" class="nav-link">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/>
-                            <line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
-                        Sair
-                    </a>
+                    <a href="/logout" class="nav-link logout-link">Sair</a>
                 </li>
             </ul>
         </div>
