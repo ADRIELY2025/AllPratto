@@ -17,7 +17,7 @@ if (php_sapi_name() !== 'cli' && session_status() === PHP_SESSION_NONE) {
 define('PROTOCOL', $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'http');
 # Domínio atual da requisição — usado no payload JWT (iss/aud) e no cookie auth_token
 # Definido aqui centralmente para evitar repetição e proteger contra Host Header Injection
-define('HOST', PROTOCOL . '://' . $_SERVER['HTTP_HOST']);
+define('HOST', (php_sapi_name() === 'cli') ? 'localhost' : ($_SERVER['HTTP_HOST'] ?? 'localhost'));
 
 
 define('ROOT', dirname(__FILE__, 3));

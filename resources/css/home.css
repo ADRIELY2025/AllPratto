@@ -20,7 +20,6 @@
   --c-fornecedor: #1f3d2a, #3a7a50;   /* verde floresta */
   --c-empresa:    #2a1f4a, #5a3a8a;   /* roxo profundo */
   --c-venda:      #3d1a1a, #8a2f2f;   /* vinho */
-  --c-compra:     #1a3040, #2a6080;   /* teal navy */
   --c-pagamento:  #3a2a10, #8a6020;   /* dourado escuro */
   --c-cozinha:    #1a2a20, #3a6a45;   /* verde escuro */
 }
@@ -441,7 +440,6 @@
 .ap-card--fornecedor { background: linear-gradient(145deg, #1f3d2a, #3a7a50); }
 .ap-card--empresa    { background: linear-gradient(145deg, #2a1f4a, #5a3a8a); }
 .ap-card--venda      { background: linear-gradient(145deg, #3d1a1a, #8a2f2f); }
-.ap-card--compra     { background: linear-gradient(145deg, #1a3040, #2a6080); }
 .ap-card--pagamento  { background: linear-gradient(145deg, #3a2a10, #8a6020); }
 .ap-card--cozinha    { background: linear-gradient(145deg, #1a2a20, #3a6a45); }
 

@@ -58,7 +58,7 @@ final class Sale extends Base
             ? (int) $form['id_cliente']
             : null;
 
-        // estado_venda usa o ENUM stock_movement_venda (PRE_VENDA | ORCAMENTO | VENDA).
+        // estado_venda usa o ENUM venda_estado (PRE_VENDA | ORCAMENTO | VENDA).
         // Uma venda recém-criada (ainda em edição/carrinho) começa sempre como PRE_VENDA.
         $estadoVenda = in_array($form['estado_venda'] ?? null, ['PRE_VENDA', 'ORCAMENTO', 'VENDA'], true)
             ? $form['estado_venda']
@@ -122,9 +122,7 @@ final class Sale extends Base
         if (isset($form['observacao'])) {
             $data['observacao'] = $form['observacao'];
         }
-        // estado_venda usa o ENUM stock_movement_venda — só aceita os valores válidos.
-        // É essa transição (qualquer estado -> 'VENDA') que dispara, via trigger no banco,
-        // a baixa automática de estoque referente a todos os itens já lançados na venda.
+        // estado_venda usa o ENUM venda_estado — só aceita os valores válidos.
         if (isset($form['estado_venda']) && in_array($form['estado_venda'], ['PRE_VENDA', 'ORCAMENTO', 'VENDA'], true)) {
             $data['estado_venda'] = $form['estado_venda'];
         }
@@ -380,7 +378,7 @@ final class Sale extends Base
                 ->setMaxResults($length)
                 ->fetchAllAssociative();
 
-            // estado_venda é o ENUM stock_movement_venda do banco — os rótulos abaixo
+            // estado_venda é o ENUM venda_estado do banco — os rótulos abaixo
             // precisam refletir exatamente os labels válidos (PRE_VENDA | ORCAMENTO | VENDA).
             $estadoLabel = [
                 'PRE_VENDA' => '<span class="badge bg-warning text-dark">Em edição</span>',

@@ -18,6 +18,7 @@
         "khanamiryan/qrcode-detector-decoder": "^2.0",
         "league/oauth2-client": "^2.9",
         "league/oauth2-google": "^5.0",
+        "setasign/fpdf": "^1.9",
         "slim/psr7": "^1.8",
         "slim/slim": "^4.15",
         "slim/twig-view": "^3.4",

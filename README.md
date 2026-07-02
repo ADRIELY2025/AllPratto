@@ -15,10 +15,10 @@ Sistema completo para restaurantes, lanchonetes, cafeterias e qualquer estabelec
 O AllPratto é uma plataforma **self-hosted** (roda no seu próprio servidor) dividida em duas grandes frentes:
 
 **Cardápio público (acesso via QR Code)**
-Qualquer pessoa com o link da mesa consegue acessar sem login. Ela vê o cardápio, adiciona itens ao carrinho, escolhe a forma de pagamento (PIX, Crédito, Débito ou Dinheiro) e finaliza o pedido. Ao confirmar, o sistema grava automaticamente: pedido, itens, venda, parcelas e movimenta o estoque — tudo em uma única transação.
+Qualquer pessoa com o link da mesa consegue acessar sem login. Ela vê o cardápio, adiciona itens ao carrinho, escolhe a forma de pagamento (PIX, Crédito, Débito ou Dinheiro) e finaliza o pedido. Ao confirmar, o sistema grava automaticamente: pedido, itens, venda e parcelas — tudo em uma única transação.
 
 **Painel administrativo (acesso restrito por login)**
-Exclusivo para administradores e operadores do estabelecimento. Aqui ficam o cadastro de produtos, mesas, clientes, fornecedores, condições de pagamento, controle de estoque, relatórios de vendas e o monitor da cozinha em tempo real.
+Exclusivo para administradores e operadores do estabelecimento. Aqui ficam o cadastro de produtos, mesas, clientes, fornecedores, condições de pagamento, relatórios de vendas e o monitor da cozinha em tempo real.
 
 ---
 
@@ -45,10 +45,8 @@ Backend grava em uma única transação:
   5. installment    → linha por parcela
   6. sale           → venda vinculada (PRE_VENDA)
   7. item_sale      → itens da venda
-  8. purchase       → saída de estoque
-  9. item_purchase  → itens da saída
- 10. installment_sale_purchase → vínculo parcela ↔ venda ↔ compra
- 11. mesa.status   → marcada como "ocupada"
+  8. installment_sale → vínculo parcela ↔ venda
+  9. mesa.status    → marcada como "ocupada"
         │
         ▼
 Monitor da Cozinha atualiza em tempo real

@@ -3,12 +3,11 @@
 declare(strict_types=1);
 
 use App\Database\Connection;
+use App\Helpers\QrCodeGenerator;
 
 require_once __DIR__ . '/../../../App/bootstrap.php';
 
 $conn = Connection::get();
-
-$conn->executeStatement('DELETE FROM mesa');
 
 $mesas = [
     ['numero' => 1,  'capacidade' => 2,  'status' => 'livre'],
@@ -28,7 +27,14 @@ $mesas = [
     ['numero' => 15, 'capacidade' => 12, 'status' => 'livre'],
 ];
 
+$inserted = 0;
 foreach ($mesas as $mesa) {
+    $exists = (int) $conn->fetchOne('SELECT COUNT(*) FROM mesa WHERE numero = ?', [$mesa['numero']]);
+
+    if ($exists > 0) {
+        continue;
+    }
+
     $conn->insert('mesa', [
         'numero'       => $mesa['numero'],
         'capacidade'   => $mesa['capacidade'],
@@ -38,6 +44,17 @@ foreach ($mesas as $mesa) {
         'criado_em'    => (new DateTimeImmutable())->format('Y-m-d H:i:s'),
         'atualizado_em'=> (new DateTimeImmutable())->format('Y-m-d H:i:s'),
     ]);
+
+    $mesaId = (int) $conn->lastInsertId();
+
+    // Gerar QR code para a mesa
+    if ($mesaId) {
+        if (QrCodeGenerator::generateForMesa($mesaId, $mesa['numero'])) {
+            echo "✅ QR code gerado para mesa {$mesa['numero']} (ID: {$mesaId})\n";
+        }
+    }
+
+    $inserted++;
 }
 
-echo '✅ Seed mesa: ' . count($mesas) . " registros inseridos (mesas 1–15).\n";
+echo '✅ Seed mesa: ' . $inserted . " registros inseridos (mesas 1–15).\n";
