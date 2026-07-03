@@ -20,7 +20,7 @@ const inputCustoOperacional = document.getElementById('custo_operacional');
 const inputMargemLucro = document.getElementById('margem_lucro');
 const inputPrecoVenda = document.getElementById('preco_venda');
 
-const Imagem = document.querySelector('#imagem');
+const Imagem = document.querySelector('#imagem_url');
 
 
 create(Imagem, {

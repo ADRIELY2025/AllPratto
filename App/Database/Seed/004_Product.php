@@ -14,55 +14,38 @@ $faker = Factory::create('pt_BR');
 // ⚠️  NÃO apaga produtos existentes.
 //     A seed é idempotente: só insere os produtos da lista abaixo que ainda
 //     NÃO existem na tabela (verificado por nome, case-insensitive).
+//     Esta seed NÃO trata imagens — os produtos são criados sem imagem
+//     (imagem_url / nome_imagem ficam NULL). A imagem pode ser adicionada
+//     depois pela tela de edição do produto.
 // ─────────────────────────────────────────────────────────────────────────────
-
-$storageDir = ROOT . '/storage/produtos';
-if (!is_dir($storageDir)) {
-    mkdir($storageDir, 0777, true);
-}
-
-$dirImagens = ROOT . '/public/img';
 
 $produtos = [
     // Entradas e Aperitivos
-    ['nome' => 'Bruschetta de Tomate',      'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 3.00,  'preco_venda' => 12.00, 'imagem' => 'bruschetta-de-tomate.jpg'],
-    ['nome' => 'Salada Caprese',            'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 4.00,  'preco_venda' => 16.00, 'imagem' => 'salada-caprese.jpg'],
-    ['nome' => 'Coxinha de Frango',         'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 2.50,  'preco_venda' => 8.00,  'imagem' => 'coxinha-de-frango.jpg'],
-    ['nome' => 'Queso Fundido',             'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 5.00,  'preco_venda' => 20.00, 'imagem' => 'queso-fundido.jpg'],
+    ['nome' => 'Carpaccio de Carne',            'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 6.50,  'preco_venda' => 26.00],
+    ['nome' => 'Bolinho de Bacalhau',           'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 4.00,  'preco_venda' => 18.00],
+    ['nome' => 'Hummus com Pão Sírio',          'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 3.00,  'preco_venda' => 14.00],
+    ['nome' => 'Anéis de Cebola Empanados',     'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 2.80,  'preco_venda' => 13.00],
 
     // Prato Principal
-    ['nome' => 'Spaghetti alla Carbonara',  'grupo' => 'Prato Principal',        'preco_compra' => 6.00,  'preco_venda' => 28.00, 'imagem' => 'spaghetti-carbonara.jpg'],
-    ['nome' => 'Frango à Passarinho',       'grupo' => 'Prato Principal',        'preco_compra' => 8.00,  'preco_venda' => 32.00, 'imagem' => 'frango-a-passarinho.jpg'],
-    ['nome' => 'Tacos de Carnitas',        'grupo' => 'Prato Principal',        'preco_compra' => 7.00,  'preco_venda' => 30.00, 'imagem' => 'tacos-carnitas.jpg'],
-    ['nome' => 'Boeuf Bourguignon',        'grupo' => 'Prato Principal',        'preco_compra' => 12.00, 'preco_venda' => 55.00, 'imagem' => 'boeuf-bourguignon.jpg'],
-    ['nome' => 'Lasanha de Berinjela (Vegana)', 'grupo' => 'Prato Principal',    'preco_compra' => 5.50,  'preco_venda' => 26.00, 'imagem' => 'lasanha-berinjela.jpg'],
+    ['nome' => 'Risoto de Camarão',             'grupo' => 'Prato Principal',        'preco_compra' => 10.00, 'preco_venda' => 48.00],
+    ['nome' => 'Filé Mignon ao Molho Madeira',  'grupo' => 'Prato Principal',        'preco_compra' => 14.00, 'preco_venda' => 62.00],
+    ['nome' => 'Salmão Grelhado com Legumes',   'grupo' => 'Prato Principal',        'preco_compra' => 11.00, 'preco_venda' => 50.00],
+    ['nome' => 'Moqueca de Peixe',              'grupo' => 'Prato Principal',        'preco_compra' => 9.50,  'preco_venda' => 44.00],
+    ['nome' => 'Curry de Grão-de-Bico (Vegano)','grupo' => 'Prato Principal',        'preco_compra' => 5.00,  'preco_venda' => 24.00],
 
     // Sobremesas
-    ['nome' => 'Tiramisu',                  'grupo' => 'Sobremesas',             'preco_compra' => 3.50,  'preco_venda' => 14.00, 'imagem' => 'tiramisu.jpg'],
-    ['nome' => 'Pudim de Leite',           'grupo' => 'Sobremesas',             'preco_compra' => 2.50,  'preco_venda' => 10.00, 'imagem' => 'pudim-de-leite.jpg'],
-    ['nome' => 'Creme Brûlée',             'grupo' => 'Sobremesas',             'preco_compra' => 3.80,  'preco_venda' => 15.00, 'imagem' => 'creme-brulee.jpg'],
+    ['nome' => 'Petit Gateau',                  'grupo' => 'Sobremesas',             'preco_compra' => 4.20,  'preco_venda' => 17.00],
+    ['nome' => 'Mousse de Maracujá',            'grupo' => 'Sobremesas',             'preco_compra' => 2.80,  'preco_venda' => 11.00],
+    ['nome' => 'Cheesecake de Frutas Vermelhas','grupo' => 'Sobremesas',             'preco_compra' => 4.50,  'preco_venda' => 18.00],
 
     // Bebidas
-    ['nome' => 'Suco de Laranja Natural',  'grupo' => 'Bebidas',                'preco_compra' => 1.20,  'preco_venda' => 7.00,  'imagem' => 'suco-laranja.jpg'],
-    ['nome' => 'Agua Mineral',             'grupo' => 'Bebidas',                'preco_compra' => 0.50,  'preco_venda' => 4.00,  'imagem' => 'agua-mineral.jpg'],
-    ['nome' => 'Margarita',                'grupo' => 'Bebidas',                'preco_compra' => 4.00,  'preco_venda' => 22.00, 'imagem' => 'margarita.jpg'],
+    ['nome' => 'Limonada Suíça',                'grupo' => 'Bebidas',                'preco_compra' => 1.50,  'preco_venda' => 8.00],
+    ['nome' => 'Refrigerante Lata',             'grupo' => 'Bebidas',                'preco_compra' => 1.80,  'preco_venda' => 7.00],
+    ['nome' => 'Caipirinha',                    'grupo' => 'Bebidas',                'preco_compra' => 3.50,  'preco_venda' => 20.00],
 ];
-
-// Busca arquivo ignorando maiúsculas/minúsculas (Windows ↔ Linux)
-function encontrarArquivo(string $dir, string $nome): ?string
-{
-    foreach (glob($dir . '/*') as $caminho) {
-        if (strcasecmp(basename($caminho), $nome) === 0) {
-            return $caminho;
-        }
-    }
-    return null;
-}
 
 $inseridos = 0;
 $ignorados = 0;
-$comImagem = 0;
-$semImagem = 0;
 
 foreach ($produtos as $produto) {
 
@@ -86,9 +69,9 @@ foreach ($produtos as $produto) {
     // ✅ RETURNING id → pega o ID real do PostgreSQL, sem depender de lastInsertId()
     $id = (int) $conn->fetchOne(
         "INSERT INTO product (
-            nome, 
-            codigo_barra, 
-            grupo, 
+            nome,
+            codigo_barra,
+            grupo,
             unidade,
             imagem_url,
             nome_imagem,
@@ -128,35 +111,10 @@ foreach ($produtos as $produto) {
         ]
     );
 
+    echo "  ✅ [{$produto['nome']}] ID={$id} inserido (sem imagem)\n";
     $inseridos++;
-    $nomeArquivo = $produto['imagem'] ?? null;
-    $origemReal  = $nomeArquivo ? encontrarArquivo($dirImagens, $nomeArquivo) : null;
-
-    if ($origemReal !== null) {
-        $nomeReal = basename($origemReal);
-        $destDir  = $storageDir . DIRECTORY_SEPARATOR . $id;
-
-        if (!is_dir($destDir)) {
-            mkdir($destDir, 0777, true);
-        }
-
-        copy($origemReal, $destDir . DIRECTORY_SEPARATOR . $nomeReal);
-
-        $conn->executeStatement(
-            "UPDATE product SET nome_imagem = ? WHERE id = ?",
-            [$nomeReal, $id]
-        );
-
-        echo "  🖼️  [{$produto['nome']}] ID={$id} → storage/produtos/{$id}/{$nomeReal}\n";
-        $comImagem++;
-    } else {
-        echo "  ⚠️  [{$produto['nome']}] ID={$id} → sem imagem ('{$nomeArquivo}' não encontrado em public/img/)\n";
-        $semImagem++;
-    }
 }
 
-echo "\n✅ Seed product finalizada.\n";
+echo "\n✅ Seed product (002) finalizada.\n";
 echo "   ✅ Inseridos   : {$inseridos}\n";
 echo "   ⏭️  Já existiam : {$ignorados}\n";
-echo "   🖼️  Com imagem : {$comImagem}\n";
-echo "   ⚠️  Sem imagem : {$semImagem}\n";
