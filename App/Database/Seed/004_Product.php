@@ -20,28 +20,105 @@ $faker = Factory::create('pt_BR');
 // ─────────────────────────────────────────────────────────────────────────────
 
 $produtos = [
-    // Entradas e Aperitivos
-    ['nome' => 'Carpaccio de Carne',            'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 6.50,  'preco_venda' => 26.00],
-    ['nome' => 'Bolinho de Bacalhau',           'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 4.00,  'preco_venda' => 18.00],
-    ['nome' => 'Hummus com Pão Sírio',          'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 3.00,  'preco_venda' => 14.00],
-    ['nome' => 'Anéis de Cebola Empanados',     'grupo' => 'Entradas e Aperitivos', 'preco_compra' => 2.80,  'preco_venda' => 13.00],
 
-    // Prato Principal
-    ['nome' => 'Risoto de Camarão',             'grupo' => 'Prato Principal',        'preco_compra' => 10.00, 'preco_venda' => 48.00],
-    ['nome' => 'Filé Mignon ao Molho Madeira',  'grupo' => 'Prato Principal',        'preco_compra' => 14.00, 'preco_venda' => 62.00],
-    ['nome' => 'Salmão Grelhado com Legumes',   'grupo' => 'Prato Principal',        'preco_compra' => 11.00, 'preco_venda' => 50.00],
-    ['nome' => 'Moqueca de Peixe',              'grupo' => 'Prato Principal',        'preco_compra' => 9.50,  'preco_venda' => 44.00],
-    ['nome' => 'Curry de Grão-de-Bico (Vegano)','grupo' => 'Prato Principal',        'preco_compra' => 5.00,  'preco_venda' => 24.00],
+    // Entradas
+    [
+        'nome' => 'Bruschetta de Tomate',
+        'grupo' => 'Entradas',
+        'preco_compra' => 5.80,
+        'preco_venda' => 24.90
+    ],
+    [
+        'nome' => 'Coxinha de Frango',
+        'grupo' => 'Entradas',
+        'preco_compra' => 3.80,
+        'preco_venda' => 18.90
+    ],
+    [
+        'nome' => 'Queso Fundido',
+        'grupo' => 'Entradas',
+        'preco_compra' => 8.50,
+        'preco_venda' => 34.90
+    ],
+    [
+        'nome' => 'Salada Caprese',
+        'grupo' => 'Entradas',
+        'preco_compra' => 7.20,
+        'preco_venda' => 29.90
+    ],
+
+    // Pratos Principais
+    [
+        'nome' => 'Boeuf Bourguignon',
+        'grupo' => 'Prato Principal',
+        'preco_compra' => 22.00,
+        'preco_venda' => 84.90
+    ],
+    [
+        'nome' => 'Lasanha de Berinjela',
+        'grupo' => 'Prato Principal',
+        'preco_compra' => 12.50,
+        'preco_venda' => 49.90
+    ],
+    [
+        'nome' => 'Spaghetti Carbonara',
+        'grupo' => 'Prato Principal',
+        'preco_compra' => 10.80,
+        'preco_venda' => 46.90
+    ],
+    [
+        'nome' => 'Tacos Carnitas',
+        'grupo' => 'Prato Principal',
+        'preco_compra' => 11.80,
+        'preco_venda' => 47.90
+    ],
+    [
+        'nome' => 'Frango à Passarinho',
+        'grupo' => 'Prato Principal',
+        'preco_compra' => 9.50,
+        'preco_venda' => 39.90
+    ],
 
     // Sobremesas
-    ['nome' => 'Petit Gateau',                  'grupo' => 'Sobremesas',             'preco_compra' => 4.20,  'preco_venda' => 17.00],
-    ['nome' => 'Mousse de Maracujá',            'grupo' => 'Sobremesas',             'preco_compra' => 2.80,  'preco_venda' => 11.00],
-    ['nome' => 'Cheesecake de Frutas Vermelhas','grupo' => 'Sobremesas',             'preco_compra' => 4.50,  'preco_venda' => 18.00],
+    [
+        'nome' => 'Crème Brûlée',
+        'grupo' => 'Sobremesas',
+        'preco_compra' => 6.50,
+        'preco_venda' => 24.90
+    ],
+    [
+        'nome' => 'Pudim de Leite',
+        'grupo' => 'Sobremesas',
+        'preco_compra' => 4.20,
+        'preco_venda' => 18.90
+    ],
+    [
+        'nome' => 'Tiramisù',
+        'grupo' => 'Sobremesas',
+        'preco_compra' => 6.80,
+        'preco_venda' => 27.90
+    ],
 
     // Bebidas
-    ['nome' => 'Limonada Suíça',                'grupo' => 'Bebidas',                'preco_compra' => 1.50,  'preco_venda' => 8.00],
-    ['nome' => 'Refrigerante Lata',             'grupo' => 'Bebidas',                'preco_compra' => 1.80,  'preco_venda' => 7.00],
-    ['nome' => 'Caipirinha',                    'grupo' => 'Bebidas',                'preco_compra' => 3.50,  'preco_venda' => 20.00],
+    [
+        'nome' => 'Água Mineral',
+        'grupo' => 'Bebidas',
+        'preco_compra' => 1.80,
+        'preco_venda' => 6.90
+    ],
+    [
+        'nome' => 'Margarita',
+        'grupo' => 'Bebidas',
+        'preco_compra' => 7.50,
+        'preco_venda' => 29.90
+    ],
+    [
+        'nome' => 'Suco de Laranja',
+        'grupo' => 'Bebidas',
+        'preco_compra' => 3.50,
+        'preco_venda' => 12.90
+    ],
+
 ];
 
 $inseridos = 0;
