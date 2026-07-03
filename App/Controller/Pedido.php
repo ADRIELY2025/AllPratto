@@ -97,7 +97,7 @@ final class Pedido extends Base
         $itensNormalizados = [];
         foreach ($itens as $item) {
             $qty   = max(0.01, (float) ($item['quantidade'] ?? 1));
-            $preco = max(0,    (float) ($item['preco']      ?? 0));
+            $preco = max(0, (float) str_replace(',', '.', (string) ($item['preco'] ?? 0)));
             $sub   = round($preco * $qty, 4);
             $subtotal += $sub;
             $itensNormalizados[] = [
@@ -421,7 +421,7 @@ final class Pedido extends Base
         $itensNormalizados = [];
         foreach ($itens as $item) {
             $qty   = max(1, (int)   ($item['quantidade'] ?? 1));
-            $preco = max(0, (float) ($item['preco']      ?? 0));
+           $preco = max(0, (float) str_replace(',', '.', (string) ($item['preco'] ?? 0)));
             $sub   = round($preco * $qty, 4);
             $total += $sub;
             $itensNormalizados[] = [

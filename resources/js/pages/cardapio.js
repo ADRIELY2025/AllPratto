@@ -181,6 +181,7 @@ function renderCarrinho() {
     if (carrinho.length === 0) {
         el.innerHTML = `<div class="carrinho-vazio"><i class="fa-solid fa-basket-shopping"></i>Nenhum item ainda.</div>`;
         document.getElementById('valor-total').textContent = 'R$ 0,00';
+        renderSaldoPagamento();
         return;
     }
     const totalVal = carrinho.reduce((s, i) => s + i.produto.preco_venda * i.qty, 0);
@@ -196,6 +197,7 @@ function renderCarrinho() {
         </div>
     `).join('');
     document.getElementById('valor-total').textContent = formatBRL(totalVal);
+    renderSaldoPagamento();
 }
 
 // ── TOAST ────────────────────────────────────────────────────────
@@ -245,6 +247,78 @@ function pagamentoSelecionado() {
     const checks = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
     const vals = checks.map(c => c.value);
     return vals.length === 1 ? vals[0] : vals; // string for single, array for multiple
+}
+
+// ── SALDO A ALOCAR (quando 2 formas de pagamento são escolhidas) ──
+// Segue o mesmo raciocínio do split de pagamento do OSale: soma-se o
+// que já foi digitado em cada forma e subtrai-se do total; o botão de
+// "Fazer Pedido" só fica liberado quando esse saldo chega a zero.
+function totalPedidoAtual() {
+    const totalEl = document.getElementById('valor-total');
+    if (!totalEl) return 0;
+    return parseFloat((totalEl.textContent || 'R$ 0,00').replace(/[R$\.\s]/g, '').replace(',', '.')) || 0;
+}
+
+function somaValoresPagamentoDigitados() {
+    const checked = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
+    let somaCentavos = 0;
+    checked.forEach(chk => {
+        const card = chk.closest('.pagamento-card');
+        const input = card ? card.querySelector('.pagamento-valor-input') : null;
+        const v = input ? input.value.trim() : '';
+        if (!v) return;
+        const n = parseFloat(v.replace(/\./g, '').replace(',', '.'));
+        if (!isNaN(n)) somaCentavos += Math.round(n * 100);
+    });
+    return somaCentavos / 100;
+}
+
+function renderSaldoPagamento() {
+    const checked   = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
+    const saldoBox  = document.getElementById('saldo-pagamento');
+    const saldoVal  = document.getElementById('saldo-pagamento-valor');
+    const btn       = document.getElementById('btn-finalizar');
+
+    if (checked.length === 0) {
+        // nenhuma forma escolhida ainda — pedido não pode ser enviado
+        if (saldoBox) saldoBox.classList.add('oculto');
+        if (btn) btn.disabled = true;
+        return;
+    }
+
+    if (checked.length === 1) {
+        // uma única forma cobre o total automaticamente — libera o botão
+        if (saldoBox) saldoBox.classList.add('oculto');
+        if (btn) btn.disabled = false;
+        return;
+    }
+
+    // duas formas selecionadas: mostra o saldo e só libera quando ele zerar
+    const total   = totalPedidoAtual();
+    const soma    = somaValoresPagamentoDigitados();
+    const saldo   = Math.round((total - soma) * 100) / 100;
+
+    if (saldoBox) {
+        saldoBox.classList.remove('oculto');
+        saldoBox.classList.remove('saldo-pendente', 'saldo-ok', 'saldo-negativo');
+
+        if (Math.abs(saldo) < 0.005) {
+            saldoBox.classList.add('saldo-ok');
+            saldoBox.querySelector('span').innerHTML = '<i class="fa-solid fa-circle-check"></i> Valores conferem, pode enviar:';
+            if (saldoVal) saldoVal.textContent = formatBRL(0);
+        } else if (saldo < 0) {
+            saldoBox.classList.add('saldo-negativo');
+            saldoBox.querySelector('span').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Valor ultrapassou o total em:';
+            if (saldoVal) saldoVal.textContent = formatBRL(Math.abs(saldo));
+        } else {
+            saldoBox.classList.add('saldo-pendente');
+            saldoBox.querySelector('span').innerHTML = '<i class="fa-solid fa-scale-balanced"></i> Falta escolher o valor de:';
+            if (saldoVal) saldoVal.textContent = formatBRL(saldo);
+        }
+    }
+
+    // "Fazer Pedido" só aparece liberado quando o saldo restante for exatamente zero
+    if (btn) btn.disabled = Math.abs(saldo) >= 0.005;
 }
 
 /** Busca payment_terms de crédito e carrega installments no dropdown */
@@ -329,16 +403,19 @@ opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]').forEach(input => 
                 return;
             }
 
-            // atualiza visual e mostra input de valor
+            // atualiza visual dos cards; o campo de valor só aparece quando
+            // EXATAMENTE 2 formas estão marcadas (com 1 forma o total inteiro
+            // vai pra ela automaticamente, sem precisar escolher valor)
             opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
                 const chk = card.querySelector('input[name="pagamento_cb"]');
-                card.classList.toggle('selecionado', !!(chk && chk.checked));
+                const isChecked = !!(chk && chk.checked);
+                card.classList.toggle('selecionado', isChecked);
                 const valorBox = card.querySelector('.pagamento-valor');
-                if (valorBox) valorBox.classList.toggle('oculto', !(chk && chk.checked));
+                if (valorBox) valorBox.classList.toggle('oculto', !(isChecked && checked.length === 2));
             });
 
             // Se apenas crédito selecionado, carregar parcelas
-            const selectedVals = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked')).map(c => c.value);
+            const selectedVals = checked.map(c => c.value);
             const isCredito = selectedVals.includes('credito');
             blocoParcelamento.classList.toggle('oculto', !isCredito);
 
@@ -349,19 +426,57 @@ opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]').forEach(input => 
                 _selectedPaymentId   = null;
             }
 
-            // Ajuste default de valores: se 1 selecionado → preenche total; se 2 selecionados → divide meio-a-meio
-            const totalEl = document.getElementById('valor-total');
-            const total = totalEl ? parseFloat((totalEl.textContent || 'R$ 0,00').replace(/[R$\.\s]/g, '').replace(',', '.')) || 0 : 0;
-            const visibleInputs = Array.from(opcoesPagamento.querySelectorAll('.pagamento-valor-input')).filter(i => !i.closest('.pagamento-valor').classList.contains('oculto'));
-            if (visibleInputs.length === 1) {
-                visibleInputs[0].value = total.toFixed(2).replace('.', ',');
-            } else if (visibleInputs.length === 2) {
-                const half = Math.round((total / 2) * 100) / 100;
-                visibleInputs[0].value = half.toFixed(2).replace('.', ',');
-                visibleInputs[1].value = (Math.round((total - half) * 100) / 100).toFixed(2).replace('.', ',');
+            if (checked.length === 2) {
+                // A primeira forma (na ordem dos cards) é editável — a pessoa digita o valor.
+                // A segunda é calculada automaticamente: total - valor digitado na primeira.
+                const cardsChecked = Array.from(opcoesPagamento.querySelectorAll('.pagamento-card'))
+                    .filter(c => c.querySelector('input[name="pagamento_cb"]').checked);
+                const [cardEditavel, cardCalculado] = cardsChecked;
+                const inputEditavel  = cardEditavel  && cardEditavel.querySelector('.pagamento-valor-input');
+                const inputCalculado = cardCalculado && cardCalculado.querySelector('.pagamento-valor-input');
+
+                if (inputEditavel) {
+                    inputEditavel.readOnly = false;
+                    inputEditavel.classList.remove('pagamento-valor-input--calculado');
+                    inputEditavel.value = '';
+                }
+                if (inputCalculado) {
+                    inputCalculado.readOnly = true;
+                    inputCalculado.classList.add('pagamento-valor-input--calculado');
+                    inputCalculado.value = totalPedidoAtual().toFixed(2).replace('.', ',');
+                }
             }
+
+            renderSaldoPagamento();
         });
     });
+
+// Enquanto a pessoa digita o valor na forma editável, a outra forma marcada
+// recalcula sozinha o restante (total - valor digitado) em tempo real.
+opcoesPagamento.addEventListener('input', (e) => {
+    if (!e.target.classList || !e.target.classList.contains('pagamento-valor-input')) return;
+    if (e.target.readOnly) { renderSaldoPagamento(); return; }
+
+    const checked = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
+    if (checked.length === 2) {
+        const inputCalculado = Array.from(opcoesPagamento.querySelectorAll('.pagamento-valor-input'))
+            .find(i => i.readOnly && i !== e.target);
+
+        if (inputCalculado) {
+            const total    = totalPedidoAtual();
+            const raw      = e.target.value.trim().replace(/\./g, '').replace(',', '.');
+            let digitado   = parseFloat(raw);
+            if (isNaN(digitado) || digitado < 0) digitado = 0;
+
+            let restante = Math.round((total - digitado) * 100) / 100;
+            if (restante < 0) restante = 0; // não deixa a forma calculada ficar negativa
+
+            inputCalculado.value = restante.toFixed(2).replace('.', ',');
+        }
+    }
+
+    renderSaldoPagamento();
+});
 
 // Formata valores dos inputs de pagamento ao perder foco
 opcoesPagamento.addEventListener('blur', (e) => {
@@ -375,6 +490,7 @@ opcoesPagamento.addEventListener('blur', (e) => {
         } else {
             e.target.value = n.toFixed(2).replace('.', ',');
         }
+        renderSaldoPagamento();
     }
 }, true);
 
