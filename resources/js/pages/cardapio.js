@@ -411,7 +411,10 @@ async function carregarInstallmentsCredito() {
 
 /** Monta as opções "Nx de R$ X,XX" no select */
 function renderSelectParcelas(selectEl) {
-    const totalVal    = carrinho.reduce((s, i) => s + i.produto.preco_venda * i.qty, 0);
+    // Usa o saldo que ainda falta alocar (não o total do carrinho), pois o
+    // crédito pode estar cobrindo só o restante depois de outras formas já
+    // terem sido adicionadas ao pagamento.
+    const totalVal    = saldoRestante();
     const maxParcelas = Math.max(..._installmentsData.map(i => parseInt(i.parcela) || 1));
 
     selectEl.innerHTML = '';
@@ -717,13 +720,25 @@ const MAPA_STATUS_PEDIDO = {
     pago:       'Pago',
 };
 
+// Pedidos nesses status já foram concluídos — somem da lista assim que a
+// página é recarregada (mas continuam visíveis normalmente enquanto ainda
+// estão em andamento, mesmo que a pessoa recarregue a página).
+const STATUS_PEDIDO_FINALIZADO = ['pronto', 'entregue', 'pago', 'cancelado'];
+
 let meusPedidosCache = [];
+
+// Ids dos pedidos que já foram escondidos (finalizados numa carga anterior).
+// Fica em memória durante a sessão da página: uma vez escondido, continua
+// escondido mesmo quando a lista é atualizada por outro motivo (ex.: enviar
+// um novo pedido) — só volta a aparecer... nunca, até a próxima vez que a
+// página for recarregada de verdade.
+let pedidosOcultosNaSessao = new Set();
 
 function infoStatusItem(status) {
     return MAPA_STATUS_ITEM[status] || MAPA_STATUS_ITEM.Awaiting;
 }
 
-async function carregarMeusPedidos() {
+async function carregarMeusPedidos(filtrarFinalizados = false) {
     const mesaId = getMesaId();
     const badge  = document.getElementById('badge-meus-pedidos');
 
@@ -738,7 +753,23 @@ async function carregarMeusPedidos() {
         const response  = await requests.get(`/cardapio/pedidos/mesa/${mesaId}`);
         if (!response.sucesso) return;
 
-        meusPedidosCache = response.pedidos || [];
+        const pedidos = response.pedidos || [];
+
+        // No carregamento inicial da página (reload), qualquer pedido que já
+        // esteja finalizado entra pra lista de "escondidos" da sessão. Nas
+        // atualizações seguintes (enviar novo pedido, cancelar item, abrir o
+        // painel), continuamos escondendo quem já estava escondido, mas um
+        // pedido que só ACABOU de ficar pronto durante a navegação continua
+        // aparecendo normalmente até a próxima recarregada.
+        if (filtrarFinalizados) {
+            pedidos.forEach(pedido => {
+                if (STATUS_PEDIDO_FINALIZADO.includes((pedido.status || '').toLowerCase())) {
+                    pedidosOcultosNaSessao.add(pedido.id);
+                }
+            });
+        }
+
+        meusPedidosCache = pedidos.filter(pedido => !pedidosOcultosNaSessao.has(pedido.id));
 
         // Badge = qtde de itens ainda não cancelados em pedidos abertos
         const qtdAtiva = meusPedidosCache.reduce((soma, pedido) => {
@@ -955,4 +986,4 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPainel
 
 // ── INIT ─────────────────────────────────────────────────────────
 carregarItens();
-carregarMeusPedidos();
+carregarMeusPedidos(true); // ao carregar/recarregar a página, some com quem já foi finalizado
