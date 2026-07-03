@@ -748,7 +748,19 @@ body::before {
   font-style: italic;
   color: var(--ap-wine);
   font-size: 1.35rem;
+  transition: var(--transicao);
 }
+
+/* Quando existem formas de pagamento adicionadas, o Total passa a mostrar
+   diretamente o quanto falta alocar (ou se já fechou, ou se passou do valor). */
+.total-row--pendente #total-label { color: var(--ap-gold); }
+.total-row--pendente .total-val   { color: var(--ap-gold); }
+
+.total-row--ok #total-label { color: #1e5b23; }
+.total-row--ok .total-val   { color: #1e5b23; }
+
+.total-row--negativo #total-label { color: var(--ap-wine, #7a2222); }
+.total-row--negativo .total-val   { color: var(--ap-wine, #7a2222); }
 
 /* =====================================================
    FORMA DE PAGAMENTO
@@ -792,8 +804,6 @@ body::before {
   transition: var(--transicao);
 }
 
-.pagamento-card > input[type="checkbox"] { position: absolute; opacity: 0; pointer-events: none; }
-
 .pagamento-card i { font-size: 1.15rem; color: var(--ap-gold); }
 
 .pagamento-card:hover { border-color: var(--ap-gold); }
@@ -804,55 +814,161 @@ body::before {
   box-shadow: 0 0 0 2px rgba(201, 168, 76, .25) inset;
 }
 
-.pagamento-valor {
-  width: 100%;
-  margin-top: .5rem;
-  padding-top: .5rem;
-  border-top: 1px dashed var(--ap-line);
+/* forma já adicionada ao split — fica marcada como "em uso" até ser removida da lista */
+.pagamento-card.usada {
+  background: var(--ap-cream);
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, .18) inset;
+  cursor: not-allowed;
+  opacity: .75;
 }
 
-.pagamento-valor.oculto { display: none; }
+.pagamento-card.usada i { color: #2e7d32; }
 
-.pagamento-valor::before {
-  content: 'R$';
-  display: inline-block;
-  margin-right: .3rem;
-  font-size: .72rem;
-  font-weight: 700;
-  color: var(--ap-muted);
-  vertical-align: middle;
+/* ── VALOR DA FORMA SELECIONADA (passo único, antes de adicionar ao split) ── */
+.pagamento-valor-form {
+  margin-top: .8rem;
+  padding: .8rem .9rem;
+
+  border: 1.5px solid var(--ap-gold);
+  border-radius: var(--ap-radius-sm);
+  background: var(--ap-cream);
 }
 
-.pagamento-valor-input {
-  width: calc(100% - 2rem);
-  display: inline-block;
-  vertical-align: middle;
+.pagamento-valor-form.oculto { display: none; }
 
-  padding: .35rem .5rem;
-
-  border: 1.5px solid var(--ap-line);
-  border-radius: 6px;
-  background: var(--ap-white);
-
-  font-size: .85rem;
+.pagamento-valor-form-label {
+  display: block;
+  margin-bottom: .5rem;
+  font-size: .78rem;
   font-weight: 700;
   color: var(--ap-navy);
-  text-align: center;
-
-  cursor: text;
 }
 
-.pagamento-valor-input:focus {
+.pagamento-valor-inputgroup {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+
+  padding: 0 .6rem;
+
+  border: 1.5px solid var(--ap-line);
+  border-radius: 8px;
+  background: var(--ap-white);
+}
+
+.pagamento-valor-inputgroup > span {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--ap-muted);
+}
+
+.pagamento-valor-inputgroup input {
+  flex: 1;
+  border: none;
   outline: none;
+  background: transparent;
+
+  padding: .55rem 0;
+
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--ap-navy);
+}
+
+.pagamento-valor-inputgroup:focus-within {
   border-color: var(--ap-gold);
   box-shadow: 0 0 0 2px rgba(201, 168, 76, .25);
 }
 
-.pagamento-valor-input--calculado {
-  background: var(--ap-cream);
-  border-style: dashed;
+.pagamento-valor-inputgroup button {
+  border: none;
+  background: transparent;
+  color: var(--ap-gold);
+  font-size: .95rem;
+  padding: .4rem;
+  cursor: pointer;
+}
+
+.btn-add-forma {
+  width: 100%;
+  margin-top: .7rem;
+
+  border: none;
+  border-radius: 8px;
+  padding: .6rem;
+
+  background: var(--ap-navy);
+  color: var(--ap-gold-light);
+
+  font-size: .82rem;
+  font-weight: 700;
+
+  transition: var(--transicao);
+}
+
+.btn-add-forma:hover { background: var(--ap-navy-light); }
+
+/* ── FORMAS DE PAGAMENTO JÁ ADICIONADAS AO PEDIDO (split) ─────────── */
+.formas-adicionadas {
+  margin-top: .9rem;
+}
+
+.formas-adicionadas.oculto { display: none; }
+
+.formas-adicionadas-titulo {
+  margin-bottom: .5rem;
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
   color: var(--ap-muted);
-  cursor: not-allowed;
+}
+
+.forma-adicionada-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+
+  padding: .55rem .7rem;
+  margin-bottom: .4rem;
+
+  border: 1px solid var(--ap-line);
+  border-radius: 8px;
+  background: var(--ap-white);
+}
+
+.forma-adicionada-nome {
+  flex: 1;
+  font-size: .84rem;
+  font-weight: 700;
+  color: var(--ap-navy);
+}
+
+.forma-adicionada-badge {
+  display: inline-block;
+  margin-left: .3rem;
+  padding: .05rem .4rem;
+  border-radius: 20px;
+  background: var(--ap-cream);
+  color: var(--ap-navy);
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.forma-adicionada-valor {
+  font-size: .84rem;
+  font-weight: 700;
+  color: var(--ap-navy);
+}
+
+.forma-adicionada-remover {
+  border: none;
+  background: transparent;
+  color: var(--ap-wine, #7a2222);
+  font-size: .85rem;
+  padding: .25rem;
+  cursor: pointer;
 }
 
 /* =====================================================
@@ -956,55 +1072,6 @@ body::before {
     transition: none;
   }
 }
-/* ── SALDO A ALOCAR (múltiplas formas de pagamento) ────────────── */
-.saldo-pagamento {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .6rem;
-
-  margin-top: .8rem;
-  padding: .7rem .9rem;
-
-  border-radius: var(--ap-radius-sm);
-  border: 1px solid var(--ap-line);
-  background: var(--ap-cream);
-
-  font-size: .82rem;
-  font-weight: 600;
-  color: var(--ap-navy);
-
-  transition: var(--transicao);
-}
-
-.saldo-pagamento.oculto { display: none; }
-
-.saldo-pagamento i { margin-right: .3rem; color: var(--ap-gold); }
-
-.saldo-pagamento strong { font-size: .92rem; }
-
-/* saldo ainda maior que zero — falta alocar valor */
-.saldo-pagamento.saldo-pendente {
-  border-color: var(--ap-gold);
-  background: var(--ap-cream);
-}
-
-/* soma bateu certinho com o total — pode enviar */
-.saldo-pagamento.saldo-ok {
-  border-color: #2e7d32;
-  background: #eaf6ec;
-  color: #1e5b23;
-}
-.saldo-pagamento.saldo-ok strong { color: #1e5b23; }
-
-/* valores informados ultrapassam o total */
-.saldo-pagamento.saldo-negativo {
-  border-color: var(--ap-wine, #7a2222);
-  background: #fbeaea;
-  color: var(--ap-wine, #7a2222);
-}
-.saldo-pagamento.saldo-negativo strong { color: var(--ap-wine, #7a2222); }
-
 /* ── BLOCO DE PARCELAMENTO ─────────────────────────────────────── */
 .bloco-parcelamento {
   margin-top: 1rem;

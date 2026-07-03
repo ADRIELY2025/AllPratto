@@ -89,48 +89,32 @@
         <div class="painel-corpo">
             <div id="itens-carrinho"></div>
 
-            <div class="total-row">
-                <span>Total</span>
+            <div class="total-row" id="total-row">
+                <span id="total-label">Total</span>
                 <span class="total-val" id="valor-total">R$ 0,00</span>
             </div>
 
             <div class="pagamento-titulo">Forma de pagamento</div>
             <div class="pagamento-opcoes" id="forma-pagamento">
-                    <label class="pagamento-card" data-forma="pix">
-                        <input type="checkbox" name="pagamento_cb" value="pix">
+                    <div class="pagamento-card" data-forma="pix">
                         <i class="fa-solid fa-qrcode"></i>
                         <span>PIX</span>
-                        <div class="pagamento-valor oculto">
-                            <input type="text" class="form-control pagamento-valor-input" placeholder="0,00">
-                        </div>
-                    </label>
-                    <label class="pagamento-card" data-forma="credito">
-                        <input type="checkbox" name="pagamento_cb" value="credito">
+                    </div>
+                    <div class="pagamento-card" data-forma="credito">
                         <i class="fa-regular fa-credit-card"></i>
                         <span>Crédito</span>
-                        <div class="pagamento-valor oculto">
-                            <input type="text" class="form-control pagamento-valor-input" placeholder="0,00">
-                        </div>
-                    </label>
-                    <label class="pagamento-card" data-forma="debito">
-                        <input type="checkbox" name="pagamento_cb" value="debito">
+                    </div>
+                    <div class="pagamento-card" data-forma="debito">
                         <i class="fa-solid fa-credit-card"></i>
                         <span>Débito</span>
-                        <div class="pagamento-valor oculto">
-                            <input type="text" class="form-control pagamento-valor-input" placeholder="0,00">
-                        </div>
-                    </label>
-                    <label class="pagamento-card" data-forma="dinheiro">
-                        <input type="checkbox" name="pagamento_cb" value="dinheiro">
+                    </div>
+                    <div class="pagamento-card" data-forma="dinheiro">
                         <i class="fa-solid fa-money-bill-wave"></i>
                         <span>Dinheiro</span>
-                        <div class="pagamento-valor oculto">
-                            <input type="text" class="form-control pagamento-valor-input" placeholder="0,00">
-                        </div>
-                    </label>
+                    </div>
             </div>
 
-            <!-- PARCELAMENTO — visível apenas em crédito -->
+            <!-- PARCELAMENTO — visível apenas quando Crédito está selecionado para adicionar -->
             <div class="bloco-parcelamento oculto" id="bloco-parcelamento">
                 <div class="parcelamento-titulo">Condições de pagamento</div>
                 <div class="parcelamento-campos">
@@ -145,7 +129,28 @@
                 </div>
             </div>
 
-            <button class="btn-finalizar" id="btn-finalizar" type="button">
+            <!-- VALOR DA FORMA SELECIONADA + BOTÃO ADICIONAR (fluxo igual ao OSale) -->
+            <div class="pagamento-valor-form oculto" id="pagamento-valor-form">
+                <label class="pagamento-valor-form-label" for="input-valor-forma">Valor pago nessa forma</label>
+                <div class="pagamento-valor-inputgroup">
+                    <span>R$</span>
+                    <input type="text" inputmode="numeric" id="input-valor-forma" placeholder="0,00">
+                    <button type="button" id="btn-usar-restante" title="Usar valor restante">
+                        <i class="fa-solid fa-arrow-turn-down"></i>
+                    </button>
+                </div>
+                <button type="button" class="btn-add-forma" id="btn-add-forma">
+                    <i class="fa-solid fa-plus"></i> Adicionar esta forma ao pagamento
+                </button>
+            </div>
+
+            <!-- FORMAS JÁ ADICIONADAS AO PEDIDO (split) -->
+            <div class="formas-adicionadas oculto" id="formas-adicionadas-wrap">
+                <div class="formas-adicionadas-titulo">Formas de pagamento adicionadas</div>
+                <div id="formas-adicionadas-lista"></div>
+            </div>
+
+            <button class="btn-finalizar" id="btn-finalizar" type="button" disabled>
                 <i class="fa-solid fa-paper-plane"></i> Fazer Pedido
             </button>
         </div>

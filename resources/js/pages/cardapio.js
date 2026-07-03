@@ -156,6 +156,7 @@ function adicionarAoCarrinho(id) {
     const item = carrinho.find(i => i.produto.id === id);
     if (item) item.qty++;
     else carrinho.push({ produto: prod, qty: 1 });
+    if (typeof resetSplits === 'function') resetSplits(); // total mudou — refaz a escolha de pagamento
     atualizarUI();
     showToast();
 }
@@ -165,6 +166,7 @@ function alterarQty(id, delta) {
     if (idx === -1) return;
     carrinho[idx].qty += delta;
     if (carrinho[idx].qty <= 0) carrinho.splice(idx, 1);
+    if (typeof resetSplits === 'function') resetSplits(); // total mudou — refaz a escolha de pagamento
     atualizarUI();
     renderCarrinho();
 }
@@ -178,9 +180,11 @@ function atualizarUI() {
 
 function renderCarrinho() {
     const el = document.getElementById('itens-carrinho');
+    const totalEl = document.getElementById('valor-total');
     if (carrinho.length === 0) {
         el.innerHTML = `<div class="carrinho-vazio"><i class="fa-solid fa-basket-shopping"></i>Nenhum item ainda.</div>`;
-        document.getElementById('valor-total').textContent = 'R$ 0,00';
+        totalEl.textContent = 'R$ 0,00';
+        totalEl.dataset.total = '0';
         renderSaldoPagamento();
         return;
     }
@@ -196,7 +200,8 @@ function renderCarrinho() {
             <div class="item-preco">${formatBRL(i.produto.preco_venda * i.qty)}</div>
         </div>
     `).join('');
-    document.getElementById('valor-total').textContent = formatBRL(totalVal);
+    totalEl.textContent = formatBRL(totalVal);
+    totalEl.dataset.total = String(totalVal);
     renderSaldoPagamento();
 }
 
@@ -234,91 +239,130 @@ painelOverlay.addEventListener('click', fecharPainel);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPainel(); });
 
 // ── FORMA DE PAGAMENTO ────────────────────────────────────────────
+// Fluxo igual ao do OSale: a pessoa escolhe UMA forma por vez, informa o
+// valor pago nela e clica em "Adicionar esta forma ao pagamento". A forma
+// entra numa lista (split) e o "saldo a alocar" mostra quanto ainda falta.
+// Só é possível enviar o pedido quando esse saldo chega a zero. Isso evita
+// o problema de marcar duas formas ao mesmo tempo sem querer.
 const opcoesPagamento   = document.getElementById('forma-pagamento');
 const blocoParcelamento = document.getElementById('bloco-parcelamento');
 
-// Estado de parcelas
+const TITULOS_FORMA = { pix: 'PIX', credito: 'Crédito', debito: 'Débito', dinheiro: 'Dinheiro' };
+
+// Estado de parcelas (crédito)
 let _installmentsData    = [];
 let _selectedInstallment = null;
 let _selectedPaymentId   = null;
 
-function pagamentoSelecionado() {
-    // retorna um array com as formas selecionadas (até 2) — compatível com legacy retornando string
-    const checks = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
-    const vals = checks.map(c => c.value);
-    return vals.length === 1 ? vals[0] : vals; // string for single, array for multiple
-}
+// Estado do split de pagamento
+let splits           = [];   // [{ forma, titulo, valor, parcelas, intervalo }]
+let formaSelecionada = null; // forma marcada aguardando valor + "Adicionar"
 
-// ── SALDO A ALOCAR (quando 2 formas de pagamento são escolhidas) ──
-// Segue o mesmo raciocínio do split de pagamento do OSale: soma-se o
-// que já foi digitado em cada forma e subtrai-se do total; o botão de
-// "Fazer Pedido" só fica liberado quando esse saldo chega a zero.
 function totalPedidoAtual() {
     const totalEl = document.getElementById('valor-total');
     if (!totalEl) return 0;
+    if (totalEl.dataset.total !== undefined) return parseFloat(totalEl.dataset.total) || 0;
     return parseFloat((totalEl.textContent || 'R$ 0,00').replace(/[R$\.\s]/g, '').replace(',', '.')) || 0;
 }
 
-function somaValoresPagamentoDigitados() {
-    const checked = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
-    let somaCentavos = 0;
-    checked.forEach(chk => {
-        const card = chk.closest('.pagamento-card');
-        const input = card ? card.querySelector('.pagamento-valor-input') : null;
-        const v = input ? input.value.trim() : '';
-        if (!v) return;
-        const n = parseFloat(v.replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(n)) somaCentavos += Math.round(n * 100);
+function totalSplits() {
+    return Math.round(splits.reduce((acc, s) => acc + s.valor, 0) * 100) / 100;
+}
+
+function saldoRestante() {
+    return Math.round((totalPedidoAtual() - totalSplits()) * 100) / 100;
+}
+
+function resetFormularioForma() {
+    formaSelecionada = null;
+    opcoesPagamento.querySelectorAll('.pagamento-card').forEach(c => c.classList.remove('selecionado'));
+    document.getElementById('pagamento-valor-form').classList.add('oculto');
+    blocoParcelamento.classList.add('oculto');
+    const input = document.getElementById('input-valor-forma');
+    if (input) input.value = '';
+    _selectedInstallment = null;
+    _selectedPaymentId   = null;
+}
+
+/** Zera o split inteiro — chamado quando o total do pedido muda (item adicionado/removido). */
+function resetSplits() {
+    if (splits.length === 0 && !formaSelecionada) return;
+    splits = [];
+    resetFormularioForma();
+    renderSplits();
+}
+
+function renderSplits() {
+    const wrap  = document.getElementById('formas-adicionadas-wrap');
+    const lista = document.getElementById('formas-adicionadas-lista');
+
+    if (splits.length === 0) {
+        wrap.classList.add('oculto');
+        lista.innerHTML = '';
+    } else {
+        wrap.classList.remove('oculto');
+        lista.innerHTML = splits.map((s, idx) => `
+            <div class="forma-adicionada-item">
+                <span class="forma-adicionada-nome">${s.titulo}${s.parcelas > 1 ? ` <span class="forma-adicionada-badge">${s.parcelas}x</span>` : ''}</span>
+                <span class="forma-adicionada-valor">${formatBRL(s.valor)}</span>
+                <button type="button" class="forma-adicionada-remover" data-idx="${idx}" title="Remover">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+
+        lista.querySelectorAll('.forma-adicionada-remover').forEach(btn => {
+            btn.addEventListener('click', () => {
+                splits.splice(parseInt(btn.dataset.idx, 10), 1);
+                renderSplits();
+            });
+        });
+    }
+
+    // marca visualmente as formas que já estão na lista, pra não deixar duplicar
+    opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
+        const usada = splits.some(s => s.forma === card.dataset.forma);
+        card.classList.toggle('usada', usada);
     });
-    return somaCentavos / 100;
+
+    renderSaldoPagamento();
 }
 
 function renderSaldoPagamento() {
-    const checked   = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
-    const saldoBox  = document.getElementById('saldo-pagamento');
-    const saldoVal  = document.getElementById('saldo-pagamento-valor');
-    const btn       = document.getElementById('btn-finalizar');
+    const totalRow   = document.getElementById('total-row');
+    const totalLabel = document.getElementById('total-label');
+    const totalVal   = document.getElementById('valor-total');
+    const btn        = document.getElementById('btn-finalizar');
 
-    if (checked.length === 0) {
-        // nenhuma forma escolhida ainda — pedido não pode ser enviado
-        if (saldoBox) saldoBox.classList.add('oculto');
+    const total = totalPedidoAtual();
+    if (totalRow) totalRow.classList.remove('total-row--pendente', 'total-row--ok', 'total-row--negativo');
+
+    if (splits.length === 0) {
+        // nenhuma forma adicionada ainda — mostra o total normal do pedido
+        if (totalLabel) totalLabel.textContent = 'Total';
+        if (totalVal) totalVal.textContent = formatBRL(total);
         if (btn) btn.disabled = true;
         return;
     }
 
-    if (checked.length === 1) {
-        // uma única forma cobre o total automaticamente — libera o botão
-        if (saldoBox) saldoBox.classList.add('oculto');
+    const saldo = saldoRestante();
+
+    if (Math.abs(saldo) < 0.005) {
+        if (totalLabel) totalLabel.textContent = 'Total';
+        if (totalVal) totalVal.textContent = formatBRL(total);
+        if (totalRow) totalRow.classList.add('total-row--ok');
         if (btn) btn.disabled = false;
-        return;
+    } else if (saldo < 0) {
+        if (totalLabel) totalLabel.textContent = 'Valor ultrapassou em';
+        if (totalVal) totalVal.textContent = formatBRL(Math.abs(saldo));
+        if (totalRow) totalRow.classList.add('total-row--negativo');
+        if (btn) btn.disabled = true;
+    } else {
+        if (totalLabel) totalLabel.textContent = 'Falta pagar';
+        if (totalVal) totalVal.textContent = formatBRL(saldo);
+        if (totalRow) totalRow.classList.add('total-row--pendente');
+        if (btn) btn.disabled = true;
     }
-
-    // duas formas selecionadas: mostra o saldo e só libera quando ele zerar
-    const total   = totalPedidoAtual();
-    const soma    = somaValoresPagamentoDigitados();
-    const saldo   = Math.round((total - soma) * 100) / 100;
-
-    if (saldoBox) {
-        saldoBox.classList.remove('oculto');
-        saldoBox.classList.remove('saldo-pendente', 'saldo-ok', 'saldo-negativo');
-
-        if (Math.abs(saldo) < 0.005) {
-            saldoBox.classList.add('saldo-ok');
-            saldoBox.querySelector('span').innerHTML = '<i class="fa-solid fa-circle-check"></i> Valores conferem, pode enviar:';
-            if (saldoVal) saldoVal.textContent = formatBRL(0);
-        } else if (saldo < 0) {
-            saldoBox.classList.add('saldo-negativo');
-            saldoBox.querySelector('span').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Valor ultrapassou o total em:';
-            if (saldoVal) saldoVal.textContent = formatBRL(Math.abs(saldo));
-        } else {
-            saldoBox.classList.add('saldo-pendente');
-            saldoBox.querySelector('span').innerHTML = '<i class="fa-solid fa-scale-balanced"></i> Falta escolher o valor de:';
-            if (saldoVal) saldoVal.textContent = formatBRL(saldo);
-        }
-    }
-
-    // "Fazer Pedido" só aparece liberado quando o saldo restante for exatamente zero
-    if (btn) btn.disabled = Math.abs(saldo) >= 0.005;
 }
 
 /** Busca payment_terms de crédito e carrega installments no dropdown */
@@ -392,107 +436,107 @@ function syncInstallmentSelecionado(selectEl) {
         : null;
 }
 
-opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]').forEach(input => {
-        input.addEventListener('change', () => {
-            // Limita seleção a 2 checkboxes
-            const checked = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
-            if (checked.length > 2) {
-                // desmarca o último selecionado
-                input.checked = false;
-                Swal.fire({ icon: 'warning', title: 'Limite', text: 'Você pode escolher no máximo 2 formas de pagamento.' });
-                return;
-            }
+// Clique no card: escolhe UMA forma por vez (passo 1, igual ao OSale).
+// Se essa forma já estiver na lista de formas adicionadas, não deixa
+// selecionar de novo — precisa remover da lista primeiro.
+opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
+    card.addEventListener('click', () => {
+        const forma = card.dataset.forma;
 
-            // atualiza visual dos cards; o campo de valor só aparece quando
-            // EXATAMENTE 2 formas estão marcadas (com 1 forma o total inteiro
-            // vai pra ela automaticamente, sem precisar escolher valor)
-            opcoesPagamento.querySelectorAll('.pagamento-card').forEach(card => {
-                const chk = card.querySelector('input[name="pagamento_cb"]');
-                const isChecked = !!(chk && chk.checked);
-                card.classList.toggle('selecionado', isChecked);
-                const valorBox = card.querySelector('.pagamento-valor');
-                if (valorBox) valorBox.classList.toggle('oculto', !(isChecked && checked.length === 2));
-            });
-
-            // Se apenas crédito selecionado, carregar parcelas
-            const selectedVals = checked.map(c => c.value);
-            const isCredito = selectedVals.includes('credito');
-            blocoParcelamento.classList.toggle('oculto', !isCredito);
-
-            if (isCredito) {
-                carregarInstallmentsCredito();
-            } else {
-                _selectedInstallment = null;
-                _selectedPaymentId   = null;
-            }
-
-            if (checked.length === 2) {
-                // A primeira forma (na ordem dos cards) é editável — a pessoa digita o valor.
-                // A segunda é calculada automaticamente: total - valor digitado na primeira.
-                const cardsChecked = Array.from(opcoesPagamento.querySelectorAll('.pagamento-card'))
-                    .filter(c => c.querySelector('input[name="pagamento_cb"]').checked);
-                const [cardEditavel, cardCalculado] = cardsChecked;
-                const inputEditavel  = cardEditavel  && cardEditavel.querySelector('.pagamento-valor-input');
-                const inputCalculado = cardCalculado && cardCalculado.querySelector('.pagamento-valor-input');
-
-                if (inputEditavel) {
-                    inputEditavel.readOnly = false;
-                    inputEditavel.classList.remove('pagamento-valor-input--calculado');
-                    inputEditavel.value = '';
-                }
-                if (inputCalculado) {
-                    inputCalculado.readOnly = true;
-                    inputCalculado.classList.add('pagamento-valor-input--calculado');
-                    inputCalculado.value = totalPedidoAtual().toFixed(2).replace('.', ',');
-                }
-            }
-
-            renderSaldoPagamento();
-        });
-    });
-
-// Enquanto a pessoa digita o valor na forma editável, a outra forma marcada
-// recalcula sozinha o restante (total - valor digitado) em tempo real.
-opcoesPagamento.addEventListener('input', (e) => {
-    if (!e.target.classList || !e.target.classList.contains('pagamento-valor-input')) return;
-    if (e.target.readOnly) { renderSaldoPagamento(); return; }
-
-    const checked = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
-    if (checked.length === 2) {
-        const inputCalculado = Array.from(opcoesPagamento.querySelectorAll('.pagamento-valor-input'))
-            .find(i => i.readOnly && i !== e.target);
-
-        if (inputCalculado) {
-            const total    = totalPedidoAtual();
-            const raw      = e.target.value.trim().replace(/\./g, '').replace(',', '.');
-            let digitado   = parseFloat(raw);
-            if (isNaN(digitado) || digitado < 0) digitado = 0;
-
-            let restante = Math.round((total - digitado) * 100) / 100;
-            if (restante < 0) restante = 0; // não deixa a forma calculada ficar negativa
-
-            inputCalculado.value = restante.toFixed(2).replace('.', ',');
+        if (splits.some(s => s.forma === forma)) {
+            Swal.fire({ icon: 'info', title: 'Forma já adicionada', text: 'Essa forma de pagamento já está na lista. Remova-a para escolher de novo.', timer: 2200, timerProgressBar: true });
+            return;
         }
-    }
 
-    renderSaldoPagamento();
+        if (formaSelecionada === forma) {
+            // clicar de novo no mesmo card cancela a seleção
+            resetFormularioForma();
+            return;
+        }
+
+        formaSelecionada = forma;
+        opcoesPagamento.querySelectorAll('.pagamento-card').forEach(c => c.classList.toggle('selecionado', c === card));
+
+        // Se for crédito, mostra o bloco de parcelamento e carrega as opções
+        blocoParcelamento.classList.toggle('oculto', forma !== 'credito');
+        if (forma === 'credito') {
+            carregarInstallmentsCredito();
+        } else {
+            _selectedInstallment = null;
+            _selectedPaymentId   = null;
+        }
+
+        // Mostra o campo de valor (passo 2), já sugerindo o saldo que falta alocar
+        const form  = document.getElementById('pagamento-valor-form');
+        const input = document.getElementById('input-valor-forma');
+        form.classList.remove('oculto');
+
+        const restante = saldoRestante();
+        input.value = restante > 0 ? restante.toFixed(2).replace('.', ',') : '';
+        input.focus();
+    });
 });
 
-// Formata valores dos inputs de pagamento ao perder foco
-opcoesPagamento.addEventListener('blur', (e) => {
-    if (!e.target.classList) return;
-    if (e.target.classList.contains('pagamento-valor-input')) {
-        const v = e.target.value.trim();
-        if (!v) return;
-        const n = parseFloat(v.replace('.', '').replace(',', '.'));
-        if (isNaN(n)) {
-            e.target.value = '';
-        } else {
-            e.target.value = n.toFixed(2).replace('.', ',');
-        }
-        renderSaldoPagamento();
+// Botão "usar valor restante" — preenche o campo com o que ainda falta alocar
+document.getElementById('btn-usar-restante').addEventListener('click', () => {
+    const input    = document.getElementById('input-valor-forma');
+    const restante = saldoRestante();
+    input.value = restante > 0 ? restante.toFixed(2).replace('.', ',') : '0,00';
+    input.focus();
+});
+
+// Formata o valor digitado ao sair do campo
+document.getElementById('input-valor-forma').addEventListener('blur', (e) => {
+    const v = e.target.value.trim();
+    if (!v) return;
+    const n = parseFloat(v.replace(/\./g, '').replace(',', '.'));
+    e.target.value = isNaN(n) ? '' : n.toFixed(2).replace('.', ',');
+});
+
+// Botão "Adicionar esta forma ao pagamento" (passo 3, igual ao OSale)
+document.getElementById('btn-add-forma').addEventListener('click', () => {
+    if (!formaSelecionada) return;
+
+    const input = document.getElementById('input-valor-forma');
+    const raw   = input.value.trim().replace(/\./g, '').replace(',', '.');
+    const valor = parseFloat(raw);
+
+    if (isNaN(valor) || valor <= 0) {
+        Swal.fire({ icon: 'warning', title: 'Valor inválido', text: 'Informe um valor válido para essa forma de pagamento.', timer: 2000, timerProgressBar: true });
+        return;
     }
-}, true);
+
+    const restante = saldoRestante();
+    if (valor - restante > 0.005) {
+        Swal.fire({ icon: 'warning', title: 'Valor maior que o restante', text: `O valor não pode passar de ${formatBRL(restante)}, que é o quanto falta alocar.`, timer: 2500, timerProgressBar: true });
+        return;
+    }
+
+    let parcelas = 1, intervalo = 0;
+    if (formaSelecionada === 'credito') {
+        if (_selectedInstallment) {
+            parcelas  = _selectedInstallment.parcela;
+            intervalo = _selectedInstallment.intervalo;
+        } else {
+            const sel = document.getElementById('select-parcelas-credito');
+            if (sel && sel.value) {
+                parcelas  = parseInt(sel.value, 10) || 1;
+                intervalo = parseInt(sel.options[sel.selectedIndex]?.dataset.intervalo) || 30;
+            }
+        }
+    }
+
+    splits.push({
+        forma:  formaSelecionada,
+        titulo: TITULOS_FORMA[formaSelecionada] || formaSelecionada,
+        valor:  Math.round(valor * 100) / 100,
+        parcelas,
+        intervalo,
+    });
+
+    resetFormularioForma();
+    renderSplits();
+});
 
 blocoParcelamento.addEventListener('change', e => {
     if (e.target && e.target.id === 'select-parcelas-credito') {
@@ -573,8 +617,7 @@ async function finalizarPedido() {
         return;
     }
 
-    const pgto = pagamentoSelecionado();
-    if (!pgto) {
+    if (splits.length === 0) {
         Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Selecione a forma de pagamento.', timer: 2000, timerProgressBar: true });
         return;
     }
@@ -589,75 +632,21 @@ async function finalizarPedido() {
     const identificado = await identificarClienteSeNecessario();
     if (!identificado) return;
 
-    // Constrói o payload de pagamentos a partir dos checkboxes e inputs visíveis
-    let pagamentosPayload = null;
+    // Constrói o payload de pagamentos a partir da lista de formas adicionadas (split)
     const totalPedido = carrinho.reduce((s, i) => s + (Number(i.qty) * Number(i.produto.preco_venda || i.produto.preco || 0)), 0);
-    const selectedChecks = Array.from(opcoesPagamento.querySelectorAll('input[name="pagamento_cb"]:checked'));
-    if (selectedChecks.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Selecione a forma de pagamento.', timer: 2000, timerProgressBar: true });
+    const soma = totalSplits();
+
+    if (Math.abs(soma - Math.round(totalPedido * 100) / 100) > 0.01) {
+        Swal.fire({ icon: 'warning', title: 'Valores divergentes', text: 'A soma das formas de pagamento adicionadas deve ser igual ao total do pedido.', timer: 2500, timerProgressBar: true });
         return;
     }
 
-    // coleta valores dos inputs correspondentes
-    pagamentosPayload = [];
-    let soma = 0;
-    for (const chk of selectedChecks) {
-        const card = chk.closest('.pagamento-card');
-        const inputValor = card ? card.querySelector('.pagamento-valor-input') : null;
-        let valor = totalPedido;
-        if (inputValor && inputValor.value.trim() !== '') {
-            valor = parseFloat(inputValor.value.replace('.', '').replace(',', '.'));
-            if (isNaN(valor) || valor < 0) valor = 0;
-        }
-        soma += Math.round(valor * 100) / 100;
-
-        pagamentosPayload.push({ forma: chk.value, valor: Math.round(valor * 100) / 100, parcelas: 1, intervalo: 0 });
-    }
-
-    // Se apenas 1 forma selecionada, ok — se 2, valida soma igual ao total (com tolerância de 0.01)
-    if (selectedChecks.length === 2) {
-        if (Math.abs(soma - Math.round(totalPedido * 100) / 100) > 0.01) {
-            Swal.fire({ icon: 'warning', title: 'Valores divergentes', text: 'A soma dos valores informados deve ser igual ao total do pedido.', timer: 2500 });
-            return;
-        }
-    } else {
-        // single: garante que o slice cubra todo o total
-        pagamentosPayload[0].valor = Math.round(totalPedido * 100) / 100;
-    }
-
-    // Ajusta parcelas/intervalo para crédito caso haja crédito selecionado
-    for (const p of pagamentosPayload) {
-        if (p.forma === 'credito') {
-            if (_selectedInstallment) {
-                p.parcelas = _selectedInstallment.parcela || 1;
-                p.intervalo = _selectedInstallment.intervalo || 30;
-            } else {
-                const sel = document.getElementById('select-parcelas-credito');
-                if (sel && sel.value) {
-                    p.parcelas = parseInt(sel.value, 10) || 1;
-                    p.intervalo = parseInt(sel.options[sel.selectedIndex]?.dataset.intervalo) || 30;
-                }
-            }
-        }
-    }
-
-    // Captura parcelas/intervalo só quando crédito
-    const isCredito = pgto === 'credito';
-    let parcelas  = 1;
-    let intervalo = 0;
-
-    if (isCredito) {
-        if (_selectedInstallment) {
-            parcelas  = _selectedInstallment.parcela;
-            intervalo = _selectedInstallment.intervalo;
-        } else {
-            const sel = document.getElementById('select-parcelas-credito');
-            if (sel) {
-                parcelas  = parseInt(sel.value) || 1;
-                intervalo = parseInt(sel.options[sel.selectedIndex]?.dataset.intervalo) || 30;
-            }
-        }
-    }
+    const pagamentosPayload = splits.map(s => ({
+        forma:     s.forma,
+        valor:     s.valor,
+        parcelas:  s.parcelas,
+        intervalo: s.intervalo,
+    }));
 
     const btnFinalizar = document.getElementById('btn-finalizar');
     btnFinalizar.disabled = true;
@@ -677,14 +666,7 @@ async function finalizarPedido() {
             })),
         };
 
-        if (pagamentosPayload) {
-            payload.pagamentos = pagamentosPayload;
-        } else {
-            // formato legado
-            payload.pagamento  = pgto;
-            payload.parcelas   = parcelas;
-            payload.intervalo  = intervalo;
-        }
+        payload.pagamentos = pagamentosPayload;
 
         const response = await requests.setBody(JSON.stringify(payload)).post('/cardapio/pedido');
 
@@ -702,6 +684,7 @@ async function finalizarPedido() {
         });
 
         carrinho = [];
+        resetSplits();
         atualizarUI();
         fecharPainel();
         carregarMeusPedidos();
