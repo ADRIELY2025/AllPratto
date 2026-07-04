@@ -90,47 +90,68 @@ final class Mesa extends Base
             // URL que será aberta pelo QRCode
             $qrUrl = PROTOCOL . '://' . HOST . '/cardapio/mesa/' . $data['numero'];
 
-            $qrDir = ROOT . '/storage/qrcode/' . $id;
+            // A geração do QR Code é isolada num try/catch próprio: se falhar
+            // (ex: pasta sem permissão de escrita), a mesa já foi salva com
+            // sucesso e não deve ser perdida por causa de um problema à parte.
+            $qrCodePath = null;
+            try {
+                $qrDir = ROOT . '/storage/qrcode/' . $id;
 
-            if (!is_dir($qrDir)) {
-                mkdir($qrDir, 0775, true);
+                if (!is_dir($qrDir) && !mkdir($qrDir, 0775, true) && !is_dir($qrDir)) {
+                    throw new \RuntimeException("Não foi possível criar o diretório do QR Code: {$qrDir}");
+                }
+
+                $fileName = "mesa_{$id}.png";
+
+                $writer = new PngWriter();
+
+                // Create QR code
+                $qrCode = new QrCode(
+                    data: $qrUrl,
+                    encoding: new Encoding('UTF-8'),
+                    errorCorrectionLevel: ErrorCorrectionLevel::Low,
+                    size: 300,
+                    margin: 10,
+                    roundBlockSizeMode: RoundBlockSizeMode::Margin,
+                    foregroundColor: new Color(0, 0, 0),
+                    backgroundColor: new Color(255, 255, 255)
+                );
+
+                $result = $writer->write($qrCode);
+
+                // Validate the result
+                $writer->validateResult($result, $qrUrl);
+
+                $result->saveToFile($qrDir . '/' . $fileName);
+
+                $qrCodePath = '/uploads/qrcodes/' . $fileName;
+            } catch (\Throwable $qrError) {
+                error_log('[Mesa::insert] Falha ao gerar QR Code para mesa ' . $id . ': ' . $qrError->getMessage());
             }
-
-            $fileName = "mesa_{$id}.png";
-
-            $writer = new PngWriter();
-
-            // Create QR code
-            $qrCode = new QrCode(
-                data: $qrUrl,
-                encoding: new Encoding('UTF-8'),
-                errorCorrectionLevel: ErrorCorrectionLevel::Low,
-                size: 300,
-                margin: 10,
-                roundBlockSizeMode: RoundBlockSizeMode::Margin,
-                foregroundColor: new Color(0, 0, 0),
-                backgroundColor: new Color(255, 255, 255)
-            );
-
-            $result = $writer->write($qrCode);
-
-            // Validate the result
-            $writer->validateResult($result, $qrUrl);
-
-            $result->saveToFile($qrDir . '/' . $fileName);
 
             return $this->json($response, [
                 'status' => true,
-                'msg'    => 'Mesa salva com sucesso!',
+                'msg'    => $qrCodePath
+                    ? 'Mesa salva com sucesso!'
+                    : 'Mesa salva com sucesso! (Não foi possível gerar o QR Code, tente novamente mais tarde.)',
                 'id'     => $id,
-                'qrcode' => '/uploads/qrcodes/' . $fileName,
+                'qrcode' => $qrCodePath,
                 'url'    => $qrUrl
             ], 201);
-        } catch (\Throwable $e) {
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
 
             return $this->json($response, [
                 'status' => false,
-                'msg'    => $e->getMessage(),
+                'msg'    => 'Já existe uma mesa cadastrada com esse número. Escolha outro número.',
+                'id'     => 0
+            ], 409);
+        } catch (\Throwable $e) {
+
+            error_log('[Mesa::insert] ' . $e->getMessage());
+
+            return $this->json($response, [
+                'status' => false,
+                'msg'    => 'Não foi possível salvar a mesa. Tente novamente.',
                 'id'     => 0
             ], 500);
         }
@@ -166,8 +187,11 @@ final class Mesa extends Base
             }
 
             return $this->json($response, ['status' => true, 'msg' => 'Mesa alterada com sucesso!', 'id' => $id], 200);
-        } catch (\Exception $e) {
-            return $this->json($response, ['status' => false, 'msg' => 'Erro: ' . $e->getMessage(), 'id' => 0], 500);
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+            return $this->json($response, ['status' => false, 'msg' => 'Já existe uma mesa cadastrada com esse número. Escolha outro número.', 'id' => 0], 409);
+        } catch (\Throwable $e) {
+            error_log('[Mesa::update] ' . $e->getMessage());
+            return $this->json($response, ['status' => false, 'msg' => 'Não foi possível atualizar a mesa. Tente novamente.', 'id' => 0], 500);
         }
     }
 
