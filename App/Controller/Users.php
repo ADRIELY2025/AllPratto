@@ -47,6 +47,8 @@ final class Users extends Base
 
         $FieldsAndValues = [
             'nome' => $form['nome'] ?? '',
+            'cpf' => preg_replace('/\D/', '', $form['cpf'] ?? ''),
+            'rg' => $form['rg'] ?? '',
             'senha' => password_hash($form['senha'], PASSWORD_DEFAULT),
             'ativo' => ($form['ativo'] === 'true') ? true : false
         ];
@@ -98,6 +100,8 @@ final class Users extends Base
 
         $FieldsAndValues = [
             'nome' => $form['nome'] ?? null,
+            'cpf' => preg_replace('/\D/', '', $form['cpf'] ?? ''),
+            'rg' => $form['rg'] ?? null,
             'ativo' => ($form['ativo'] === 'true') ? true : false
         ];
 

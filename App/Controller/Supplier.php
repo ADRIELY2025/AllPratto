@@ -48,7 +48,7 @@ final class Supplier extends Base
         $FieldsAndValues = [
             'nome_fantasia' => $form['nomeExibicao'],
             'razao_social' => $form['nomeLegal'] ?? '',
-            'cnpj' => $form['numeroDocumento'] ?? '',
+            'cnpj_cpf' => preg_replace('/\D/', '', $form['numeroDocumento'] ?? ''),
             'inscricao_estadual' => $form['registroSecundario'] ?? '',
             'telefone' => $form['telefone'] ?? '',
             'email' => $form['email'] ?? '',
@@ -103,7 +103,7 @@ final class Supplier extends Base
         $FieldsAndValues = [
             'nome_fantasia' => $form['nomeExibicao'] ?? null,
             'razao_social' => $form['nomeLegal'] ?? null,
-            'cnpj' => $form['numeroDocumento'] ?? null,
+            'cnpj_cpf' => preg_replace('/\D/', '', $form['numeroDocumento'] ?? ''),
             'inscricao_estadual' => $form['registroSecundario'] ?? null,
             'telefone' => $form['telefone'] ?? null,
             'email' => $form['email'] ?? null,

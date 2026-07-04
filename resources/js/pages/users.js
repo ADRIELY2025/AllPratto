@@ -5,6 +5,8 @@ const Action = document.getElementById('action');
 const Id = document.getElementById('id');
 const Insert = document.getElementById('insert');
 
+Inputmask({ mask: ['999.999.999-99'] }).mask('#cpf');
+
 async function applyChanges() {
     $('button').prop('disabled', true);
     const IsValid = Validate.SetForm('form').Validate();

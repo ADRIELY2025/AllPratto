@@ -7,6 +7,7 @@ const Insert = document.getElementById('insert');
 
 Inputmask({ mask: ['99.999.999/9999-99'] }).mask('#cnpj');
 Inputmask({ mask: ['99999-999'] }).mask('#cep');
+Inputmask({ mask: ['(99) 9999-9999', '(99) 99999-9999'], keepStatic: true }).mask('#telefone');
 
 async function applyChanges() {
     $('button').prop('disabled', true);

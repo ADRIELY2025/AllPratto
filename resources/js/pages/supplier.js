@@ -5,6 +5,9 @@ const Action = document.getElementById('action');
 const Id = document.getElementById('id');
 const Insert = document.getElementById('insert');
 
+Inputmask({ mask: ['99.999.999/9999-99'] }).mask('#numeroDocumento');
+Inputmask({ mask: ['(99) 9999-9999', '(99) 99999-9999'], keepStatic: true }).mask('#telefone');
+
 async function applyChanges() {
     $('button').prop('disabled', true);
     const IsValid = Validate.SetForm('form').Validate();
