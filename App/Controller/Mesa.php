@@ -68,7 +68,7 @@ final class Mesa extends Base
                 : null,
             'status'     => $form['status'] ?? 'livre',
             'observacao' => $form['observacao'] ?? null,
-            'ativo'      => (($form['ativo'] ?? 'false') === 'true')
+            'ativo'      => (isset($form['ativo']) && $form['ativo'] === 'true') ? 'true' : 'false',
         ];
 
         try {
@@ -89,18 +89,15 @@ final class Mesa extends Base
 
             // URL que será aberta pelo QRCode
             $qrUrl = PROTOCOL . '://' . HOST . '/cardapio/mesa/' . $data['numero'];
-
             // A geração do QR Code é isolada num try/catch próprio: se falhar
             // (ex: pasta sem permissão de escrita), a mesa já foi salva com
             // sucesso e não deve ser perdida por causa de um problema à parte.
             $qrCodePath = null;
             try {
                 $qrDir = ROOT . '/storage/qrcode/' . $id;
-
-                if (!is_dir($qrDir) && !mkdir($qrDir, 0775, true) && !is_dir($qrDir)) {
-                    throw new \RuntimeException("Não foi possível criar o diretório do QR Code: {$qrDir}");
+                if (\file_exists($qrDir)) {
+                    mkdir($qrDir, 0775, true);
                 }
-
                 $fileName = "mesa_{$id}.png";
 
                 $writer = new PngWriter();
@@ -118,12 +115,10 @@ final class Mesa extends Base
                 );
 
                 $result = $writer->write($qrCode);
-
                 // Validate the result
                 $writer->validateResult($result, $qrUrl);
 
-                $result->saveToFile($qrDir . '/' . $fileName);
-
+                $save = $result->saveToFile($qrDir . '/' . $fileName);
                 $qrCodePath = '/uploads/qrcodes/' . $fileName;
             } catch (\Throwable $qrError) {
                 error_log('[Mesa::insert] Falha ao gerar QR Code para mesa ' . $id . ': ' . $qrError->getMessage());
@@ -151,7 +146,7 @@ final class Mesa extends Base
 
             return $this->json($response, [
                 'status' => false,
-                'msg'    => 'Não foi possível salvar a mesa. Tente novamente.',
+                'msg'    => 'Não foi possível salvar a mesa. Tente novamente.' . $e->getMessage(),
                 'id'     => 0
             ], 500);
         }
@@ -175,7 +170,7 @@ final class Mesa extends Base
                 ? (int) $form['capacidade'] : null,
             'status'      => $form['status']     ?? 'livre',
             'observacao'  => $form['observacao'] ?? null,
-            'ativo'       => (($form['ativo'] ?? 'false') === 'true') ? true : false,
+            'ativo'       => (isset($form['ativo']) && $form['ativo'] === 'true') ? 'true' : 'false',
             'atualizado_em' => date('Y-m-d H:i:s'),
         ];
 
