@@ -127,6 +127,7 @@ $app->group('/mesa', function (\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/lista',          Mesa::class . ':list')->add(Middleware::web());
     $group->get('/detalhes/{id}',  Mesa::class . ':details')->add(Middleware::web());
     $group->get('/detalhes',       Mesa::class . ':details')->add(Middleware::web());
+    $group->get('/imprimir/{id}',  Mesa::class . ':imprimir')->add(Middleware::web());
     $group->post('/insert',        Mesa::class . ':insert')->add(Middleware::api());
     $group->post('/update',        Mesa::class . ':update')->add(Middleware::api());
     $group->post('/update-status', Mesa::class . ':updateStatus')->add(Middleware::api());

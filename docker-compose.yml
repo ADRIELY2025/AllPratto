@@ -61,7 +61,7 @@ services:
     # Verificação periódica de que o servidor responde
     healthcheck:
       # Faz HEAD na raiz e considera saudável se responder
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/" ]
       # Intervalo entre verificações
       interval: 30s
       # Tempo máximo aguardando resposta
@@ -101,7 +101,8 @@ services:
       - composer_cache:/root/.composer/cache
     # Comando executado na subida do container
     command: >
-      sh -c "composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader &&
+      sh -c "mkdir -p storage/qrcode && chmod -R 777 storage &&
+             composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader &&
              exec php-fpm"
     # Variáveis de ambiente disponíveis dentro do container
     environment:

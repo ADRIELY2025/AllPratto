@@ -95,7 +95,7 @@ final class Mesa extends Base
             $qrCodePath = null;
             try {
                 $qrDir = ROOT . '/storage/qrcode/' . $id;
-                if (\file_exists($qrDir)) {
+                if (!\is_dir($qrDir)) {
                     mkdir($qrDir, 0775, true);
                 }
                 $fileName = "mesa_{$id}.png";
@@ -115,8 +115,6 @@ final class Mesa extends Base
                 );
 
                 $result = $writer->write($qrCode);
-                // Validate the result
-                $writer->validateResult($result, $qrUrl);
 
                 $save = $result->saveToFile($qrDir . '/' . $fileName);
                 $qrCodePath = '/uploads/qrcodes/' . $fileName;
@@ -331,6 +329,7 @@ final class Mesa extends Base
                     "<td>
                     <a class='btn btn-sm btn-warning' href='/mesa/detalhes/" . $value['id'] . "'><i class='fa-solid fa-pen-to-square'></i> Editar</a>
                     <button type='button' class='btn btn-sm btn-danger' onclick='ShowModal(" . $value['id'] . ");'><i class='fa-solid fa-trash'></i> Excluir</button>
+                    <a class='btn btn-sm btn-primary' target='_blank' href='/mesa/imprimir/" . $value['id'] . "'><i class='fa-solid fa-print'></i> Imprimir</a>
                 </td>",
                 ];
             }
@@ -346,6 +345,109 @@ final class Mesa extends Base
                 'msg'    => 'Erro: ' . $e->getMessage(),
                 'id'     => 0,
             ], 500);
+        }
+    }
+
+    // ──────────────────────────────────────────
+    //  Imprime a ficha da mesa com o QR Code
+    // ──────────────────────────────────────────
+    public function imprimir($request, $response, $args)
+    {
+        $id = $args['id'] ?? null;
+
+        if (is_null($id) || $id === '') {
+            return $this->json($response, ['status' => false, 'msg' => 'Informe o código da mesa', 'id' => 0], 403);
+        }
+
+        try {
+            $qb   = \App\Database\DB::select('*')->from('mesa');
+            $mesa = $qb
+                ->where('id = ' . $qb->createPositionalParameter($id, \Doctrine\DBAL\ParameterType::INTEGER))
+                ->fetchAssociative();
+
+            if (!$mesa) {
+                return $this->json($response, ['status' => false, 'msg' => 'Mesa não encontrada', 'id' => 0], 404);
+            }
+
+            $qrDir      = ROOT . '/storage/qrcode/' . $id;
+            $qrFilePath = $qrDir . '/mesa_' . $id . '.png';
+
+            // Se o QR Code ainda não existe (ex: falha anterior), gera agora mesmo
+            if (!\file_exists($qrFilePath)) {
+                if (!\is_dir($qrDir)) {
+                    mkdir($qrDir, 0775, true);
+                }
+
+                $qrUrl = PROTOCOL . '://' . HOST . '/cardapio/mesa/' . $mesa['numero'];
+
+                $writer = new PngWriter();
+
+                $qrCode = new QrCode(
+                    data: $qrUrl,
+                    encoding: new Encoding('UTF-8'),
+                    errorCorrectionLevel: ErrorCorrectionLevel::Low,
+                    size: 300,
+                    margin: 10,
+                    roundBlockSizeMode: RoundBlockSizeMode::Margin,
+                    foregroundColor: new Color(0, 0, 0),
+                    backgroundColor: new Color(255, 255, 255)
+                );
+
+                $result = $writer->write($qrCode);
+                $result->saveToFile($qrFilePath);
+            }
+
+            $pdf = new \FPDF('P', 'mm', 'A4');
+            $pdf->AddPage();
+
+            $pdf->SetFont('Arial', 'B', 16);
+            $pdf->Cell(0, 10, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'Ficha da Mesa'), 0, 1, 'C');
+            $pdf->Ln(4);
+
+            $pdf->SetFont('Arial', '', 11);
+
+            $linhas = [
+                ['ID:',          (string) $mesa['id']],
+                ['Número:',      (string) $mesa['numero']],
+                ['Capacidade:',  $mesa['capacidade'] !== null ? (string) $mesa['capacidade'] : '—'],
+                ['Status:',      ucfirst((string) $mesa['status'])],
+                ['Ativo:',       ($mesa['ativo'] === true || $mesa['ativo'] === 't') ? 'Sim' : 'Não'],
+                ['Observação:',  $mesa['observacao'] ?? ''],
+            ];
+
+            foreach ($linhas as [$label, $valor]) {
+                $pdf->SetFont('Arial', 'B', 11);
+                $pdf->Cell(50, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $label), 0, 0);
+                $pdf->SetFont('Arial', '', 11);
+                $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $valor), 0, 1);
+            }
+
+            if (\file_exists($qrFilePath)) {
+                $pdf->Ln(6);
+                $pdf->SetFont('Arial', 'B', 12);
+                $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'QR Code do cardápio (mesa ' . $mesa['numero'] . '):'), 0, 1, 'C');
+                $pdf->Ln(2);
+
+                $larguraQr = 80; // mm
+                $xCentro   = ($pdf->GetPageWidth() - $larguraQr) / 2;
+                $pdf->Image($qrFilePath, $xCentro, $pdf->GetY(), $larguraQr, $larguraQr, 'PNG');
+            } else {
+                $pdf->Ln(6);
+                $pdf->SetFont('Arial', 'I', 10);
+                $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'QR Code indisponível no momento.'), 0, 1, 'C');
+            }
+
+            $pdfContent = $pdf->Output('S', 'mesa_' . $id . '.pdf');
+
+            $response->getBody()->write($pdfContent);
+
+            return $response
+                ->withHeader('Content-Type', 'application/pdf')
+                ->withHeader('Content-Disposition', 'inline; filename="mesa_' . $id . '.pdf"')
+                ->withStatus(200);
+        } catch (\Throwable $e) {
+            error_log('[Mesa::imprimir] ' . $e->getMessage());
+            return $this->json($response, ['status' => false, 'msg' => 'Erro ao gerar o PDF da mesa.', 'id' => 0], 500);
         }
     }
 }
