@@ -2,7 +2,9 @@ tls:
   certificates:
     - certFile: /etc/traefik/certs/localhost+2.pem
       keyFile: /etc/traefik/certs/localhost+2-key.pem
-      
+    - certFile: /etc/traefik/certs/lan.pem
+      keyFile: /etc/traefik/certs/lan-key.pem
+
   stores:
     default:
       defaultCertificate:

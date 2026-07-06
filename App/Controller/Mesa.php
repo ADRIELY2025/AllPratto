@@ -369,33 +369,51 @@ final class Mesa extends Base
                 return $this->json($response, ['status' => false, 'msg' => 'Mesa não encontrada', 'id' => 0], 404);
             }
 
-            $qrDir      = ROOT . '/storage/qrcode/' . $id;
-            $qrFilePath = $qrDir . '/mesa_' . $id . '.png';
-
-            // Se o QR Code ainda não existe (ex: falha anterior), gera agora mesmo
-            if (!\file_exists($qrFilePath)) {
-                if (!\is_dir($qrDir)) {
-                    mkdir($qrDir, 0775, true);
-                }
-
-                $qrUrl = PROTOCOL . '://' . HOST . '/cardapio/mesa/' . $mesa['numero'];
-
-                $writer = new PngWriter();
-
-                $qrCode = new QrCode(
-                    data: $qrUrl,
-                    encoding: new Encoding('UTF-8'),
-                    errorCorrectionLevel: ErrorCorrectionLevel::Low,
-                    size: 300,
-                    margin: 10,
-                    roundBlockSizeMode: RoundBlockSizeMode::Margin,
-                    foregroundColor: new Color(0, 0, 0),
-                    backgroundColor: new Color(255, 255, 255)
-                );
-
-                $result = $writer->write($qrCode);
-                $result->saveToFile($qrFilePath);
+            $qrDir = ROOT . '/storage/qrcode/' . $id;
+            if (!\is_dir($qrDir)) {
+                mkdir($qrDir, 0775, true);
             }
+
+            $lanIp = $_ENV['LAN_IP'] ?? null;
+
+            // Monta as variantes que serão geradas: sempre localhost,
+            // e também o IP da rede local se ele estiver configurado no .env
+            $variantes = [
+                'localhost' => [
+                    'url'   => PROTOCOL . '://localhost/cardapio/mesa/' . $mesa['numero'],
+                    'file'  => $qrDir . '/mesa_' . $id . '_localhost.png',
+                    'label' => 'Somente neste computador (localhost)',
+                ],
+            ];
+
+            if (!empty($lanIp)) {
+                $variantes['lan'] = [
+                    'url'   => 'http://' . $lanIp . '/cardapio/mesa/' . $mesa['numero'],
+                    'file'  => $qrDir . '/mesa_' . $id . '_lan.png',
+                    'label' => 'Rede local / Wi-Fi (celular)',
+                ];
+            }
+
+            foreach ($variantes as $chave => &$variante) {
+                if (!\file_exists($variante['file'])) {
+                    $writer = new PngWriter();
+
+                    $qrCode = new QrCode(
+                        data: $variante['url'],
+                        encoding: new Encoding('UTF-8'),
+                        errorCorrectionLevel: ErrorCorrectionLevel::Low,
+                        size: 300,
+                        margin: 10,
+                        roundBlockSizeMode: RoundBlockSizeMode::Margin,
+                        foregroundColor: new Color(0, 0, 0),
+                        backgroundColor: new Color(255, 255, 255)
+                    );
+
+                    $result = $writer->write($qrCode);
+                    $result->saveToFile($variante['file']);
+                }
+            }
+            unset($variante);
 
             $pdf = new \FPDF('P', 'mm', 'A4');
             $pdf->AddPage();
@@ -422,19 +440,28 @@ final class Mesa extends Base
                 $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $valor), 0, 1);
             }
 
-            if (\file_exists($qrFilePath)) {
-                $pdf->Ln(6);
-                $pdf->SetFont('Arial', 'B', 12);
-                $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'QR Code do cardápio (mesa ' . $mesa['numero'] . '):'), 0, 1, 'C');
-                $pdf->Ln(2);
+            $pdf->Ln(6);
+            $pdf->SetFont('Arial', 'B', 12);
+            $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'QR Code do cardápio (mesa ' . $mesa['numero'] . '):'), 0, 1, 'C');
+            $pdf->Ln(2);
 
-                $larguraQr = 80; // mm
-                $xCentro   = ($pdf->GetPageWidth() - $larguraQr) / 2;
-                $pdf->Image($qrFilePath, $xCentro, $pdf->GetY(), $larguraQr, $larguraQr, 'PNG');
-            } else {
-                $pdf->Ln(6);
-                $pdf->SetFont('Arial', 'I', 10);
-                $pdf->Cell(0, 8, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'QR Code indisponível no momento.'), 0, 1, 'C');
+            $qtd          = count($variantes);
+            $larguraQr    = 70; // mm
+            $espacamento  = 10; // mm entre os QR Codes
+            $larguraTotal = ($larguraQr * $qtd) + ($espacamento * ($qtd - 1));
+            $xInicial     = ($pdf->GetPageWidth() - $larguraTotal) / 2;
+            $yImagem      = $pdf->GetY();
+
+            $x = $xInicial;
+            foreach ($variantes as $variante) {
+                if (\file_exists($variante['file'])) {
+                    $pdf->Image($variante['file'], $x, $yImagem, $larguraQr, $larguraQr, 'PNG');
+
+                    $pdf->SetXY($x, $yImagem + $larguraQr + 2);
+                    $pdf->SetFont('Arial', '', 9);
+                    $pdf->MultiCell($larguraQr, 4, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $variante['label']), 0, 'C');
+                }
+                $x += $larguraQr + $espacamento;
             }
 
             $pdfContent = $pdf->Output('S', 'mesa_' . $id . '.pdf');

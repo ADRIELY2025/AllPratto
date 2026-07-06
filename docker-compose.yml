@@ -13,13 +13,18 @@ services:
     labels:
       - "traefik.enable=true"
       # ${APP_DOMAIN}=localhost em dev | seu domínio real em prod
-      - "traefik.http.routers.app.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.app.rule=Host(`${APP_DOMAIN}`) || Host(`192.168.35.8`)"
       - "traefik.http.routers.app.entrypoints=websecure"
       - "traefik.http.routers.app.tls=true"
       # SOMENTE em produção (via override) adicione a linha abaixo:
       # - "traefik.http.routers.app.tls.certresolver=letsencrypt"
       - "traefik.http.services.app.loadbalancer.server.port=80"
-    # Arquivos montados do host dentro do container
+      # Rota extra em HTTP puro (sem certificado) — usada pelo QR Code do celular
+      - "traefik.http.routers.app-http.rule=Host(`${APP_DOMAIN}`) || Host(`192.168.35.8`)"
+      - "traefik.http.routers.app-http.entrypoints=web"
+      - "traefik.http.routers.app-http.service=app"
+
+      # Arquivos montados do host dentro do container
     volumes:
       # Configuração do site em modo somente leitura
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
