@@ -41,6 +41,123 @@ BtnLogin.addEventListener('click', async () => {
 });
 
 // ============================================================================
+// ESQUECI A SENHA
+// ============================================================================
+const OverlayEsqueciSenha = document.getElementById('overlay-esqueci-senha');
+const BtnGerarSenha = document.getElementById('btnGerarSenha');
+const BtnCopiarSenha = document.getElementById('btnCopiarSenha');
+const BtnVoltarLogin = document.getElementById('btnVoltarLogin');
+
+function resetForgotModalSteps() {
+    document.getElementById('esqueci-passo-1').style.display = '';
+    document.getElementById('esqueci-passo-2').style.display = 'none';
+    document.getElementById('esqueci-login').value = '';
+    document.getElementById('err-esqueci-login').textContent = '';
+    document.getElementById('senha-gerada').value = '';
+    document.getElementById('copia-feedback').textContent = '';
+}
+
+window.openForgotModal = () => {
+    resetForgotModalSteps();
+    // Se o usuário já digitou algo no login principal, pré-preenche
+    const loginPrincipal = document.getElementById('login').value.trim();
+    if (loginPrincipal) {
+        document.getElementById('esqueci-login').value = loginPrincipal;
+    }
+    OverlayEsqueciSenha.classList.add('active');
+    document.body.style.overflow = 'hidden';
+};
+
+window.closeForgotModal = () => {
+    OverlayEsqueciSenha.classList.remove('active');
+    document.body.style.overflow = '';
+};
+
+OverlayEsqueciSenha.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) window.closeForgotModal();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && OverlayEsqueciSenha.classList.contains('active')) {
+        window.closeForgotModal();
+    }
+});
+
+BtnGerarSenha.addEventListener('click', async () => {
+    const loginInput = document.getElementById('esqueci-login');
+    const errEl = document.getElementById('err-esqueci-login');
+    const login = loginInput.value.trim();
+
+    errEl.textContent = '';
+    loginInput.classList.remove('error');
+
+    if (!login) {
+        errEl.textContent = 'Informe seu CPF, e-mail ou telefone';
+        loginInput.classList.add('error');
+        return;
+    }
+
+    BtnGerarSenha.disabled = true;
+    BtnGerarSenha.textContent = 'Gerando...';
+
+    try {
+        const formData = new FormData();
+        formData.append('login', login);
+
+        const response = await fetch('/authentication/forgot-password', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data?.status) {
+            errEl.textContent = data?.msg || 'Não foi possível gerar uma nova senha.';
+            loginInput.classList.add('error');
+            return;
+        }
+
+        // Mostra a senha gerada no passo 2
+        document.getElementById('senha-gerada').value = data.senha;
+        document.getElementById('esqueci-passo-1').style.display = 'none';
+        document.getElementById('esqueci-passo-2').style.display = '';
+
+        // Já deixa preenchido no formulário de login para facilitar
+        document.getElementById('login').value = login;
+    } catch (error) {
+        errEl.textContent = error.message || 'Erro ao conectar ao servidor';
+        loginInput.classList.add('error');
+    } finally {
+        BtnGerarSenha.disabled = false;
+        BtnGerarSenha.textContent = 'Gerar nova senha →';
+    }
+});
+
+BtnCopiarSenha.addEventListener('click', async () => {
+    const senhaInput = document.getElementById('senha-gerada');
+    const feedback = document.getElementById('copia-feedback');
+
+    try {
+        await navigator.clipboard.writeText(senhaInput.value);
+    } catch (error) {
+        // Fallback para navegadores sem suporte à Clipboard API
+        senhaInput.select();
+        senhaInput.setSelectionRange(0, senhaInput.value.length);
+        document.execCommand('copy');
+    }
+
+    feedback.textContent = 'Senha copiada!';
+    setTimeout(() => { feedback.textContent = ''; }, 2500);
+});
+
+BtnVoltarLogin.addEventListener('click', () => {
+    window.closeForgotModal();
+    document.getElementById('senha').focus();
+});
+
+// ============================================================================
 // GOOGLE SIGN-IN
 // ============================================================================
 function getCookie(name) {

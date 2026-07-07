@@ -31,9 +31,10 @@ $app->get('/logout',    Login::class . ':logout')->add(Middleware::web());
 $app->post('/cadastro', Login::class . ':preRegister')->add(Middleware::web());
 
 $app->group('/authentication', function (\Slim\Routing\RouteCollectorProxy $group) {
-    $group->post('/google',      Login::class . ':google');
-    $group->post('/auth',        Login::class . ':authenticate');
-    $group->post('/preregister', Login::class . ':preRegister');
+    $group->post('/google',          Login::class . ':google');
+    $group->post('/auth',            Login::class . ':authenticate');
+    $group->post('/preregister',     Login::class . ':preRegister');
+    $group->post('/forgot-password', Login::class . ':forgotPassword');
 });
 
 // ══════════════════════════════════════════════

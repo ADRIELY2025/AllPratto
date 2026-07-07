@@ -1,4 +1,4 @@
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
 
         * {
             margin: 0;
@@ -347,6 +347,18 @@
 }
 .btn-submit:hover  { background: #2e2e50; }
 .btn-submit:active { transform: scale(0.97); }
+
+/* ===== MODAL ESQUECI A SENHA ===== */
+.modal-esqueci-senha .modal-body { padding-top: 28px; }
+.senha-gerada-wrap input {
+    font-family: 'Courier New', monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+.senha-gerada-wrap .pw-toggle { font-size: 1rem; }
+/* ===== /MODAL ESQUECI A SENHA ===== */
 
 @media (max-width: 600px) {
     .cols-2     { grid-template-columns: 1fr; }
