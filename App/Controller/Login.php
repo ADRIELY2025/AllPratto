@@ -462,30 +462,14 @@ final class Login extends Base
     }
 
     // -------------------------------------------------------------------------
-    // Logout: marca inativo no banco, destrói sessão e apaga cookies
+    // Logout: destrói sessão e apaga cookies.
+    // NÃO altera o campo 'ativo' do usuário — esse campo é uma flag de negócio
+    // controlada pelo administrador (conta habilitada/desabilitada), não um
+    // indicador de sessão. Encerrar a sessão aqui (destruir cookie + $_SESSION)
+    // já é suficiente para invalidar o acesso.
     // -------------------------------------------------------------------------
     public function logout($request, $response)
     {
-        # Pega o ID do usuário ANTES de destruir a sessão
-        $userId = $_SESSION['user']['id'] ?? null;
-
-        if ($userId) {
-            try {
-                DB::connection()->update(
-                    'users',
-                    [
-                        'ativo'         => 0,
-                        'atualizado_em' => date('Y-m-d H:i:s'),
-                    ],
-                    [
-                        'id' => (int) $userId
-                    ]
-                );
-            } catch (\Throwable $e) {
-                error_log('[logout][DB] ' . $e->getMessage());
-            }
-        }
-
         # HTTPS detect
         $isSecure =
             (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')

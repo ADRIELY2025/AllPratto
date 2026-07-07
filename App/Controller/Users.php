@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Trait\PasswordGenerator;
+
 final class Users extends Base
 {
+    use PasswordGenerator;
+
     public function list($request, $response)
     {
         return $this->getTwig()
@@ -177,6 +181,69 @@ final class Users extends Base
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Reseta a senha de um usuário (ação do administrador, a partir da lista
+    // ou da tela de cadastro/edição). Gera uma nova senha aleatória, grava o
+    // hash no banco e devolve a senha em texto puro (uma única vez) para o
+    // administrador copiar e repassar ao usuário.
+    // -------------------------------------------------------------------------
+    public function resetPassword($request, $response)
+    {
+        $form = $request->getParsedBody();
+        $id   = $form['id'] ?? null;
+
+        if (is_null($id) || $id === '') {
+            return $this->json($response, [
+                'status' => false,
+                'msg'    => 'Informe o código do usuário',
+            ], 403);
+        }
+
+        try {
+            $qb = \App\Database\DB::select('id', 'nome')->from('users');
+            $qb->where('id = ' . $qb->createPositionalParameter($id, \Doctrine\DBAL\ParameterType::INTEGER));
+            $user = $qb->fetchAssociative();
+
+            if (!$user) {
+                return $this->json($response, [
+                    'status' => false,
+                    'msg'    => 'Usuário não encontrado.',
+                ], 404);
+            }
+
+            $novaSenha = $this->gerarSenhaSegura();
+
+            $IsUpdated = \App\Database\DB::connection()->update(
+                'users',
+                [
+                    'senha'         => password_hash($novaSenha, PASSWORD_DEFAULT),
+                    'atualizado_em' => date('Y-m-d H:i:s'),
+                ],
+                ['id' => $user['id']]
+            );
+
+            if (!$IsUpdated) {
+                return $this->json($response, [
+                    'status' => false,
+                    'msg'    => 'Não foi possível resetar a senha deste usuário.',
+                ], 500);
+            }
+
+            return $this->json($response, [
+                'status' => true,
+                'msg'    => 'Senha resetada com sucesso! Copie a senha abaixo antes de fechar.',
+                'senha'  => $novaSenha,
+                'id'     => $user['id'],
+            ], 200);
+        } catch (\Exception $e) {
+            error_log('[users][resetPassword] ' . $e->getMessage());
+            return $this->json($response, [
+                'status' => false,
+                'msg'    => 'Restrição: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function listingdata($request, $response)
     {
         $form = $request->getParsedBody();
@@ -253,6 +320,13 @@ final class Users extends Base
                         <a class='btn btn-sm btn-warning' href='/users/detalhes/" . $value['id'] . "'>
                             <i class='fa-solid fa-pen-to-square'></i> Editar
                         </a>
+
+                        <button
+                            type='button'
+                            class='btn btn-sm btn-info'
+                            onclick='ShowResetPasswordModal(" . $value['id'] . ");'>
+                            <i class='fa-solid fa-key'></i> Resetar senha
+                        </button>
 
                         <button
                             type='button'
