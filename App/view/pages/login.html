@@ -28,7 +28,7 @@
 
                 <div class="form-group">
                     <label for="senha">Senha</label>
-                    <a href="#" class="forgot-link" onclick="openForgotModal(); return false;">Esqueceu a senha?</a>
+                    <a href="#" class="forgot-link">Esqueceu a senha?</a>
                     <input type="password" id="senha" name="senha" placeholder="Informe sua senha"
                         autocomplete="current-password"
                         onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('btnLogin').click(); }">
@@ -204,78 +204,6 @@
                 </div>
             </div>
             <!-- ===== /MODAL CADASTRO ===== -->
-
-            <!-- ===== MODAL ESQUECI A SENHA ===== -->
-            <div class="overlay" id="overlay-esqueci-senha">
-                <div class="modal-cadastro modal-esqueci-senha" id="modal-esqueci-senha">
-
-                    <!-- Passo 1: informar CPF / e-mail / telefone -->
-                    <div id="esqueci-passo-1">
-                        <div class="modal-header">
-                            <div>
-                                <h2>Recuperar senha</h2>
-                                <p>Informe seu CPF, e-mail ou telefone</p>
-                            </div>
-                            <button class="close-btn" onclick="closeForgotModal()">✕</button>
-                        </div>
-
-                        <div class="modal-body">
-                            <div class="field">
-                                <label>CPF, Telefone ou E-mail</label>
-                                <input type="text" id="esqueci-login" name="esqueci-login"
-                                    placeholder="CPF, Telefone ou E-mail" autocomplete="username"
-                                    onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('btnGerarSenha').click(); }" />
-                                <span class="err-msg" id="err-esqueci-login"></span>
-                            </div>
-
-                            <p class="terms" style="max-width:100%; margin-top:6px;">
-                                Uma nova senha será gerada automaticamente e exibida na tela a
-                                seguir. Copie-a e use-a para entrar; você poderá alterá-la depois.
-                            </p>
-
-                            <div class="modal-footer" style="justify-content:flex-end;">
-                                <button class="btn-submit" type="button" id="btnGerarSenha">Gerar
-                                    nova senha →</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Passo 2: exibir a nova senha gerada -->
-                    <div id="esqueci-passo-2" style="display:none;">
-                        <div class="modal-header">
-                            <div>
-                                <h2>Nova senha gerada</h2>
-                                <p>Copie a senha abaixo antes de fechar esta janela</p>
-                            </div>
-                            <button class="close-btn" onclick="closeForgotModal()">✕</button>
-                        </div>
-
-                        <div class="modal-body">
-                            <div class="field">
-                                <label>Sua nova senha</label>
-                                <div class="pw-wrap senha-gerada-wrap">
-                                    <input type="text" id="senha-gerada" name="senha-gerada" readonly />
-                                    <button class="pw-toggle" type="button" id="btnCopiarSenha"
-                                        title="Copiar senha">📋</button>
-                                </div>
-                                <span class="err-msg" id="copia-feedback" style="color:#1e6b45;"></span>
-                            </div>
-
-                            <p class="terms" style="max-width:100%; margin-top:6px;">
-                                Esta senha só é exibida uma vez. Guarde-a com segurança e, após
-                                entrar, recomendamos alterá-la para uma senha de sua preferência.
-                            </p>
-
-                            <div class="modal-footer" style="justify-content:flex-end;">
-                                <button class="btn-submit" type="button" id="btnVoltarLogin">Voltar
-                                    para o login →</button>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-            <!-- ===== /MODAL ESQUECI A SENHA ===== -->
 
             <p class="signup-link">
                 Não tem uma conta? <a href="#" onclick="openModal(); return false;">Cadastre-se</a>
